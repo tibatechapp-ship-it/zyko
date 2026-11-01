@@ -5,7 +5,8 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — Universal AI Orchestration Platform" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-133%20passing-22c55e)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-203%20passing-22c55e)](.github/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-89%25-84cc16)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Android%20%7C%20Termux-10b981)](android/README.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
@@ -19,7 +20,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.2.0** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
+**النسخة 0.3.0** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -47,6 +48,19 @@
 | بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
+
+## ما الجديد في 0.3.0؟ (جولة تقييم وعلاج)
+
+جولة إعادة تقييم كاملة كشفت وعالجت **أربع** ثغرات وظيفية حقيقية، وأضافت أوامر رؤية جديدة:
+
+| الثغرة المكتشفة | المعالجة |
+|---|---|
+| **التثبيت الصريح للنموذج كان مُهمَلًا**: `zyko ask --model openai/gpt-4o` كان يتجاهله الموجّه ويختار أفضل مرشّح! | `candidates_for()` تُلزم المسار بالنموذج المطلوب (`provider/model` أو `model` مجرد أو `provider/*`)، وتفشل فورًا برسالة مفيدة إن لم يتوفر، والإيصال يسجّل `requested_model` للتحقق اللاحق |
+| **رفض 401 كان يُفسد اتصالات keep-alive في البوابة**: جسم الطلب غير المقروء يُفسَّر كسطر طلب تالٍ → 501 | جسم الطلب يُستهلك قبل أي ردّ خطأ — اختبار HTTP حقيقي بمقبس فعلي يثبت الدورة الكاملة (401 ثم 200 على نفس الاتصال) |
+| **إطار JSON-RPC تالف كان يُسقط خادم MCP بالكامل** | الرد بـ `PARSE_ERROR (-32700)` حسب مواصفة JSON-RPC والاستمرار في الخدمة؛ كما صار `zyko_models` يعرض النماذج **المتاحة فعليًا** (مُرشّحة بالسياسة) لا كتالوجًا ثابتًا |
+| **ذاكرة الجلسات كانت ميزة «ميتة»**: SQLite كاملة بلا أي رؤية في CLI وتغطية 25% | أمر جديد `zyko sessions list/show/rm/clear` + تغطية 98% |
+
+إضافات: **`zyko cost`** — تقرير إنفاق وحوكمة من سجل التدقيق (حسب اليوم، حسب المرشّح، تقديري مقابل مُبلَّغ من المورّد، قواعد الحجب) · التغطية 81% → **89%** · الاختبارات 133 → **203**.
 
 ## التثبيت
 
@@ -191,7 +205,7 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.2.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.3.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
 
 ## Four differentiators
 
@@ -235,7 +249,7 @@ print(outcome.response.text, "←", outcome.receipt["chosen"])
 
 ## Highlights
 
-- **CLI**: `ask` · `chat` · `route` (planning-only) · `models` · `policy` · `run` (agents) · `serve` · `mcp` · `bench` · `doctor` — argparse-only, zero CLI dependencies. `--demo` runs the whole stack offline through a deterministic mock provider (no keys, no network).
+- **CLI**: `ask` · `chat` · `route` (planning-only) · `models` · `policy` · `run` (agents) · `sessions` (inspect SQLite memory) · `cost` (spend & governance report) · `serve` · `mcp` · `bench` · `doctor` — argparse-only, zero CLI dependencies. `--demo` runs the whole stack offline through a deterministic mock provider (no keys, no network). Explicit `--model provider/name` pins are enforced by the router, not ignored.
 - **Gateway**: stdlib HTTP server, streaming SSE included, `zyko.receipt` embedded in responses and chunks.
 - **Agents**: ReAct loop, builtin tools (calculator/file/http/shell-guarded), MCP tools namespaced as `server__tool`, SQLite session memory, step/timeout/policy guards.
 - **Providers**: OpenAI · Anthropic · Google · Groq · Mistral · DeepSeek · OpenRouter · Ollama(local). Retries with backoff, circuit breakers, latency EWMA.
@@ -244,7 +258,7 @@ print(outcome.response.text, "←", outcome.receipt["chosen"])
 
 ## Tests
 
-`pytest -q` → 133 tests covering routing (incl. snapshot/parity), policy (incl. schema warnings), MCP over real subprocesses, the gateway, agents, every provider adapter against canned HTTP, streaming cost accounting, `Retry-After` resilience, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12/3.13.
+`pytest -q` → 203 tests (89% coverage) covering routing (incl. snapshot/parity and explicit model pinning), policy (incl. schema warnings), MCP over real subprocesses plus in-memory server frames, the gateway over a real HTTP socket (auth + keep-alive integrity), agents, the loader search path, every provider adapter against canned HTTP, session memory, the audit-based cost report, streaming cost accounting, `Retry-After` resilience, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12/3.13.
 
 ## License
 

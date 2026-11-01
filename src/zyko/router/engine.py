@@ -143,6 +143,35 @@ class Router:
                 out.append(RouteCandidate(provider_name, info.id))
         return out
 
+    def candidates_for(self, request: ChatRequest) -> list[RouteCandidate]:
+        """Candidates eligible for *this* request, honoring an explicit model pin.
+
+        ``openai/gpt-4o`` pins provider and model; a bare ``gpt-4o`` pins the
+        model on any provider; ``auto`` (or unset) ranks the whole board.
+        A pin that matches nothing fails fast with an actionable hint instead
+        of silently routing somewhere else.
+        """
+        wanted = (request.model or "").strip()
+        if not wanted or wanted.lower() == "auto":
+            return self.candidates()
+        if "/" in wanted:
+            provider_name, _, model_id = wanted.partition("/")
+            pool = [
+                c
+                for c in self.candidates()
+                if c.provider == provider_name
+                and (model_id in ("", "*") or c.model == model_id)
+            ]
+        else:
+            pool = [c for c in self.candidates() if c.model == wanted]
+        if not pool:
+            available = ", ".join(c.key for c in self.candidates()[:20])
+            hint = "run `zyko models` to list candidates, pin as provider/model"
+            if available:
+                hint += f"; available: {available}"
+            raise ProviderError(f"requested model '{wanted}' is not available", hint=hint)
+        return pool
+
     def _board_snapshot(self) -> tuple[list[float], list[float]]:
         """Candidate price/latency ranges, computed once per scoring pass.
 
@@ -226,6 +255,7 @@ class Router:
         *,
         est_input_tokens: int = DEFAULT_EST_IN,
         est_output_tokens: int = DEFAULT_EST_OUT,
+        pool: list[RouteCandidate] | None = None,
     ) -> list[tuple[RouteCandidate, ScoreBreakdown]]:
         snapshot = self._board_snapshot()
         ranked = [
@@ -238,7 +268,7 @@ class Router:
                     snapshot=snapshot,
                 ),
             )
-            for cand in self.candidates()
+            for cand in (pool if pool is not None else self.candidates())
         ]
         ranked.sort(key=lambda pair: pair[1].total, reverse=True)
         return ranked
@@ -267,7 +297,8 @@ class Router:
     async def aroute(self, request: ChatRequest) -> RouteResult:
         est_in = max(kernel.messages_tokens(request.messages), 1)
         est_out = request.max_tokens or DEFAULT_EST_OUT
-        ranking = self.rank(est_input_tokens=est_in, est_output_tokens=est_out)
+        pool = self.candidates_for(request)
+        ranking = self.rank(est_input_tokens=est_in, est_output_tokens=est_out, pool=pool)
         attempts: list[RouteAttempt] = []
 
         for candidate, breakdown in ranking[: max(1, self.max_fallbacks)]:
@@ -313,7 +344,8 @@ class Router:
         """Streaming route: falls back only *before* the first token arrives."""
         est_in = max(kernel.messages_tokens(request.messages), 1)
         est_out = request.max_tokens or DEFAULT_EST_OUT
-        ranking = self.rank(est_input_tokens=est_in, est_output_tokens=est_out)
+        pool = self.candidates_for(request)
+        ranking = self.rank(est_input_tokens=est_in, est_output_tokens=est_out, pool=pool)
         attempts: list[RouteAttempt] = []
 
         for candidate, breakdown in ranking[: max(1, self.max_fallbacks)]:
@@ -422,6 +454,7 @@ class Router:
             "created": time.time(),
             "strategy": self.strategy,
             "chosen": chosen.key,
+            "requested_model": (request.model or "auto").strip() or "auto",
             "est_input_tokens": est_in,
             "est_output_tokens": est_out,
             "score_components": breakdown.as_dict(),

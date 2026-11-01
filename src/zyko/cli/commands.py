@@ -327,6 +327,150 @@ def cmd_bench(args: Any) -> int:
     return run_bench(args)
 
 
+def cmd_sessions(args: Any) -> int:
+    """`zyko sessions list|show|rm|clear` — make stored memory visible."""
+    store = MemoryStore()
+    action = args.sessions_cmd
+    if action == "list":
+        rows = store.list_sessions()
+        if not rows:
+            print(ui.info("no sessions yet — start one with `zyko chat`"))
+            return 0
+        ui.table(
+            ["session", "messages", "updated", "title"],
+            [
+                [
+                    r["id"],
+                    r["messages"],
+                    time.strftime("%Y-%m-%d %H:%M", time.localtime(r["updated"])),
+                    (r["title"] or "-")[:40],
+                ]
+                for r in rows
+            ],
+        )
+        return 0
+    if action == "show":
+        history = store.history(args.session_id)
+        if not history:
+            print(ui.warn(f"session '{args.session_id}' is empty or missing"))
+            return 1
+        for message in history:
+            if message.tool_calls:
+                calls = ", ".join(f"{tc.name}({json.dumps(tc.arguments, ensure_ascii=False)})" for tc in message.tool_calls)
+                print(f"{message.role.value:>9} | {calls}")
+            else:
+                text = (message.content or "").replace("\n", " ")
+                print(f"{message.role.value:>9} | {text}")
+        return 0
+    if action == "rm":
+        removed = sum(1 for sid in args.session_ids if store.delete_session(sid))
+        print(ui.ok(f"removed {removed} session(s)"))
+        return 0
+    if action == "clear":
+        if not args.yes:
+            raise ConfigError(
+                "refusing to wipe all sessions without --yes",
+                hint="run `zyko sessions clear --yes` to confirm",
+            )
+        count = store.clear()
+        print(ui.ok(f"removed {count} session(s)"))
+        return 0
+    raise ConfigError(f"unknown sessions subcommand: {action}")
+
+
+def cmd_cost(args: Any) -> int:
+    """`zyko cost` — spend & governance report from the policy audit log."""
+    from zyko.platform.paths import audit_log
+
+    path = Path(args.audit) if getattr(args, "audit", None) else audit_log()
+    if not path.is_file():
+        print(ui.info(f"no audit log at {path} — entries appear once a policy processes traffic"))
+        return 0
+    cutoff = time.time() - args.days * 86400 if args.days else 0.0
+    events: dict[str, int] = {}
+    spend_by_day: dict[str, float] = {}
+    spend_by_candidate: dict[str, float] = {}
+    denied_by_rule: dict[str, int] = {}
+    redaction_events = 0
+    estimated_entries = 0
+    vendor_entries = 0
+    total_spend = 0.0
+    with path.open(encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(entry, dict):
+                continue
+            if cutoff and float(entry.get("ts") or 0) < cutoff:
+                continue
+            event = entry.get("event") or "unknown"
+            events[event] = events.get(event, 0) + 1
+            if event == "usage":
+                cost = float(entry.get("cost") or 0.0)
+                total_spend += cost
+                day = time.strftime("%Y-%m-%d", time.localtime(float(entry.get("ts") or 0)))
+                spend_by_day[day] = spend_by_day.get(day, 0.0) + cost
+                candidate = entry.get("candidate") or "(unknown)"
+                spend_by_candidate[candidate] = spend_by_candidate.get(candidate, 0.0) + cost
+                if entry.get("estimated"):
+                    estimated_entries += 1
+                else:
+                    vendor_entries += 1
+            elif event == "deny":
+                rule = entry.get("rule") or "unknown"
+                denied_by_rule[rule] = denied_by_rule.get(rule, 0) + 1
+            elif event == "allow" and entry.get("redactions"):
+                redaction_events += 1
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "audit_file": str(path),
+                    "window_days": args.days,
+                    "events": events,
+                    "total_spend_usd": round(total_spend, 6),
+                    "spend_by_day": {d: round(v, 6) for d, v in sorted(spend_by_day.items())},
+                    "spend_by_candidate": {c: round(v, 6) for c, v in sorted(spend_by_candidate.items())},
+                    "denied_by_rule": denied_by_rule,
+                    "redaction_events": redaction_events,
+                    "cost_accounting": {"vendor_reported": vendor_entries, "kernel_estimated": estimated_entries},
+                },
+                indent=2,
+            )
+        )
+        return 0
+    print(ui.bold(f"ZYKO cost & governance report — last {args.days or 'all'} day(s)"))
+    ui.kv("audit file", str(path))
+    for event in sorted(events):
+        ui.kv(f"event {event}", events[event])
+    ui.kv("total spend", f"${total_spend:.6f}")
+    ui.kv(
+        "cost accounting",
+        f"vendor={vendor_entries}, estimated={estimated_entries}",
+    )
+    if spend_by_day:
+        ui.table(
+            ["day", "spend (USD)"],
+            [[day, f"${value:.6f}"] for day, value in sorted(spend_by_day.items())],
+        )
+    if spend_by_candidate:
+        top = sorted(spend_by_candidate.items(), key=lambda pair: pair[1], reverse=True)[:10]
+        ui.table(
+            ["candidate", "spend (USD)"],
+            [[cand, f"${value:.6f}"] for cand, value in top],
+        )
+    if denied_by_rule:
+        ui.table(["deny rule", "count"], [[rule, count] for rule, count in sorted(denied_by_rule.items())])
+    if redaction_events:
+        ui.kv("redaction events", redaction_events)
+    return 0
+
+
 def cmd_doctor(args: Any) -> int:
     print(bold("ZYKO doctor"))
     p = platform_info()

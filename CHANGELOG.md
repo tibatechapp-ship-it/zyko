@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.3.0 — second evaluation round: correctness, visibility, hardening
+
+Another full re-evaluation (tests, lint, coverage, functional smokes). This
+round focused on *correctness bugs the earlier suite could not see* and on
+making hidden subsystems (session memory, audit trail) visible to users.
+
+### Bugs found by the new evaluation → fixes
+- **Explicit model pins were silently ignored.** `zyko ask --model
+  openai/gpt-4o` (or `Zyko().ask(..., model=...)`) was discarded by the
+  router: it ranked the whole board and overwrote the model with the top
+  candidate. The router now pins the route to the requested model
+  (`provider/model`, bare `model`, or `provider/*`), fails fast with an
+  actionable hint when the pin matches nothing, keeps fallbacks *inside* the
+  pin, and records `requested_model` on every receipt.
+- **Gateway keep-alive corruption on auth rejection.** A 401 (or any early
+  error) returned without draining the request body; with HTTP/1.1
+  keep-alive the unread body was parsed as the next request line and the
+  connection broke (501 "Unsupported method"). The body is now consumed
+  before any error path. Regression-tested over a real socket: 401 then 200
+  on the same connection.
+- **One malformed JSON-RPC frame killed the MCP server.** `serve()` now
+  answers `PARSE_ERROR (-32700)` per the JSON-RPC 2.0 spec and keeps
+  serving. `zyko_models` also lists what the router can *actually* route
+  (policy-filtered, keyless demo fallback) instead of raw vendor catalogs.
+- **Session memory was an invisible feature**: a full SQLite store with no
+  CLI surface and 25% coverage. New `zyko sessions list|show|rm|clear`
+  command (clear requires `--yes`), `MemoryStore.delete_session`/`clear`,
+  `updated` surfaced in listings; coverage now 98%.
+
+### New
+- **`zyko cost`** — spend & governance report from the policy audit log:
+  totals, per-day and per-candidate spend, vendor-reported vs kernel-estimated
+  accounting, deny-rule counts, redaction events. `--days N` window,
+  `--json` for pipelines.
+- **Receipts now carry `requested_model`** — replaying a decision also
+  verifies that the pin was honored.
+- `python -m zyko` covered by a real-subprocess test; version consistency
+  between `pyproject.toml` and `zyko.version` is now test-enforced.
+
+### Numbers
+- Tests 133 → **203**; coverage 81% → **89%** (`cli/commands` 63% → 90%,
+  `client` 51% → 98%, `agents/loader` 39% → 100%, `agents/memory` 25% → 98%,
+  `mcp/server` 63% → 91%); `ruff` clean; byte-compile clean.
+
 ## 0.2.0 — evaluation-driven hardening round
 
 A full re-evaluation of the platform (tests, lint, coverage, functional smokes)

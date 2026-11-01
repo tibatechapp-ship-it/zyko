@@ -178,7 +178,10 @@ def test_version_command(capsys):
 
     assert main(["version"]) == 0
     out = capsys.readouterr().out
-    assert "0.2.0" in out
+    from zyko.version import __version__
+
+    assert __version__ in out
+    assert "MCP protocol" in out
     assert "MCP" in out
 
 

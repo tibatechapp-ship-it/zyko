@@ -106,13 +106,40 @@ class MemoryStore:
             messages.append(Message(role=role, content=content, tool_calls=tool_calls))
         return messages
 
+    def delete_session(self, session: str) -> bool:
+        """Remove a session and all of its messages. True if it existed."""
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT 1 FROM sessions WHERE id = ?", (session,)
+            ).fetchone()
+            existed = row is not None
+            if existed:
+                self._conn.execute("DELETE FROM messages WHERE session_id = ?", (session,))
+                self._conn.execute("DELETE FROM sessions WHERE id = ?", (session,))
+                self._conn.commit()
+        return existed
+
+    def clear(self) -> int:
+        """Delete every session and message. Returns the number of sessions removed."""
+        with self._lock:
+            row = self._conn.execute("SELECT COUNT(*) FROM sessions").fetchone()
+            count = int(row[0])
+            if count:
+                self._conn.execute("DELETE FROM messages")
+                self._conn.execute("DELETE FROM sessions")
+                self._conn.commit()
+        return count
+
     def list_sessions(self) -> list[dict]:
         with self._lock:
             rows = self._conn.execute(
-                "SELECT s.id, s.title, s.created, COUNT(m.idx) FROM sessions s "
+                "SELECT s.id, s.title, s.created, s.updated, COUNT(m.idx) FROM sessions s "
                 "LEFT JOIN messages m ON m.session_id = s.id GROUP BY s.id ORDER BY s.updated DESC"
             ).fetchall()
-        return [{"id": r[0], "title": r[1], "created": r[2], "messages": r[3]} for r in rows]
+        return [
+            {"id": r[0], "title": r[1], "created": r[2], "updated": r[3], "messages": r[4]}
+            for r in rows
+        ]
 
     def close(self) -> None:
         with self._lock:

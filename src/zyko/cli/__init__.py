@@ -30,6 +30,8 @@ def build_parser() -> argparse.ArgumentParser:
             "  zyko ask 'hello' --demo                   # offline, no keys needed\n"
             "  zyko serve --port 8787                    # OpenAI-compatible gateway\n"
             "  zyko mcp serve                            # expose ZYKO as an MCP server\n"
+            "  zyko sessions list                        # inspect stored chat memory\n"
+            "  zyko cost                                 # spend & governance report\n"
             "  zyko doctor                               # diagnose platform + keys\n"
         ),
     )
@@ -118,6 +120,27 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--trace", action="store_true", help="print the step table")
     with_router(p)
     p.set_defaults(func=cmd.cmd_run)
+
+    # sessions (memory visibility)
+    p = sub.add_parser("sessions", help="inspect stored chat sessions (SQLite memory)")
+    ses = p.add_subparsers(dest="sessions_cmd", required=True)
+    ses.add_parser("list", help="list sessions with message counts").set_defaults(func=cmd.cmd_sessions)
+    c = ses.add_parser("show", help="print every message of a session")
+    c.add_argument("session_id")
+    c.set_defaults(func=cmd.cmd_sessions)
+    c = ses.add_parser("rm", help="delete one or more sessions")
+    c.add_argument("session_ids", nargs="+")
+    c.set_defaults(func=cmd.cmd_sessions)
+    c = ses.add_parser("clear", help="delete ALL sessions (requires --yes)")
+    c.add_argument("--yes", action="store_true")
+    c.set_defaults(func=cmd.cmd_sessions)
+
+    # cost (governance visibility)
+    p = sub.add_parser("cost", help="spend & governance report from the policy audit log")
+    p.add_argument("--days", type=int, default=7, help="window size in days (0 = all history)")
+    p.add_argument("--audit", default=None, help="audit JSONL path (default: the policy audit log)")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd.cmd_cost)
 
     # bench
     p = sub.add_parser("bench", help="run the reproducible routing benchmark")

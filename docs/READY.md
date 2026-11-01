@@ -1,3 +1,47 @@
+# ZYKO v0.3.0 — Readiness Report (release QA)
+
+Status: **READY** — all gates green on the reference environment (Linux, Python 3.12),
+after a second full evaluation round that found and fixed three real correctness bugs.
+
+## Gates
+
+| Gate | Command | Result |
+|---|---|---|
+| Unit/integration tests (plain `pytest`, same as CI) | `pytest -q` | **203 passed** (0 failed, 0 skipped) |
+| Lint | `ruff check .` | **0 findings** |
+| Coverage (reference platform) | `pytest --cov=zyko` | **89% total** (`cli/commands` 90%, `client` 98%, `agents/loader` 100%, `agents/memory` 98%, `mcp/server` 91%) |
+| Byte-compile | `python -m compileall src tests` | clean |
+| Secret scan | `git grep` for token/key patterns | clean — no credentials in tree |
+| CLI smoke (all commands) | `zyko version/info/doctor/models/route/ask/sessions/cost/policy/mcp/bench` | all exit 0 or fail cleanly with hints |
+| Keyless first run (no flags) | `zyko route "hello"` with zero keys | exit 0 — auto-fallback to the demo provider with a notice |
+| **Model pinning (new gate)** | `zyko ask --model provider/model --explain` | route honours the pin; receipt records `requested_model`; unknown pins fail fast with a hint |
+| MCP stdio protocol | `initialize` → `tools/list` → `tools/call` + malformed-frame probe | correct JSON-RPC 2.0 responses; bad frames get `-32700` and the server survives |
+| Gateway | OpenAI-compatible `/v1/chat/completions` incl. SSE + receipts, **over a real socket with keep-alive** | 401 then 200 on the same connection (regression test for the body-drain fix) |
+| Cross-platform paths | XDG (Linux/Termux), macOS, Windows layouts | covered by `platform/paths.py` + tests |
+| Landing site | `docs/site` AR(RTL)/EN | version/badge refs refreshed to 0.3.0 |
+
+## Correctness bugs fixed in the v0.3.0 evaluation round
+
+1. **Explicit model pins were ignored** — the router now enforces
+   `--model provider/model` (bare-model and `provider/*` forms too), keeps
+   fallbacks inside the pin, and records `requested_model` on receipts.
+2. **Gateway keep-alive corruption on 401** — request bodies are drained
+   before any early error response; verified over a real HTTP socket.
+3. **Malformed JSON-RPC frame killed the MCP server** — now answered with
+   `PARSE_ERROR (-32700)` per spec; `zyko_models` lists policy-filtered,
+   availability-aware models instead of static catalogs.
+
+## Added in v0.3.0
+
+4. **`zyko sessions list|show|rm|clear`** — SQLite session memory is now
+   user-visible and manageable (`clear` requires `--yes`).
+5. **`zyko cost`** — spend & governance report from the audit log (per day,
+   per candidate, vendor vs estimated accounting, deny rules, redactions).
+6. **Receipts carry `requested_model`**; version consistency between
+   `pyproject.toml` and `zyko.version` is test-enforced.
+
+---
+
 # ZYKO v0.2.0 — Readiness Report (release QA)
 
 Status: **READY** — all gates green on the reference environment (Linux, Python 3.12.16),

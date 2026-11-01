@@ -121,6 +121,9 @@ class ZykoMCPServer:
                 providers: dict[str, Any] = {"mock": MockProvider()}
             else:
                 providers = configured_providers(settings.provider_settings)
+            if not providers:
+                # Keyless host: same keyless-first-run behaviour as the CLI.
+                providers = {"mock": MockProvider()}
             # Same governance as the CLI: default_policy, ledger, demo mode.
             policy = None
             policy_name = settings.get("default_policy")
@@ -137,16 +140,12 @@ class ZykoMCPServer:
         return self._router
 
     def _models_text(self) -> str:
+        """List the models the router can actually use (policy-filtered)."""
+        router = self._ensure_router()
         lines: list[str] = []
-        from zyko.providers import get_provider_class, provider_names
-
-        for name in provider_names():
-            cls = get_provider_class(name)
-            try:
-                catalog = cls().catalog() if cls.local else cls.CATALOG
-            except Exception:
-                catalog = cls.CATALOG
-            for info in catalog:
+        for provider_name in sorted(router.providers):
+            provider = router.providers[provider_name]
+            for info in provider.catalog():
                 price = (
                     "free"
                     if info.local
@@ -201,8 +200,13 @@ class ZykoMCPServer:
                 yield line
 
         async for raw in _lines(byte_iter()):
-            message = raw
-            response = await self.handle(message)
+            if isinstance(raw, bytes):
+                # Undecodable frame: answer per JSON-RPC 2.0 spec (parse error,
+                # id null) and keep serving — a bad line must not kill the host.
+                response = protocol.error(None, protocol.PARSE_ERROR, "invalid JSON-RPC frame")
+            else:
+                message = raw
+                response = await self.handle(message)
             if response is not None:
                 stdout.write(protocol.encode(response))
                 await asyncio.to_thread(stdout.flush)
@@ -215,7 +219,11 @@ async def _lines(byte_iter):
         while b"\n" in buf:
             line, buf = buf.split(b"\n", 1)
             if line.strip():
-                yield protocol.decode(line)
+                try:
+                    yield protocol.decode(line)
+                except ZykoError as exc:
+                    log.warning("mcp server dropped undecodable frame: %s", exc)
+                    yield b"__undecodable__"
 
 
 def main() -> int:

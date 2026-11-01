@@ -126,14 +126,21 @@ class _Handler(BaseHTTPRequestHandler):
         return self._error(404, f"no route: {path}")
 
     def do_POST(self) -> None:  # noqa: N802
+        # Drain the request body BEFORE any early error return: with HTTP/1.1
+        # keep-alive, an unread body would be parsed as the next request line
+        # and corrupt the connection (classic 501-on-reuse failure).
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+            body = self.rfile.read(length) if length > 0 else b""
+        except (ValueError, OSError):
+            body = b""
         if not self._authed():
             return self._error(401, "invalid or missing bearer token")
         path = self.path.split("?")[0]
         if path != "/v1/chat/completions":
             return self._error(404, f"no route: {path}")
         try:
-            length = int(self.headers.get("Content-Length") or 0)
-            payload = json.loads(self.rfile.read(length) or b"{}")
+            payload = json.loads(body or b"{}")
         except json.JSONDecodeError:
             return self._error(400, "request body is not valid JSON")
         try:

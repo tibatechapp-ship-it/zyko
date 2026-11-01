@@ -78,7 +78,10 @@ async def test_zyko_mcp_server_models_tool():
     server = ZykoMCPServer()
     reply = await server.handle(decode(encode(request(9, "tools/call", {"name": "zyko_models", "arguments": {}}))))
     text = reply["result"]["content"][0]["text"]
-    assert "openai/gpt-4o-mini" in text  # static catalog, no keys needed
+    # Keyless env: _ensure_router falls back to the demo provider, and the
+    # listing reflects what the router can actually route (policy-filtered),
+    # not a static vendor catalog.
+    assert "mock/mock-mini" in text
 
 
 async def test_zyko_mcp_server_unknown_method():
