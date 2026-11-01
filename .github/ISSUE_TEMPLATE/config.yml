@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & discussions
+    url: https://github.com/tibatechapp-ship-it/zyko/discussions
+    about: Ask how ZYKO works, share routing policies and agent definitions.
+  - name: Security report
+    url: https://github.com/tibatechapp-ship-it/zyko/blob/main/SECURITY.md
+    about: Found a vulnerability? Follow the private disclosure process — do not open a public issue.

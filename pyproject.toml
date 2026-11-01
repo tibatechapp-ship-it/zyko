@@ -42,6 +42,7 @@ zyko = "zyko.cli:main"
 [project.urls]
 Homepage = "https://github.com/tibatechapp-ship-it/zyko"
 Repository = "https://github.com/tibatechapp-ship-it/zyko"
+Documentation = "https://tibatechapp-ship-it.github.io/zyko/"
 Issues = "https://github.com/tibatechapp-ship-it/zyko/issues"
 
 [tool.setuptools]

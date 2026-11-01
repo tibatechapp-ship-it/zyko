@@ -1,0 +1,57 @@
+name: "🐞 Bug report"
+description: "Report something broken in ZYKO — on any platform."
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug! ZYKO runs on Linux, Windows, macOS, Android and Termux —
+        platform details make reports much easier to reproduce.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: Where did this happen?
+      options:
+        - Linux
+        - Windows
+        - macOS
+        - Termux (Android)
+        - Android (Kivy / Chaquopy)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: ZYKO version
+      description: Output of `zyko --version` (and `zyko info` if relevant).
+      placeholder: "zyko 0.1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Steps to reproduce + expected vs actual behaviour.
+      placeholder: |
+        1. zyko ask "..." --policy strict
+        2. Expected: ...
+        3. Got: ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output
+      description: Paste console output. **Never paste API keys or secrets.**
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I redacted all secrets from the output above
+          required: true
+        - label: I searched existing issues for duplicates
+          required: false

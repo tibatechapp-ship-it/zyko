@@ -1,0 +1,41 @@
+name: "✨ Feature request"
+description: "Suggest an idea or an improvement for ZYKO."
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Router (strategies / scoring / fallbacks)
+        - Policy-as-Code (governance / redaction / budget)
+        - MCP (client / server / tools)
+        - Gateway (OpenAI-compatible API)
+        - Agents (YAML definitions / tools / memory)
+        - CLI / UX
+        - Providers (new adapter or behavior)
+        - Benchmarks / quality ledger
+        - Android / Termux
+        - Rust kernel (optional accelerator)
+        - Documentation / website
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to achieve? What works badly today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should happen instead? Sketch the CLI/API/YAML if you can.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

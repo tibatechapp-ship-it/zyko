@@ -1,5 +1,22 @@
 <div dir="rtl">
 
+<div align="center">
+
+<img src="docs/assets/social-card.png" alt="ZYKO — Universal AI Orchestration Platform" width="800"/>
+
+[![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-106%20passing-22c55e)](.github/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-3776ab?logo=python&logoColor=white)](pyproject.toml)
+[![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Android%20%7C%20Termux-10b981)](android/README.md)
+[![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
+[![MCP](https://img.shields.io/badge/MCP-native-8b5cf6)](https://modelcontextprotocol.io)
+[![Docs](https://img.shields.io/badge/docs-tibatechapp--ship--it.github.io%2Fzyko-22d3ee)](https://tibatechapp-ship-it.github.io/zyko/)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-ec4899)](CONTRIBUTING.md)
+
+**العربية** · [English](#zyko--universal-ai-orchestration-platform-english) · [الموقع التعريفي](https://tibatechapp-ship-it.github.io/zyko/) · [المناقشات](https://github.com/tibatechapp-ship-it/zyko/discussions)
+
+</div>
+
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
 **النسخة 0.1.0** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
@@ -136,7 +153,15 @@ pytest -q            # 106 اختبارًا: توجيه، سياسات، MCP (ب
 ruff check src tests
 ```
 
-يعمل CI على ubuntu/windows/macos × Python 3.11/3.12 + فحص Rust + تجربة دخان للـCLI.
+يعمل CI على ubuntu/windows/macos × Python 3.11/3.12 + فحص Rust + تجربة دخان للـCLI — ويعمل أول تشغيل **بلا أي مفاتيح** عبر التراجع التلقائي لمزوّد العرض المدمج.
+
+## الأمان
+
+بلّغ ثغرة أمنية خاصًة عبر [SECURITY.md](SECURITY.md) — لا تفتح issue عامًا للثغرات.
+
+## الاقتباس العلمي
+
+إذا استخدمت ZYKO في بحث، اقتبسها عبر [CITATION.cff](CITATION.cff) (يدعمها GitHub في زر «Cite this repository»).
 
 ## خارطة الطريق
 

@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+title: ZYKO — Universal AI Orchestration Platform
+message: >-
+  If you use ZYKO in your research or production systems, please cite it
+  using this metadata.
+type: software
+authors:
+  - name: ZYKO Contributors
+    website: "https://github.com/tibatechapp-ship-it/zyko"
+version: 0.1.0
+date-released: "2026-11-01"
+license: Apache-2.0
+repository-code: "https://github.com/tibatechapp-ship-it/zyko"
+abstract: >-
+  ZYKO is a pure-Python, cross-platform AI orchestration platform with
+  verifiable multi-provider routing (routing receipts), Policy-as-Code
+  governance, reproducible quality benchmarks, and MCP-native agents.
+  It runs on Linux, Windows, macOS, Android and Termux.
+keywords:
+  - llm
+  - routing
+  - orchestration
+  - agents
+  - mcp
+  - model-context-protocol
+  - policy-as-code
+  - termux
+  - android
