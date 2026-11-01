@@ -75,6 +75,13 @@ def _ledger_path(args: Any):
 
 
 # ------------------------------------------------------------------- commands
+def cmd_version(args: Any) -> int:
+    from zyko.version import PROTOCOL_VERSION
+
+    print(f"zyko {__version__} (MCP protocol {PROTOCOL_VERSION})")
+    return 0
+
+
 def cmd_info(args: Any) -> int:
     p = platform_info()
     print(bold(f"ZYKO v{__version__}"))

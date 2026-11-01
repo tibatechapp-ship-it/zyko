@@ -43,9 +43,10 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--ledger", default=None, help="quality ledger JSON path")
         p.add_argument("--demo", action="store_true", help="offline mock provider: no keys, no network")
 
-    # info / doctor
+    # info / doctor / version
     sub.add_parser("info", help="platform, config and provider summary").set_defaults(func=cmd.cmd_info)
     sub.add_parser("doctor", help="diagnose environment, keys and local inference").set_defaults(func=cmd.cmd_doctor)
+    sub.add_parser("version", help="print version and protocol info").set_defaults(func=cmd.cmd_version)
 
     # models
     p = sub.add_parser("models", help="list available models with scores")
@@ -124,6 +125,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--json-out", default=None, help="write full results JSON here")
     p.add_argument("--ledger", default=None)
     p.add_argument("--concurrency", type=int, default=4)
+    p.add_argument(
+        "--repeats", type=int, default=1, help="repeat the suite N times for stabler medians (default 1)"
+    )
     p.add_argument("--demo", action="store_true", help="benchmark the offline mock provider (CI/pipeline check)")
     p.set_defaults(func=cmd.cmd_bench)
 

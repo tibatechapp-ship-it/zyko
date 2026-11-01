@@ -73,7 +73,7 @@ def _deep_merge(base: dict[str, Any], over: dict[str, Any]) -> dict[str, Any]:
 
 
 def _coerce(value: str, key: str) -> Any:
-    if key.endswith(("_s", "_port")) or key in {"max_fallbacks", "retries", "breaker_threshold"}:
+    if key.endswith(("_s", "port")) or key in {"max_fallbacks", "retries", "breaker_threshold"}:
         try:
             return float(value) if "." in value or key.endswith("_s") else int(value)
         except ValueError:

@@ -256,7 +256,10 @@ def run_bench(args: Any) -> int:
         return 1
 
     tasks = build_suite(SEED)
-    print(ui.info(f"suite: {len(tasks)} deterministic tasks (seed={SEED}, hash={suite_hash(tasks)})"))
+    repeats = max(1, int(getattr(args, "repeats", 1) or 1))
+    run_tasks = tasks * repeats if repeats > 1 else tasks
+    suffix = f", repeats={repeats}" if repeats > 1 else ""
+    print(ui.info(f"suite: {len(tasks)} deterministic tasks (seed={SEED}, hash={suite_hash(tasks)}{suffix})"))
     ledger_arg = ledger_file() if not getattr(args, "ledger", None) else Path(args.ledger)
     ledger = QualityLedger.load(ledger_arg)
     router = Router(providers, ledger=ledger, strategy="quality", max_fallbacks=1)
@@ -265,13 +268,14 @@ def run_bench(args: Any) -> int:
         jobs = []
         for provider_name, provider in sorted(providers.items()):
             for info in provider.catalog():
-                jobs.append(_run_candidate(router, provider_name, info.id, tasks, args.concurrency))
+                jobs.append(_run_candidate(router, provider_name, info.id, run_tasks, args.concurrency))
         return await asyncio.gather(*jobs)
 
     report = {
         "zyko_version": __version__,
         "seed": SEED,
         "suite_hash": suite_hash(tasks),
+        "repeats": repeats,
         "started": time.time(),
         "kernel": kernel.backend(),
         "results": [],

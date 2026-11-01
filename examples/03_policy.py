@@ -1,6 +1,7 @@
 """03 — Policy-as-Code: redaction, budgets, allowlists — declaratively."""
 
 from zyko.policy.engine import PolicyEngine
+from zyko.router.engine import RouteCandidate
 
 policy = PolicyEngine(
     {
@@ -17,8 +18,6 @@ cleaned = policy.redact_text("invoice for card 4111 1111 1111 1111, mail billing
 print("redacted:", cleaned)
 
 # 2) Budget accounting survives restarts (state on disk).
-from zyko.router.engine import RouteCandidate
-
 candidate = RouteCandidate("openai", "gpt-4o-mini")
 policy.record_cost(0.0031, candidate)
 print("budget remaining: $%.4f" % (policy.snapshot()["budget_remaining_usd"] or 0))
