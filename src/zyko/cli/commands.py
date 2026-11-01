@@ -32,7 +32,23 @@ log = get_logger("cli")
 # --------------------------------------------------------------------- helpers
 def _build_router(args: Any) -> Router:
     settings = Settings.load()
-    if getattr(args, "demo", False) or os.environ.get("ZYKO_DEMO") == "1":
+    demo = getattr(args, "demo", False) or os.environ.get("ZYKO_DEMO") == "1"
+    if not demo:
+        providers = configured_providers(settings.provider_settings)
+        if not providers:
+            # Keyless first run: instead of failing, fall back to the built-in
+            # deterministic demo provider so every command works out of the box
+            # on every platform (Linux, Windows, macOS, Android, Termux).
+            demo = True
+            print(
+                ui.warn(
+                    "no providers configured — using the built-in demo provider "
+                    "(deterministic, offline). Export an API key or start Ollama "
+                    "for real inference."
+                ),
+                file=sys.stderr,
+            )
+    if demo:
         from zyko.providers.mock import MockProvider
 
         providers = {"mock": MockProvider()}

@@ -30,10 +30,11 @@ def test_doctor_runs(capsys):
     assert "ZYKO doctor" in out
 
 
-def test_route_without_providers_fails_cleanly(capsys):
-    assert main(["route", "hello"]) == 1
+def test_route_without_providers_falls_back_to_demo(capsys):
+    """Keyless first run: route plans over the built-in demo provider."""
+    assert main(["route", "hello"]) == 0
     err = capsys.readouterr().err
-    assert "no providers configured" in err
+    assert "demo" in err.lower()
 
 
 def test_policy_check_valid_file(tmp_path, capsys):
