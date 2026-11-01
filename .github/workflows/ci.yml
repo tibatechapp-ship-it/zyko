@@ -45,7 +45,7 @@ jobs:
           python-version: "3.12"
       - run: pip install bandit pip-audit
       - name: Static analysis (SAST)
-        run: bandit -r src/zyko -q -c .bandit.yml --exit-zero-on-skipped
+        run: bandit -r src/zyko -q -c .bandit.yml
       - name: Dependency audit (declared deps only)
         run: |
           pip install -e .

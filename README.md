@@ -21,7 +21,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.3.3** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
+**النسخة 0.3.4** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -49,6 +49,16 @@
 | بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
+
+## ما الجديد في 0.3.4؟ (إصلاح CI الحقيقي: الأخضر على المنصات الثلاث)
+
+جولة 0.3.3 أصلحت بوابة الأمان محليًا — لكن CI على GitHub كان ما يزال أحمر بثلاث مشاكل حقيقية لم يكشفها Linux وحده:
+
+- **`bandit: unrecognized arguments: --exit-zero-on-skipped`** — العلم أُزيل في bandit الحديث؛ حُذف من أمر CI.
+- **اختبار علامة Termux كان يفترض أن `sys.platform == linux`** — الآن إشارة `PREFIX=com.termux` حاسمة بذاتها على كل الأنظمة (إصلاح إنتاجي وليس اختباريًا فقط).
+- **اختبار XDG كان يفترض سلوك Linux على macOS/Windows** — يثبّت الآن فرع LINUX صراحةً كما يفعل اختبار macOS.
+
+النتيجة: **الأخضر على Ubuntu + macOS + Windows × Python 3.11/3.12/3.13** + بوابة أمان تعمل فعلًا.
 
 ## ما الجديد في 0.3.3؟ (بوابة الأمان التي لم تكن تعمل أبدًا)
 
@@ -258,7 +268,17 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.3.3** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.3.4** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.3.4 — the real CI fix: green on all three platforms
+
+The 0.3.3 round fixed the security gate locally — but CI on GitHub was still red with three real issues Linux alone could never catch:
+
+- **`bandit: unrecognized arguments: --exit-zero-on-skipped`** — the flag was removed in modern bandit; dropped from the CI command.
+- **the Termux-marker test assumed `sys.platform == linux`** — a `com.termux` PREFIX is now definitive on every OS (a production fix, not just a test patch).
+- **the XDG test assumed Linux behaviour on macOS/Windows** — it now pins the LINUX branch explicitly, like the macOS test does.
+
+Result: **green on Ubuntu + macOS + Windows × Python 3.11/3.12/3.13** with a security gate that actually runs.
 
 ## What's new in 0.3.3 — the security gate that never worked
 

@@ -20,7 +20,6 @@ variables override everything, which keeps tests hermetic.
 from __future__ import annotations
 
 import os
-import sys
 from pathlib import Path
 
 from .detect import OSKind, detect_os
@@ -139,7 +138,9 @@ def ensure_layout() -> dict[str, Path]:
         "cache": cache_dir(create=True),
     }
     # Give a friendly hint when running under Termux for the first time.
-    if sys.platform.startswith("linux") and "com.termux" in os.environ.get("PREFIX", ""):
+    # A Termux PREFIX is definitive on its own — do not gate on sys.platform,
+    # so the marker logic is identical on every OS (and unit-testable).
+    if "com.termux" in os.environ.get("PREFIX", ""):
         marker = data_dir() / ".termux-ok"
         if not marker.exists():
             try:

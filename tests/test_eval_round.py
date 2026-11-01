@@ -499,6 +499,13 @@ def test_paths_xdg_branches(tmp_path, monkeypatch):
 
     for var in ("ZYKO_CONFIG_DIR", "ZYKO_DATA_DIR", "ZYKO_CACHE_DIR"):
         monkeypatch.delenv(var, raising=False)
+    # XDG variables are honoured by the Linux branch only (macOS uses
+    # ~/Library, Windows uses %APPDATA%), so pin the OS like test_macos_branch.
+    import zyko.platform.paths as _paths
+    from zyko.platform.detect import OSKind
+
+    monkeypatch.setattr(_paths, "detect_os", lambda: OSKind.LINUX)
+    monkeypatch.setattr(_paths, "_home", lambda: tmp_path / "home")
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache"))

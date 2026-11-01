@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.3.4 — the real CI fix: green on Ubuntu + macOS + Windows
+
+The 0.3.3 release fixed the bandit gate locally, but the GitHub CI matrix was
+still red. Three root causes, none of which a Linux-only run can ever catch:
+
+### Fixed
+- **`security` job: `bandit: unrecognized arguments: --exit-zero-on-skipped`.**
+  Modern bandit removed the flag; the CI command now runs plain
+  `bandit -r src/zyko -q -c .bandit.yml`.
+- **`test_ensure_layout_creates_tree_and_termux_marker` failed on macOS and
+  Windows.** Production `ensure_layout()` gated the Termux marker on
+  `sys.platform.startswith("linux")` even though a `com.termux` PREFIX is
+  definitive by itself. The platform gate is gone, so the first-run marker
+  behaves identically on every OS (production fix, regression test now
+  platform-independent).
+- **`test_paths_xdg_branches` failed on macOS and Windows.** XDG variables
+  are honoured by the Linux branch only (macOS uses `~/Library`, Windows
+  `%APPDATA%`); the test now pins `detect_os → LINUX` explicitly, mirroring
+  the established `test_macos_branch` pattern.
+
+### Result
+- CI matrix green: `pytest` on ubuntu/macos/windows × Python 3.11/3.12/3.13,
+  `lint`, `security` (bandit + pip-audit), `rust-kernel`, `cli-smoke`, Pages.
+- Version synced: version.py / pyproject.toml / CITATION.cff → 0.3.4.
+
 ## 0.3.3 — the security gate that never ran: bandit config was silently ignored
 
 The 0.3.2 round added a CI `security` job — but its bandit invocation could
