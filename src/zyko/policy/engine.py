@@ -330,12 +330,16 @@ class PolicyEngine:
         return PolicyDecision(False, reason)
 
     # ------------------------------------------------------------------ usage
-    def record_cost(self, cost_usd: float, candidate: Any) -> None:
-        """Account real spend (computed by the router from the model price)."""
+    def record_cost(self, cost_usd: float, candidate: Any, *, estimated: bool = False) -> None:
+        """Account spend against the daily budget.
+
+        ``estimated=True`` marks kernel-estimated stream costs (vendor usage
+        was unavailable); the audit entry records the accounting source.
+        """
         if cost_usd and cost_usd > 0:
             spent = self.budget.add(cost_usd)
-            log.debug("policy: +%0.6f USD (day total %.4f)", cost_usd, spent)
-            self._audit("usage", candidate, [], cost=cost_usd, spent_today=spent)
+            log.debug("policy: +%0.6f USD (day total %.4f, estimated=%s)", cost_usd, spent, estimated)
+            self._audit("usage", candidate, [], cost=cost_usd, spent_today=spent, estimated=estimated)
 
     def record_stream_open(self, candidate: Any) -> None:
         self._audit("stream_open", candidate, [])

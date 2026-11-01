@@ -22,11 +22,11 @@ from typing import Any, AsyncIterator
 
 from zyko import kernel
 from zyko.core.events import StreamEvent, done_event
-from zyko.core.response import ChatRequest, ChatResponse
+from zyko.core.response import ChatRequest, ChatResponse, Usage
 from zyko.exceptions import ProviderError
 from zyko.log import get_logger
 from zyko.policy.engine import PolicyEngine
-from zyko.providers.base import BaseProvider
+from zyko.providers.base import BaseProvider, usage_from_raw
 from zyko.router.health import HealthTracker
 from zyko.router.quality import QualityLedger
 from zyko.version import __version__
@@ -330,8 +330,11 @@ class Router:
             provider = self.providers[candidate.provider]
             started = time.perf_counter()
             emitted = False
+            final_usage_raw: dict[str, Any] | None = None
             try:
                 async for event in provider.astream(request.with_model(candidate.model)):
+                    if event.type == "usage":
+                        final_usage_raw = event.data.get("usage")
                     if not emitted:
                         latency = (time.perf_counter() - started) * 1000.0
                         self.health.record(candidate.key, latency_ms=latency, ok=True)
@@ -348,6 +351,13 @@ class Router:
                     yield event
                 if not emitted:
                     raise ProviderError(f"{candidate.key}: empty stream", provider=candidate.provider)
+                # Close the streaming governance gap: charge the budget for
+                # streams too, from vendor-reported usage when available,
+                # kernel estimation otherwise (recorded in the audit trail).
+                if self.policy:
+                    self._record_stream_cost(
+                        self.policy, provider, candidate, final_usage_raw, est_in, est_out
+                    )
                 yield done_event()
                 return
             except ProviderError as exc:
@@ -362,7 +372,40 @@ class Router:
 
         raise _all_failed(attempts)
 
-    # -------------------------------------------------------------- receipt
+    # ------------------------------------------------------------- helpers
+    @staticmethod
+    def _record_stream_cost(
+        policy: PolicyEngine,
+        provider: BaseProvider,
+        candidate: RouteCandidate,
+        final_usage_raw: dict[str, Any] | None,
+        est_in: int,
+        est_out: int,
+    ) -> None:
+        """Charge the policy budget for a completed streaming call.
+
+        Prefers the vendor-reported usage (OpenAI-style
+        ``stream_options.include_usage``); falls back to the same kernel
+        token estimate the non-streaming path uses. The audit entry records
+        which accounting source was used (``estimated: true/false``).
+        """
+        info = provider.find_model(candidate.model)
+        if info is None:
+            return
+        usage: Usage | None = None
+        estimated = True
+        if final_usage_raw:
+            usage = usage_from_raw(final_usage_raw)
+            if usage.input_tokens == 0 and usage.output_tokens == 0:
+                usage = None
+        if usage is None:
+            usage = Usage(input_tokens=est_in, output_tokens=est_out)
+        else:
+            estimated = False
+        cost = usage.cost_usd(info)
+        if cost:
+            policy.record_cost(cost, candidate, estimated=estimated)
+
     def _receipt(
         self,
         request: ChatRequest,

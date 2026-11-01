@@ -38,6 +38,11 @@ class BaseProvider(ABC):
     KEY_ENV: str | tuple[str, ...] | None = None
     local: bool = False  # local providers (ollama) need no API key
     CATALOG: list[ModelInfo] = []
+    # Only set True after confirming the vendor accepts OpenAI's
+    # ``stream_options: {"include_usage": true}`` — wrong flags can 400.
+    # Enables vendor-reported usage in streams, which the router uses to
+    # charge the policy budget with *real* token counts instead of estimates.
+    STREAM_INCLUDE_USAGE: bool = False
     _stream_protocol: str = "sse"  # or "ndjson" (ollama)
 
     def __init__(
@@ -120,7 +125,13 @@ class BaseProvider(ABC):
             except ProviderError as exc:
                 if not exc.retryable or attempt >= attempts:
                     raise
-                delay = min(0.5 * (2**attempt), 8.0) * (0.5 + random.random() / 2)
+                retry_after = getattr(exc, "retry_after", None)
+                if retry_after is not None and float(retry_after) > 0:
+                    # The vendor told us exactly when to come back (HTTP 429
+                    # with Retry-After) — honor it instead of our own curve.
+                    delay = min(max(float(retry_after), 0.05), 30.0)
+                else:
+                    delay = min(0.5 * (2**attempt), 8.0) * (0.5 + random.random() / 2)
                 log.warning(
                     "%s: retryable error (status=%s), retry %d/%d in %.1fs: %s",
                     self.name,
@@ -199,15 +210,21 @@ class BaseProvider(ABC):
             body = ""
         snippet = (body or resp.text or "")[:300]
         status = resp.status_code
+        if status == 429:
+            raise RateLimitError(
+                f"{self.name}: HTTP 429: {snippet or resp.reason_phrase}",
+                provider=self.name,
+                status=status,
+                retryable=True,
+                hint="the retry loop honors the vendor's Retry-After automatically",
+                retry_after=_retry_after_seconds(resp),
+            )
         hint = None
         if status in (401, 403):
             exc: type[ProviderError] = AuthError
             hint = "check the API key for this provider"
-        elif status == 429:
-            exc = RateLimitError
         elif status in RETRYABLE_STATUS:
             exc = ProviderError
-            hint = None
         else:
             exc = ProviderError
             hint = "inspect the request payload; see provider docs"
@@ -256,6 +273,23 @@ class BaseProvider(ABC):
         return None
 
 
+def _retry_after_seconds(resp: httpx.Response) -> float | None:
+    """Parse the HTTP ``Retry-After`` header (delay-seconds or HTTP-date)."""
+    value = resp.headers.get("Retry-After")
+    if not value:
+        return None
+    try:
+        return max(0.0, float(value))
+    except ValueError:
+        pass
+    try:
+        from email.utils import parsedate_to_datetime
+
+        return max(0.0, parsedate_to_datetime(value).timestamp() - time.time())
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
 def _safe_json(raw: str) -> dict[str, Any]:
     import json
 
@@ -277,3 +311,6 @@ def _usage_from(data: dict[str, Any] | None) -> Any:
             data.get("output_tokens") or data.get("completion_tokens") or data.get("eval_count") or 0
         ),
     )
+
+
+usage_from_raw = _usage_from  # public alias — the router reads stream usage through it

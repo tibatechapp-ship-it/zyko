@@ -43,11 +43,24 @@ class ProviderError(ZykoError):
 
 
 class RateLimitError(ProviderError):
-    """Provider-side rate limit (HTTP 429). Always retryable."""
+    """Provider-side rate limit (HTTP 429). Always retryable.
 
-    def __init__(self, message: str, *, provider: str | None = None, **kw) -> None:
+    Carries ``retry_after`` (seconds) parsed from the vendor's ``Retry-After``
+    header, so the retry loop can honor the vendor's own backoff instruction
+    instead of guessing (the LiteLLM/OpenAI-SDK pattern).
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        provider: str | None = None,
+        retry_after: float | None = None,
+        **kw,
+    ) -> None:
         kw.setdefault("retryable", True)
         super().__init__(message, provider=provider, **kw)
+        self.retry_after = retry_after
 
 
 class AuthError(ProviderError):

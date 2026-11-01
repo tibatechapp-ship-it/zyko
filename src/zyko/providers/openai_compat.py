@@ -26,6 +26,9 @@ class OpenAICompatProvider(BaseProvider):
     DEFAULT_BASE_URL = "https://api.openai.com/v1"
     DEFAULT_MODEL = "gpt-4o-mini"
     KEY_ENV = "OPENAI_API_KEY"
+    # OpenAI documents stream_options.include_usage; subclasses only keep it
+    # enabled when their vendor confirms support (OpenRouter does, for example).
+    STREAM_INCLUDE_USAGE = True
     CATALOG = [
         ModelInfo("openai", "gpt-4o", 128_000, 16_384, True, True, 2.50, 10.00, ["flagship"]),
         ModelInfo("openai", "gpt-4o-mini", 128_000, 16_384, True, True, 0.15, 0.60, ["cheap", "fast"]),
@@ -41,6 +44,10 @@ class OpenAICompatProvider(BaseProvider):
             "messages": [m.to_openai() for m in request.messages],
             "stream": stream,
         }
+        if stream and self.STREAM_INCLUDE_USAGE:
+            # Ask the vendor for a final usage chunk so streaming calls are
+            # cost-accounted from real token counts, not estimates.
+            payload["stream_options"] = {"include_usage": True}
         if request.temperature is not None:
             payload["temperature"] = request.temperature
         if request.max_tokens:
@@ -101,6 +108,7 @@ class GroqProvider(OpenAICompatProvider):
     DEFAULT_BASE_URL = "https://api.groq.com/openai/v1"
     DEFAULT_MODEL = "llama-3.3-70b-versatile"
     KEY_ENV = "GROQ_API_KEY"
+    STREAM_INCLUDE_USAGE = False  # vendor support for stream_options unconfirmed
     CATALOG = [
         ModelInfo("groq", "llama-3.3-70b-versatile", 128_000, 32_768, True, False, 0.59, 0.79, ["open"]),
         ModelInfo("groq", "llama-3.1-8b-instant", 128_000, 131_072, True, False, 0.05, 0.08, ["open", "fast"]),
@@ -112,6 +120,7 @@ class MistralProvider(OpenAICompatProvider):
     DEFAULT_BASE_URL = "https://api.mistral.ai/v1"
     DEFAULT_MODEL = "mistral-small-latest"
     KEY_ENV = "MISTRAL_API_KEY"
+    STREAM_INCLUDE_USAGE = False  # vendor support for stream_options unconfirmed
     CATALOG = [
         ModelInfo("mistral", "mistral-large-latest", 128_000, 8_192, True, False, 2.00, 6.00, ["flagship"]),
         ModelInfo("mistral", "mistral-small-latest", 128_000, 8_192, True, False, 0.20, 0.60, ["cheap"]),
@@ -124,6 +133,7 @@ class DeepSeekProvider(OpenAICompatProvider):
     DEFAULT_BASE_URL = "https://api.deepseek.com/v1"
     DEFAULT_MODEL = "deepseek-chat"
     KEY_ENV = "DEEPSEEK_API_KEY"
+    STREAM_INCLUDE_USAGE = False  # vendor support for stream_options unconfirmed
     CATALOG = [
         ModelInfo("deepseek", "deepseek-chat", 64_000, 8_192, True, False, 0.27, 1.10, ["open", "cheap"]),
         ModelInfo("deepseek", "deepseek-reasoner", 64_000, 8_192, True, False, 0.55, 2.19, ["reasoning"]),
