@@ -115,8 +115,15 @@ class MCPClient:
 
     async def _notify(self, method: str, params: dict[str, Any] | None = None) -> None:
         assert self._process and self._process.stdin
-        self._process.stdin.write(protocol.encode(protocol.notification(method, params)))
-        await self._process.stdin.drain()
+        try:
+            self._process.stdin.write(protocol.encode(protocol.notification(method, params)))
+            await self._process.stdin.drain()
+        except (ConnectionResetError, BrokenPipeError) as exc:
+            # Server died between write() and drain(); raise the same typed error
+            # the reader loop produces on EOF, deterministically on every OS
+            # (macOS py3.11 drain() wins that race and would otherwise leak a
+            # raw ConnectionResetError).
+            raise MCPError(f"mcp server '{self.name}' closed the stream") from exc
 
     async def _request(self, method: str, params: dict[str, Any] | None = None) -> Any:
         if not self._process:
@@ -125,8 +132,15 @@ class MCPClient:
         fut: asyncio.Future = asyncio.get_running_loop().create_future()
         self._pending[msg_id] = fut
         assert self._process.stdin
-        self._process.stdin.write(protocol.encode(protocol.request(msg_id, method, params)))
-        await self._process.stdin.drain()
+        try:
+            self._process.stdin.write(protocol.encode(protocol.request(msg_id, method, params)))
+            await self._process.stdin.drain()
+        except (ConnectionResetError, BrokenPipeError) as exc:
+            # Transport already closed by a dead server: map to the same typed
+            # error the reader loop raises on EOF (see _notify). Pop our future
+            # so the EOF cleanup never sets an exception nobody retrieves.
+            self._pending.pop(msg_id, None)
+            raise MCPError(f"mcp server '{self.name}' closed the stream") from exc
         try:
             return await asyncio.wait_for(fut, timeout=self.request_timeout)
         except asyncio.TimeoutError as exc:

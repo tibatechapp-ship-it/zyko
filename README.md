@@ -21,7 +21,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.3.6** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
+**النسخة 0.3.7** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -49,6 +49,10 @@
 | بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
+
+## ما الجديد في 0.3.7؟ (سباق موت خادم MCP أصبح مُنمّطًا على كل منصة)
+
+التقطتها ذراع macOS/py3.11 في CI بعد 0.3.6: عندما يموت خادم MCP بين `write()` و`drain()` لدى العميل، كان `drain()` يرمي `ConnectionResetError` خام في بعض المنصات بدلاً من `MCPError` الموثّقة. الآن يسلك المسارَان (`_request` و`_notify`) سلوكًا واحدًا حتميًا على Linux وmacOS وWindows: خطأ مُنمّط واحد `MCPError("closed the stream")`، مع تنظيف الطلب المعلّق فورًا (يزيل تحذير "Future exception was never retrieved"). **347 اختبارًا ناجحًا**.
 
 ## ما الجديد في 0.3.6؟ (امتثال التنسيق لأداة ruff 0.17)
 
@@ -288,7 +292,11 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.3.6** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.3.7** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.3.7 — MCP dead-server race now fails typed, on every OS
+
+Caught by the macOS/py3.11 CI leg after 0.3.6: when an MCP server dies between the client's `write()` and `drain()`, `drain()` used to leak a raw `ConnectionResetError` on some platforms instead of the documented `MCPError`. Both paths (`_request`, `_notify`) now behave identically and deterministically on Linux, macOS and Windows — one typed `MCPError("closed the stream")`, with the pending future cleaned up immediately (also removing the "Future exception was never retrieved" warning). **347 tests passing**.
 
 ## What's new in 0.3.6 — ruff 0.17 format compliance
 

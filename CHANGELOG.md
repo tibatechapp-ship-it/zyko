@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.3.7 — MCP: dead-server race now fails typed, on every OS
+
+Caught by the macOS py3.11 CI leg after 0.3.6: `test_mcp_closed_stream_fails_pending_request`
+failed with a raw `ConnectionResetError: Connection lost` from
+`StreamWriter.drain()`. When an MCP server dies between the client's
+`write()` and `drain()`, the drain-raises path wins the race against the
+reader loop's EOF path on some platforms — leaking an untyped transport
+error instead of the documented `MCPError`.
+
+### Fixed
+- **`MCPClient._request` / `_notify`**: a transport already closed by a dead
+  server (`ConnectionResetError` / `BrokenPipeError` from `drain()`) now maps
+  to the same typed `MCPError("mcp server 'X' closed the stream")` the reader
+  loop produces on EOF — deterministic on Linux, macOS and Windows alike.
+  The pending future is popped first, which also removes the
+  "Future exception was never retrieved" warning this race used to emit.
+
+### Result
+Same suite, deterministic everywhere: **347 passed**, `ruff check` clean,
+`ruff format --check .` clean (97 files).
+Version synced: version.py / pyproject.toml / CITATION.cff → 0.3.7.
+
 ## 0.3.6 — ruff 0.17 format compliance (hygiene, zero behavior change)
 
 Ruff 0.17 changed formatting behaviour (and now formats Python code blocks
