@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.6 — ruff 0.17 format compliance (hygiene, zero behavior change)
+
+Ruff 0.17 changed formatting behaviour (and now formats Python code blocks
+inside Markdown). Running the current toolchain over the whole tree flagged
+four files that CI's `src tests benchmarks` scope did not cover — fixed now,
+so a future CI scope extension or ruff upgrade cannot break `lint`:
+
+- `README.md`, `docs/API.md`, `docs/PROVIDERS.md` — Python code blocks
+  normalized (trailing-comment alignment collapsed to two spaces, blank line
+  after imports).
+- `examples/04_agent_tools.py` — long f-string line split per line-length 100.
+
+No source under `src/` or `tests/` was touched; the full suite passes
+unchanged: **347 passed**, `ruff check` clean, `ruff format --check .` now
+clean across the entire tree (97 files), CI 14/14 green.
+Version synced: version.py / pyproject.toml / CITATION.cff → 0.3.6.
+
 ## 0.3.5 — deep developer documentation
 
 Three new reference documents, every signature taken verbatim from the code:

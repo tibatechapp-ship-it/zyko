@@ -21,7 +21,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.3.5** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
+**النسخة 0.3.6** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -49,6 +49,10 @@
 | بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
+
+## ما الجديد في 0.3.6؟ (امتثال التنسيق لأداة ruff 0.17)
+
+جولة نظافة صفرية التأثير: أداة ruff 0.17 غيّرت سلوك التنسيق (وأصبحت تنسّق كتل الكود داخل Markdown أيضًا). أُصلحت أربعة ملفات خارج نطاق CI الحالي (`README.md` و`docs/API.md` و`docs/PROVIDERS.md` و`examples/04_agent_tools.py`) حتى لا ينكسر الـ lint مستقبلًا عند توسيع النطاق أو ترقية الأداة. لا تغيير في أي سطر تحت `src/` أو `tests/` — **347 اختبارًا ناجحًا** كما هي، و`ruff format --check .` نقي الآن على كامل الشجرة (97 ملفًا).
 
 ## ما الجديد في 0.3.5؟ (توثيق عميق للمطوّرين)
 
@@ -173,10 +177,10 @@ zyko doctor                                  # تشخيص البيئة والم�
 ```python
 from zyko import Zyko
 
-zk = Zyko()                                  # المفاتيح من البيئة
+zk = Zyko()  # المفاتيح من البيئة
 outcome = zk.ask("مرحبًا")
 print(outcome.response.text)
-print(outcome.receipt["chosen"])             # القرار المُوجَّه — قابل للتحقق
+print(outcome.receipt["chosen"])  # القرار المُوجَّه — قابل للتحقق
 
 # وكيل بأدوات:
 agent = zk.agent({"name": "calc", "tools": ["calculator"], "max_steps": 6})
@@ -284,7 +288,11 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.3.5** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.3.6** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.3.6 — ruff 0.17 format compliance
+
+Zero-impact hygiene round: ruff 0.17 changed formatting behaviour (and now formats Python code blocks inside Markdown too). Four files outside CI's current scope were normalized — `README.md`, `docs/API.md`, `docs/PROVIDERS.md`, `examples/04_agent_tools.py` — so a future scope extension or toolchain upgrade cannot break `lint`. Not a single line under `src/` or `tests/` changed — **347 tests passing** as before, and `ruff format --check .` is now clean across the whole tree (97 files).
 
 ## What's new in 0.3.5 — deep developer documentation
 
@@ -370,6 +378,7 @@ zyko serve                          # OpenAI-compatible gateway on :8787
 
 ```python
 from zyko import Zyko
+
 outcome = Zyko().ask("hello")
 print(outcome.response.text, "←", outcome.receipt["chosen"])
 ```

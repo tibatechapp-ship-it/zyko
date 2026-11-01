@@ -50,11 +50,11 @@ def chat(self, messages: list[Message], **kwargs) -> RouteResult:   # sync wrapp
 ```python
 from zyko import Zyko
 
-zk = Zyko()                          # keys straight from the environment
+zk = Zyko()  # keys straight from the environment
 answer = zk.ask("Explain routing in one line", system="You are terse.")
 print(answer.response.text)
-print(answer.receipt["chosen"])      # e.g. "groq/llama-3.3-70b-versatile"
-print(answer.receipt["attempts"])    # full candidate ordering with score parts
+print(answer.receipt["chosen"])  # e.g. "groq/llama-3.3-70b-versatile"
+print(answer.receipt["attempts"])  # full candidate ordering with score parts
 ```
 
 ### Agents, introspection
@@ -97,9 +97,9 @@ Router(
 @dataclass
 class RouteResult:
     response: ChatResponse | None
-    candidate: str | None               # "provider/model"
-    attempts: list[RouteAttempt]        # every try: chosen | failed | skipped-breaker | skipped-policy
-    receipt: dict[str, Any]             # verifiable routing decision (see ARCHITECTURE.md)
+    candidate: str | None  # "provider/model"
+    attempts: list[RouteAttempt]  # every try: chosen | failed | skipped-breaker | skipped-policy
+    receipt: dict[str, Any]  # verifiable routing decision (see ARCHITECTURE.md)
 ```
 
 The receipt is the contract: candidate ordering, score components
@@ -117,8 +117,15 @@ from zyko.core.response import ChatRequest, ChatResponse
 from zyko.core.models import ModelInfo, Usage
 
 Message.system(text) / Message.user(text) / Message.assistant(text)
-ChatRequest(messages, model=None, temperature=None, max_tokens=None,
-            tools=None, tool_choice=None, metadata={})
+ChatRequest(
+    messages,
+    model=None,
+    temperature=None,
+    max_tokens=None,
+    tools=None,
+    tool_choice=None,
+    metadata={},
+)
 ```
 
 `model=None` or `"auto"` → the router picks. Pin a model with
@@ -247,9 +254,9 @@ Builtin tools: calculator, safe shell (policy-gated), plus MCP-provided tools.
 ```python
 from zyko.config.settings import Settings
 
-settings = Settings.load(path=None)        # YAML + env layering, per-call deep copy
+settings = Settings.load(path=None)  # YAML + env layering, per-call deep copy
 settings.get("router.strategy", "balanced")
-settings.provider_settings                 # per-provider dicts (base_url, key, api…)
+settings.provider_settings  # per-provider dicts (base_url, key, api…)
 ```
 
 Defaults (`router.strategy/max_fallbacks/request_timeout_s/retries/

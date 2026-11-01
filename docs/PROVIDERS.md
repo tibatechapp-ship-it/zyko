@@ -72,9 +72,7 @@ servers — anything speaking the OpenAI protocol:
 from zyko.providers.openai_compat import OpenAICompatProvider
 from zyko import Zyko
 
-together = OpenAICompatProvider(
-    api_key="...", base_url="https://api.together.xyz/v1"
-)
+together = OpenAICompatProvider(api_key="...", base_url="https://api.together.xyz/v1")
 zk = Zyko(providers={"together": together})
 print(zk.ask("hello").receipt["chosen"])
 ```
