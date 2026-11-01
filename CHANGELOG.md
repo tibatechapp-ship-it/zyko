@@ -5,6 +5,23 @@
 A targeted audit of the CLI surfaced three defects a user could hit on a
 normal day; all are fixed and regression-tested.
 
+### Hardening & evaluation round (same release)
+- **Coverage 89% → 92%** with 22 new tests in `tests/test_hardening.py`:
+  MCP protocol helpers (100%), the optional Rust-kernel swap (100%), agent
+  tool-loop failure modes (99%), builtin tool edges — calculator power caps,
+  workspace escapes, shell timeout — (95%), and the provider base class
+  error/retry map: timeout/network/invalid-JSON mapping, `Retry-After`
+  honoring (delay and HTTP-date), SSE with garbage frames, sync streaming,
+  `aclose`, model-resolution rules (93%).
+- **Security audit re-confirmed**: danger tools (`shell`) stay locked unless
+  explicitly named in `tools.allow` — a `*` wildcard never unlocks them
+  (`explicitly_allows_tool`); http_get rejects non-HTTP schemes; the MCP
+  client spawns servers via `exec`, never a shell.
+- **CI guard test** pins the workflow push trigger to `['main']` after an
+  ANSI-sanitizing log pipeline made `[main]` read as `ain]` (byte-level
+  inspection proved the YAML was always correct — kept the guard anyway).
+- **Social card** version chip repainted to v0.3.1; site badges refreshed.
+
 ### Fixes
 - **`zyko cost --json` emitted `[INFO]` text instead of JSON** when no audit
   log existed yet — breaking every downstream consumer (`| jq`, CI steps).

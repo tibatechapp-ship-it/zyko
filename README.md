@@ -5,8 +5,8 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — Universal AI Orchestration Platform" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-203%20passing-22c55e)](.github/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-89%25-84cc16)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-230%20passing-22c55e)](.github/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-92%25-84cc16)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Android%20%7C%20Termux-10b981)](android/README.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
@@ -20,7 +20,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.3.0** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
+**النسخة 0.3.1** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -48,6 +48,19 @@
 | بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
+
+## ما الجديد في 0.3.1؟ (تصلّب الـ CLI + جولة تغطية)
+
+جولة تقييم مستهدفة شغّلت **كل أمر CLI فعليًا** (وضع العرض) وطاردت الأعطال التي لا تراها الاختبارات وحدها:
+
+| العطل المُكتشف | المعالجة |
+|---|---|
+| **`zyko cost --json` كان يطبع نصًا لا JSON** عند غياب سجل التدقيق → كل الأنابيب اللاحقة (`\| jq`، خطوات CI) تنكسر | فراغ السجل يُصدر **نفس مخطط JSON** للتقرير الحقيقي؛ رسالة `[INFO]` بقت للأمر العادي فقط |
+| **`zyko serve` على منفذ مشغول كان ينهار بـ traceback خام** (`OSError: Address already in use`) | ردّ ودّي `[FAIL] cannot start gateway` + تلميح عملي (جرّب `--port 8788`) |
+| **`zyko doctor \| head` كان يطبع `BrokenPipeError` traceback** | خروج هادئ بالرمز **141** (128+SIGPIPE) كأداة POSIX محترفة |
+| **ويندوز: كونسول cp1252 القديم كان ينهار على `—`/`·`/الحروف العربية** | حارس ترميز عند الإقلاع (`errors="replace"`) — الحرف يُستبدل بدل قتل الأمر |
+
+نتائج الجولة: **التغطية 89% → 92%** (بروتوكول MCP والنواة وأدوات الوكلاء 95–100%) · الاختبارات 203 → **230** (ملف `tests/test_hardening.py`: حواف الحاسبة، هروب مساحة العمل، خرائط أخطاء HTTP الكاملة، توقيتات MCP، تبديل نواة Rust) · تدقيق أمان أكّد أن أدوات الخطر (`shell`) تبقى **مقفلة** ما لم تُسمَّ صراحةً في `tools.allow` — حتى مع `allow: ["*"]`.
 
 ## ما الجديد في 0.3.0؟ (جولة تقييم وعلاج)
 
@@ -175,7 +188,7 @@ zyko info   # kernel backend: rust
 
 ```bash
 pip install -e .[dev]
-pytest -q            # 133 اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، وضع العرض
+pytest -q            # 230 اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض
 ruff check src tests
 ```
 
@@ -205,7 +218,18 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.3.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.3.1** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.3.1 — CLI robustness + coverage round
+
+A targeted audit ran **every CLI command for real** (demo mode) and hunted the failures tests alone cannot see:
+
+- **`zyko cost --json` printed `[INFO]` text instead of JSON** when no audit log existed — breaking every downstream consumer (`| jq`, CI steps). The empty-log branch now emits the exact report schema; the friendly `[INFO]` stays for human mode.
+- **`zyko serve` on a busy port crashed with a raw `OSError` traceback** → now a friendly `[FAIL] cannot start gateway` with an actionable hint.
+- **`zyko doctor | head` printed a `BrokenPipeError` traceback** → the CLI now exits quietly with code **141** (128 + SIGPIPE), like every well-behaved POSIX tool.
+- **Windows hardening**: legacy cp1252 consoles can no longer crash on em-dashes, `·` separators, or Arabic output (`errors="replace"` guard at startup).
+
+Round results: **coverage 89% → 92%** (MCP protocol, kernel swap and agent tools at 95–100%) · tests 203 → **230** (new `tests/test_hardening.py`: calculator edges, workspace escapes, full HTTP error maps, MCP timings, Rust-kernel swap) · a security audit re-confirmed danger tools (`shell`) stay **locked** unless explicitly named in `tools.allow` — even under `allow: ["*"]`.
 
 ## Four differentiators
 
@@ -258,7 +282,7 @@ print(outcome.response.text, "←", outcome.receipt["chosen"])
 
 ## Tests
 
-`pytest -q` → 203 tests (89% coverage) covering routing (incl. snapshot/parity and explicit model pinning), policy (incl. schema warnings), MCP over real subprocesses plus in-memory server frames, the gateway over a real HTTP socket (auth + keep-alive integrity), agents, the loader search path, every provider adapter against canned HTTP, session memory, the audit-based cost report, streaming cost accounting, `Retry-After` resilience, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12/3.13.
+`pytest -q` → 230 tests (92% coverage) covering routing (incl. snapshot/parity and explicit model pinning), policy (incl. schema warnings), MCP over real subprocesses plus in-memory server frames, the gateway over a real HTTP socket (auth + keep-alive integrity), agents, the loader search path, every provider adapter against canned HTTP, session memory, the audit-based cost report, streaming cost accounting, `Retry-After` resilience, CLI robustness (broken pipes, busy ports, JSON-only `--json`), tool-loop failure modes, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12/3.13.
 
 ## License
 

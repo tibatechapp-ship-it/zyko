@@ -1,3 +1,56 @@
+# ZYKO v0.3.1 — Readiness Report (release QA)
+
+Status: **READY** — all gates green on the reference environment (Linux, Python 3.12),
+after a CLI-robustness audit (every command exercised for real) and a coverage
+hardening round.
+
+## Gates
+
+| Gate | Command | Result |
+|---|---|---|
+| Unit/integration tests (plain `pytest`, same as CI) | `pytest` | **230 passed** (0 failed, 0 skipped, ~12.7s) |
+| Lint | `ruff check src tests benchmarks` | **0 findings** |
+| Coverage (reference platform) | `pytest --cov=zyko` | **92% total** (`mcp/protocol` 100%, `kernel` 100%, `core/tools` 100%, `agents/agent` 99%, `tools_builtin` 95%, `providers/base` 93%) |
+| Byte-compile | `python -m compileall src tests` | clean |
+| Secret scan | `git grep` for token/key patterns | clean — no credentials in tree |
+| Workflow/config validity | YAML workflows + policy/agent examples + bench schema | all parse clean |
+| CLI smoke (all commands, demo mode) | `zyko version/info/doctor/models/route/ask/chat/sessions/policy/mcp/run/serve+curl/bench/cost` | all exit 0 or fail cleanly with hints |
+| **CLI failure paths (new gate)** | busy port · closed pipe · `--json` without audit log | `[FAIL] cannot start gateway…` + hint · exit 141 quietly · valid empty-report JSON |
+| Broken-pipe hygiene | `zyko doctor \| head -1` | stderr stays **empty** (was a `BrokenPipeError` traceback) |
+| Windows encoding guard | stdout/stderr `errors=replace` at startup | legacy cp1252 consoles cannot crash on `—`/`·`/Arabic |
+| Danger-tool lock | `allow: ["*"]` + `shell` call | blocked — wildcard never unlocks danger tools; explicit `tools.allow` entry required |
+| Keyless first run (no flags) | `zyko route "hello"` with zero keys | exit 0 — auto-fallback to the demo provider with a notice |
+| MCP stdio protocol | `initialize` → `tools/list` → `tools/call` + malformed-frame probe | correct JSON-RPC 2.0; bad frames get `-32700`, server survives |
+| Gateway | OpenAI-compatible `/v1/chat/completions` incl. SSE, real socket, keep-alive | 401 then 200 on the same connection |
+| Landing site | `docs/site` AR(RTL)/EN | badges/tests refreshed to 0.3.1 (230 · 92%) |
+| Social card | `docs/assets/social-card.png` | version chip repainted **v0.3.1** (in-place patch, verified pixel-level) |
+
+## Fixed in the v0.3.1 round
+
+1. **`zyko cost --json` broke every pipeline** — printed `[INFO]` text instead of
+   JSON when no audit log existed; now emits the exact report schema (empty),
+   and the `[INFO]` stays for human mode.
+2. **`zyko serve` on a busy port crashed with a raw `OSError` traceback** —
+   now a friendly `[FAIL] cannot start gateway on <host>:<port>` + hint.
+3. **`zyko doctor | head` printed a `BrokenPipeError` traceback** — the CLI
+   detects the closed pipe and exits 141 (128 + SIGPIPE) quietly.
+4. **Windows console hardening** — `errors="replace"` on stdout/stderr so a
+   legacy code page cannot kill a command over an em-dash or Arabic text.
+5. **Version-consistency trap** — bumping `version.py` alone leaves
+   `pyproject.toml` stale; the existing sync test caught it during this round
+   (kept as the guard).
+
+## Evaluation notes (no action needed)
+
+- A suspected corrupted CI trigger (`branches: ain]`) was investigated at the
+  byte level (`od -c`): the YAML was always `[main]` — an ANSI-sanitizing log
+  pipeline had swallowed `[m`. A trigger guard test was added anyway.
+- Security posture re-verified: MCP clients spawn via `exec` (no shell),
+  `http_get` rejects non-HTTP schemes, `shell` requires explicit allowlisting,
+  calculator is AST-walled (no names/functions/bools, exponent cap).
+
+---
+
 # ZYKO v0.3.0 — Readiness Report (release QA)
 
 Status: **READY** — all gates green on the reference environment (Linux, Python 3.12),
