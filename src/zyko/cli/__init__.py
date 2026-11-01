@@ -37,19 +37,31 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument("--version", action="version", version=f"zyko {__version__}")
-    parser.add_argument("--log-level", default="WARNING", help="DEBUG/INFO/WARNING (default: WARNING)")
+    parser.add_argument(
+        "--log-level", default="WARNING", help="DEBUG/INFO/WARNING (default: WARNING)"
+    )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     def with_router(p: argparse.ArgumentParser) -> None:
-        p.add_argument("--strategy", choices=["quality", "cost", "latency", "balanced"], default=None)
+        p.add_argument(
+            "--strategy", choices=["quality", "cost", "latency", "balanced"], default=None
+        )
         p.add_argument("--policy", default=None, help="policy name or path (Policy-as-Code)")
         p.add_argument("--ledger", default=None, help="quality ledger JSON path")
-        p.add_argument("--demo", action="store_true", help="offline mock provider: no keys, no network")
+        p.add_argument(
+            "--demo", action="store_true", help="offline mock provider: no keys, no network"
+        )
 
     # info / doctor / version
-    sub.add_parser("info", help="platform, config and provider summary").set_defaults(func=cmd.cmd_info)
-    sub.add_parser("doctor", help="diagnose environment, keys and local inference").set_defaults(func=cmd.cmd_doctor)
-    sub.add_parser("version", help="print version and protocol info").set_defaults(func=cmd.cmd_version)
+    sub.add_parser("info", help="platform, config and provider summary").set_defaults(
+        func=cmd.cmd_info
+    )
+    sub.add_parser("doctor", help="diagnose environment, keys and local inference").set_defaults(
+        func=cmd.cmd_doctor
+    )
+    sub.add_parser("version", help="print version and protocol info").set_defaults(
+        func=cmd.cmd_version
+    )
 
     # models
     p = sub.add_parser("models", help="list available models with scores")
@@ -109,7 +121,9 @@ def build_parser() -> argparse.ArgumentParser:
     # mcp
     p = sub.add_parser("mcp", help="MCP integration")
     m = p.add_subparsers(dest="mcp_cmd", required=True)
-    m.add_parser("serve", help="expose ZYKO as an MCP server over stdio").set_defaults(func=cmd.cmd_mcp)
+    m.add_parser("serve", help="expose ZYKO as an MCP server over stdio").set_defaults(
+        func=cmd.cmd_mcp
+    )
     c = m.add_parser("tools", help="list tools of an MCP server: zyko mcp tools -- <cmd...>")
     c.add_argument("command", nargs="*", help="command to spawn (use -- before it)")
     c.set_defaults(func=cmd.cmd_mcp)
@@ -125,7 +139,9 @@ def build_parser() -> argparse.ArgumentParser:
     # sessions (memory visibility)
     p = sub.add_parser("sessions", help="inspect stored chat sessions (SQLite memory)")
     ses = p.add_subparsers(dest="sessions_cmd", required=True)
-    ses.add_parser("list", help="list sessions with message counts").set_defaults(func=cmd.cmd_sessions)
+    ses.add_parser("list", help="list sessions with message counts").set_defaults(
+        func=cmd.cmd_sessions
+    )
     c = ses.add_parser("show", help="print every message of a session")
     c.add_argument("session_id")
     c.set_defaults(func=cmd.cmd_sessions)
@@ -145,14 +161,23 @@ def build_parser() -> argparse.ArgumentParser:
 
     # bench
     p = sub.add_parser("bench", help="run the reproducible routing benchmark")
-    p.add_argument("--update-ledger", action="store_true", help="merge results into the quality ledger")
+    p.add_argument(
+        "--update-ledger", action="store_true", help="merge results into the quality ledger"
+    )
     p.add_argument("--json-out", default=None, help="write full results JSON here")
     p.add_argument("--ledger", default=None)
     p.add_argument("--concurrency", type=int, default=4)
     p.add_argument(
-        "--repeats", type=int, default=1, help="repeat the suite N times for stabler medians (default 1)"
+        "--repeats",
+        type=int,
+        default=1,
+        help="repeat the suite N times for stabler medians (default 1)",
     )
-    p.add_argument("--demo", action="store_true", help="benchmark the offline mock provider (CI/pipeline check)")
+    p.add_argument(
+        "--demo",
+        action="store_true",
+        help="benchmark the offline mock provider (CI/pipeline check)",
+    )
     p.set_defaults(func=cmd.cmd_bench)
 
     return parser

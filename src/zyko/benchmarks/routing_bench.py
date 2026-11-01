@@ -48,8 +48,22 @@ log = get_logger("bench")
 SEED = 42
 
 _WORDS = [
-    "river", "market", "signal", "copper", "window", "forest", "planet", "engine",
-    "shadow", "lantern", "harbor", "meadow", "circuit", "marble", "anchor", "puzzle",
+    "river",
+    "market",
+    "signal",
+    "copper",
+    "window",
+    "forest",
+    "planet",
+    "engine",
+    "shadow",
+    "lantern",
+    "harbor",
+    "meadow",
+    "circuit",
+    "marble",
+    "anchor",
+    "puzzle",
 ]
 _TOPICS = ["logistics", "energy", "health", "education", "agriculture", "transport"]
 
@@ -117,46 +131,70 @@ def build_suite(seed: int = SEED) -> list[Task]:
     # 1. instruction_following — strict format
     for i in range(4):
         w1, w2, w3 = rng.sample(_WORDS, 3)
-        tasks.append(Task(
-            f"if_{i}", "instruction_following",
-            f"Reply with EXACTLY this line and nothing else: {w1}-{w2}-{w3}",
-            "exact", f"{w1}-{w2}-{w3}",
-        ))
+        tasks.append(
+            Task(
+                f"if_{i}",
+                "instruction_following",
+                f"Reply with EXACTLY this line and nothing else: {w1}-{w2}-{w3}",
+                "exact",
+                f"{w1}-{w2}-{w3}",
+            )
+        )
 
     # 2. extraction — pull structured fields from a mini-record
     for i in range(4):
         name = rng.choice(_WORDS).title()
         topic = rng.choice(_TOPICS)
         amount = rng.randint(100, 9999)
-        tasks.append(Task(
-            f"ex_{i}", "extraction",
-            f'Record: {name} ordered {amount} units for the {topic} division. '
-            'Reply with JSON only: {"units": <number>, "topic": "<topic>"}',
-            "json", "units,topic",
-        ))
+        tasks.append(
+            Task(
+                f"ex_{i}",
+                "extraction",
+                f"Record: {name} ordered {amount} units for the {topic} division. "
+                'Reply with JSON only: {"units": <number>, "topic": "<topic>"}',
+                "json",
+                "units,topic",
+            )
+        )
 
     # 3. classification — fixed label set
-    labels = {"river": "nature", "market": "economy", "engine": "technology",
-              "forest": "nature", "harbor": "economy", "circuit": "technology",
-              "meadow": "nature", "lantern": "technology", "anchor": "economy"}
+    labels = {
+        "river": "nature",
+        "market": "economy",
+        "engine": "technology",
+        "forest": "nature",
+        "harbor": "economy",
+        "circuit": "technology",
+        "meadow": "nature",
+        "lantern": "technology",
+        "anchor": "economy",
+    }
     for i in range(4):
         word = rng.choice(list(labels))
-        tasks.append(Task(
-            f"cl_{i}", "classification",
-            f'Classify the word "{word}" into exactly one of: nature, economy, technology. '
-            "Answer with the label only.",
-            "exact", labels[word],
-        ))
+        tasks.append(
+            Task(
+                f"cl_{i}",
+                "classification",
+                f'Classify the word "{word}" into exactly one of: nature, economy, technology. '
+                "Answer with the label only.",
+                "exact",
+                labels[word],
+            )
+        )
 
     # 4. math — deterministic arithmetic
     for i in range(4):
         a, b, c = rng.randint(11, 99), rng.randint(2, 9), rng.randint(2, 9)
         expected = a * b + c
-        tasks.append(Task(
-            f"math_{i}", "math",
-            f"Compute {a} * {b} + {c}. Reply with the number only.",
-            "numeric", str(expected),
-        ))
+        tasks.append(
+            Task(
+                f"math_{i}",
+                "math",
+                f"Compute {a} * {b} + {c}. Reply with the number only.",
+                "numeric",
+                str(expected),
+            )
+        )
 
     # 5. summarization — keyword-preserving compression
     for i in range(4):
@@ -165,21 +203,29 @@ def build_suite(seed: int = SEED) -> list[Task]:
             f"The quarterly report mentions {keep[0]} capacity doubled while {keep[1]} "
             f"costs fell; the {keep[2]} program remains funded next year."
         )
-        tasks.append(Task(
-            f"sum_{i}", "summarization",
-            f"Summarize in one sentence, keeping the words {keep[0]}, {keep[1]} and {keep[2]}:\n{story}",
-            "contains_all", "||".join(keep),
-        ))
+        tasks.append(
+            Task(
+                f"sum_{i}",
+                "summarization",
+                f"Summarize in one sentence, keeping the words {keep[0]}, {keep[1]} and {keep[2]}:\n{story}",
+                "contains_all",
+                "||".join(keep),
+            )
+        )
 
     # 6. format — output templating (regex-graded)
     for i in range(4):
         word = rng.choice(_WORDS)
         n = rng.randint(1, 99)
-        tasks.append(Task(
-            f"fmt_{i}", "format",
-            f'Produce one line in the form "ID[{word}:{n:02d}]" with those exact values.',
-            "regex", rf"ID\[{re.escape(word)}:{n:02d}\]",
-        ))
+        tasks.append(
+            Task(
+                f"fmt_{i}",
+                "format",
+                f'Produce one line in the form "ID[{word}:{n:02d}]" with those exact values.',
+                "regex",
+                rf"ID\[{re.escape(word)}:{n:02d}\]",
+            )
+        )
     return tasks
 
 
@@ -189,7 +235,9 @@ def suite_hash(tasks: list[Task]) -> str:
 
 
 # ----------------------------------------------------------------- execution
-async def _run_candidate(router: Router, provider_name: str, model: str, tasks: list[Task], concurrency: int):
+async def _run_candidate(
+    router: Router, provider_name: str, model: str, tasks: list[Task], concurrency: int
+):
     provider = router.providers[provider_name]
     info = provider.find_model(model)
     sem = asyncio.Semaphore(max(1, concurrency))
@@ -204,14 +252,23 @@ async def _run_candidate(router: Router, provider_name: str, model: str, tasks: 
                 answer = outcome.text
                 latency = (time.perf_counter() - started) * 1000.0
                 passed = GRADERS[task.grader](answer, task.expected, task.extra)
-                return {"task": task.tid, "category": task.category, "ok": passed,
-                        "latency_ms": round(latency, 1), "answer": answer[:200],
-                        "input_tokens": outcome.usage.input_tokens,
-                        "output_tokens": outcome.usage.output_tokens}
+                return {
+                    "task": task.tid,
+                    "category": task.category,
+                    "ok": passed,
+                    "latency_ms": round(latency, 1),
+                    "answer": answer[:200],
+                    "input_tokens": outcome.usage.input_tokens,
+                    "output_tokens": outcome.usage.output_tokens,
+                }
             except ZykoError as exc:
-                return {"task": task.tid, "category": task.category, "ok": False,
-                        "latency_ms": round((time.perf_counter() - started) * 1000.0, 1),
-                        "error": str(exc).splitlines()[0][:200]}
+                return {
+                    "task": task.tid,
+                    "category": task.category,
+                    "ok": False,
+                    "latency_ms": round((time.perf_counter() - started) * 1000.0, 1),
+                    "error": str(exc).splitlines()[0][:200],
+                }
 
     verdicts = await asyncio.gather(*(one(t) for t in tasks))
     results.extend(verdicts)
@@ -236,7 +293,9 @@ async def _run_candidate(router: Router, provider_name: str, model: str, tasks: 
         "candidate": f"{provider_name}/{model}",
         "overall": round(overall, 4),
         "categories": {k: round(v, 4) for k, v in categories.items()},
-        "median_latency_ms": round(sorted(latencies)[len(latencies) // 2], 1) if latencies else None,
+        "median_latency_ms": round(sorted(latencies)[len(latencies) // 2], 1)
+        if latencies
+        else None,
         "estimated_cost_usd": cost,
         "token_usage": {"input": in_tok, "output": out_tok},
         "tasks": results,
@@ -259,7 +318,11 @@ def run_bench(args: Any) -> int:
     repeats = max(1, int(getattr(args, "repeats", 1) or 1))
     run_tasks = tasks * repeats if repeats > 1 else tasks
     suffix = f", repeats={repeats}" if repeats > 1 else ""
-    print(ui.info(f"suite: {len(tasks)} deterministic tasks (seed={SEED}, hash={suite_hash(tasks)}{suffix})"))
+    print(
+        ui.info(
+            f"suite: {len(tasks)} deterministic tasks (seed={SEED}, hash={suite_hash(tasks)}{suffix})"
+        )
+    )
     ledger_arg = ledger_file() if not getattr(args, "ledger", None) else Path(args.ledger)
     ledger = QualityLedger.load(ledger_arg)
     router = Router(providers, ledger=ledger, strategy="quality", max_fallbacks=1)
@@ -268,7 +331,9 @@ def run_bench(args: Any) -> int:
         jobs = []
         for provider_name, provider in sorted(providers.items()):
             for info in provider.catalog():
-                jobs.append(_run_candidate(router, provider_name, info.id, run_tasks, args.concurrency))
+                jobs.append(
+                    _run_candidate(router, provider_name, info.id, run_tasks, args.concurrency)
+                )
         return await asyncio.gather(*jobs)
 
     report = {
@@ -285,7 +350,10 @@ def run_bench(args: Any) -> int:
     report["finished"] = time.time()
 
     # console summary
-    rows = [[r["candidate"], f"{r['overall']:.3f}", r["median_latency_ms"], r["estimated_cost_usd"]] for r in results]
+    rows = [
+        [r["candidate"], f"{r['overall']:.3f}", r["median_latency_ms"], r["estimated_cost_usd"]]
+        for r in results
+    ]
     ui.table(["candidate", "overall", "median ms", "est $/run"], rows)
     winner = max(results, key=lambda r: r["overall"]) if results else None
     if winner:
@@ -301,8 +369,13 @@ def run_bench(args: Any) -> int:
         for r in results:
             wins = sum(1 for o in others if r["overall"] >= o)
             win_rate = wins / len(others) if others else 0.5
-            ledger.update(*r["candidate"].split("/", 1), quality=r["overall"],
-                          win_rate=win_rate, samples=len(r["tasks"]), categories=r["categories"])
+            ledger.update(
+                *r["candidate"].split("/", 1),
+                quality=r["overall"],
+                win_rate=win_rate,
+                samples=len(r["tasks"]),
+                categories=r["categories"],
+            )
         ledger_path = ledger_file() if not getattr(args, "ledger", None) else Path(args.ledger)
         ledger.save(ledger_path)
         print(ui.ok(f"ledger updated → {ledger_path}"))

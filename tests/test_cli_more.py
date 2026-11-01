@@ -18,9 +18,7 @@ FIXTURE = Path(__file__).parent / "fixtures" / "echo_server.py"
 
 def _with_fake_router(monkeypatch):
     fake = FakeProvider(script=["chat answer"])
-    monkeypatch.setattr(
-        "zyko.cli.commands.configured_providers", lambda *_a, **_k: {"fake": fake}
-    )
+    monkeypatch.setattr("zyko.cli.commands.configured_providers", lambda *_a, **_k: {"fake": fake})
     return fake
 
 
@@ -57,9 +55,7 @@ def test_chat_loop_survives_provider_error(monkeypatch, capsys):
     # fail_first=2 exhausts both fake models in one route → route() raises;
     # the next turn succeeds after the outage clears.
     fake = FakeProvider(script=["second try"], fail_first=2, name="fake")
-    monkeypatch.setattr(
-        "zyko.cli.commands.configured_providers", lambda *_a, **_k: {"fake": fake}
-    )
+    monkeypatch.setattr("zyko.cli.commands.configured_providers", lambda *_a, **_k: {"fake": fake})
     lines = iter(["first question", "second question", "/exit"])
     monkeypatch.setattr("builtins.input", lambda _prompt="": next(lines))
     assert main(["chat"]) == 0
@@ -86,7 +82,9 @@ def test_cmd_serve_starts_and_stops(monkeypatch, capsys):
         return DummyServer()
 
     monkeypatch.setattr(gw, "serve", fake_serve)
-    monkeypatch.setattr("zyko.cli.commands.time.sleep", lambda _s: (_ for _ in ()).throw(KeyboardInterrupt()))
+    monkeypatch.setattr(
+        "zyko.cli.commands.time.sleep", lambda _s: (_ for _ in ()).throw(KeyboardInterrupt())
+    )
     assert main(["serve", "--port", "9999"]) == 0
     out = capsys.readouterr().out
     assert "http://127.0.0.1:9999/v1" in out
@@ -146,10 +144,7 @@ def test_run_agent_with_trace(monkeypatch, capsys, tmp_path):
     _with_fake_router(monkeypatch)
     agent_file = tmp_path / "mini.yaml"
     agent_file.write_text(
-        "name: mini\n"
-        "system: answer directly\n"
-        "max_steps: 3\n"
-        "tools: []\n",
+        "name: mini\nsystem: answer directly\nmax_steps: 3\ntools: []\n",
         encoding="utf-8",
     )
     assert main(["run", str(agent_file), "say hi", "--trace"]) == 0
@@ -177,7 +172,10 @@ def test_python_dash_m_zyko_entry():
     env = {**os.environ, "PYTHONPATH": str(repo / "src")}
     proc = subprocess.run(
         [sys.executable, "-m", "zyko", "--version"],
-        capture_output=True, text=True, env=env, timeout=60,
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=60,
     )
     assert proc.returncode == 0
     assert "zyko" in proc.stdout

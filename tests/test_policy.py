@@ -43,7 +43,9 @@ def test_redactor_custom_regex():
 
 # ------------------------------------------------------------------- models
 def test_model_allow_and_deny():
-    engine = PolicyEngine({"version": 1, "name": "t", "models": {"allow": ["fake/*"], "deny": ["fake/fake-large"]}})
+    engine = PolicyEngine(
+        {"version": 1, "name": "t", "models": {"allow": ["fake/*"], "deny": ["fake/fake-large"]}}
+    )
     assert engine.allows_model("fake", "fake-small") is True
     assert engine.allows_model("fake", "fake-large") is False
     assert engine.allows_model("openai", "gpt-4o") is False

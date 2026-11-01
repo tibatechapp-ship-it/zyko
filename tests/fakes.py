@@ -33,8 +33,20 @@ class FakeProvider(BaseProvider):
         super().__init__(api_key=None, timeout=5.0)
         self.name = name
         self._catalog = catalog or [
-            ModelInfo(name, "fake-small", 8_000, 2_000, True, False, input_price, output_price, ["cheap"]),
-            ModelInfo(name, "fake-large", 32_000, 4_000, True, False, input_price * 10, output_price * 10, ["flagship"]),
+            ModelInfo(
+                name, "fake-small", 8_000, 2_000, True, False, input_price, output_price, ["cheap"]
+            ),
+            ModelInfo(
+                name,
+                "fake-large",
+                32_000,
+                4_000,
+                True,
+                False,
+                input_price * 10,
+                output_price * 10,
+                ["flagship"],
+            ),
         ]
         self.script = list(script) if script else ["ok"]
         self.fail_first = fail_first
@@ -49,7 +61,9 @@ class FakeProvider(BaseProvider):
     async def acomplete(self, request: ChatRequest, *, retries: int | None = None) -> ChatResponse:
         self.calls += 1
         if self.calls <= self.fail_first:
-            raise ProviderError(f"{self.name}: simulated outage", provider=self.name, retryable=False)
+            raise ProviderError(
+                f"{self.name}: simulated outage", provider=self.name, retryable=False
+            )
         entry = self.script[min(self.calls - 1 - self.fail_first, len(self.script) - 1)]
         if isinstance(entry, dict) and entry.get("tool_calls"):
             return ChatResponse(

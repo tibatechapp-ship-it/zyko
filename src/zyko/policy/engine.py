@@ -63,8 +63,15 @@ _PATTERN_PRIORITY = {"credit_card": 0, "iban": 1, "ssn": 2, "email": 3, "phone":
 # typo that would otherwise silently disable a control the author believed
 # was active ("privcy:", "budget_per_day:", ...).
 KNOWN_TOP_LEVEL = {
-    "version", "name", "defaults", "models", "providers", "tools",
-    "privacy", "rate_limit", "audit",
+    "version",
+    "name",
+    "defaults",
+    "models",
+    "providers",
+    "tools",
+    "privacy",
+    "rate_limit",
+    "audit",
 }
 KNOWN_DEFAULTS_KEYS = {"budget_usd_per_day", "max_tokens_per_request"}
 
@@ -99,7 +106,14 @@ class Redactor:
             rules.append((_PATTERN_PRIORITY.get(name, 9), re.compile(pattern), replace, name))
         for custom in privacy.get("custom") or []:
             try:
-                rules.append((9, re.compile(custom["pattern"]), custom.get("replace", "[REDACTED]"), "custom"))
+                rules.append(
+                    (
+                        9,
+                        re.compile(custom["pattern"]),
+                        custom.get("replace", "[REDACTED]"),
+                        "custom",
+                    )
+                )
             except (KeyError, re.error) as exc:
                 raise ConfigError(f"invalid custom redaction rule: {exc}") from exc
         rules.sort(key=lambda r: r[0])
@@ -111,6 +125,7 @@ class Redactor:
     def apply(self, text: str) -> tuple[str, list[str]]:
         applied: list[str] = []
         for regex, replace, label in self.rules:
+
             def _sub(match: re.Match[str], *, _label=label, _replace=replace) -> str:
                 if _label == "credit_card":
                     digits = re.sub(r"\D", "", match.group(0))
@@ -172,7 +187,11 @@ class _Budget:
 
     def spent_today(self) -> float:
         state = self._load()
-        return float(state.get("spend_usd", 0.0)) if state.get("date") == time.strftime("%Y-%m-%d") else 0.0
+        return (
+            float(state.get("spend_usd", 0.0))
+            if state.get("date") == time.strftime("%Y-%m-%d")
+            else 0.0
+        )
 
     def remaining(self) -> float | None:
         return None if self.cap is None else max(0.0, self.cap - self.spent_today())
@@ -199,18 +218,32 @@ class PolicyEngine:
             raise ConfigError(f"unsupported policy schema version: {version!r} (expected 1)")
         self.doc = doc
         self.name = doc.get("name", "unnamed")
+        # Malformed sections must degrade to schema warnings, not crash the
+        # engine with an AttributeError before _schema_warnings() runs.
         defaults = doc.get("defaults") or {}
+        if not isinstance(defaults, dict):
+            defaults = {}
         self.max_tokens = defaults.get("max_tokens_per_request")
         budget_cap = defaults.get("budget_usd_per_day")
         from zyko.platform.paths import data_dir
 
         base = state_dir or data_dir(create=True)
-        self.budget = _Budget(float(budget_cap) if budget_cap is not None else None, base / "budget_state.json")
-        self.redactor = Redactor.from_doc(doc.get("privacy") or {})
-        rate = (doc.get("rate_limit") or {}).get("requests_per_minute")
+        self.budget = _Budget(
+            float(budget_cap) if budget_cap is not None else None, base / "budget_state.json"
+        )
+        privacy = doc.get("privacy") or {}
+        self.redactor = Redactor.from_doc(privacy if isinstance(privacy, dict) else {})
+        rate_limit = doc.get("rate_limit") or {}
+        rate = rate_limit.get("requests_per_minute") if isinstance(rate_limit, dict) else None
         self.bucket = _TokenBucket(int(rate)) if rate else None
-        self.audit_enabled = bool((doc.get("audit") or {}).get("enabled", True))
-        self.stats = {"requests_allowed": 0, "requests_denied": 0, "redactions": 0, "denied_by_rule": {}}
+        audit = doc.get("audit") or {}
+        self.audit_enabled = bool(audit.get("enabled", True)) if isinstance(audit, dict) else True
+        self.stats = {
+            "requests_allowed": 0,
+            "requests_denied": 0,
+            "redactions": 0,
+            "denied_by_rule": {},
+        }
         self.warnings = self._schema_warnings(doc)
 
     # ------------------------------------------------------------------ models
@@ -271,7 +304,9 @@ class PolicyEngine:
         if not self.allows_provider(candidate.provider):
             return self._deny("providers.allow", f"provider '{candidate.provider}' is not allowed")
         if not self.allows_model(candidate.provider, candidate.model):
-            return self._deny("models.deny", f"model '{candidate.provider}/{candidate.model}' is not allowed")
+            return self._deny(
+                "models.deny", f"model '{candidate.provider}/{candidate.model}' is not allowed"
+            )
 
         if self.budget.cap is not None and self.budget.remaining() <= 0.0:
             raise BudgetExceededError(
@@ -305,7 +340,9 @@ class PolicyEngine:
                 if message.content:
                     cleaned, labels = self.redactor.apply(message.content)
                     applied.extend(labels)
-                    new_messages.append(message.map_content(lambda _t: cleaned) if labels else message)
+                    new_messages.append(
+                        message.map_content(lambda _t: cleaned) if labels else message
+                    )
                 else:
                     new_messages.append(message)
             effective = ChatRequest(
@@ -338,8 +375,12 @@ class PolicyEngine:
         """
         if cost_usd and cost_usd > 0:
             spent = self.budget.add(cost_usd)
-            log.debug("policy: +%0.6f USD (day total %.4f, estimated=%s)", cost_usd, spent, estimated)
-            self._audit("usage", candidate, [], cost=cost_usd, spent_today=spent, estimated=estimated)
+            log.debug(
+                "policy: +%0.6f USD (day total %.4f, estimated=%s)", cost_usd, spent, estimated
+            )
+            self._audit(
+                "usage", candidate, [], cost=cost_usd, spent_today=spent, estimated=estimated
+            )
 
     def record_stream_open(self, candidate: Any) -> None:
         self._audit("stream_open", candidate, [])
@@ -384,7 +425,11 @@ def load_policy(name_or_path: str | Path) -> PolicyEngine:
     import yaml
 
     path = Path(name_or_path)
-    candidates = [path] if path.is_absolute() else [Path.cwd() / path, *(d / name_or_path for d in policies_search_dirs())]
+    candidates = (
+        [path]
+        if path.is_absolute()
+        else [Path.cwd() / path, *(d / name_or_path for d in policies_search_dirs())]
+    )
     for cand in candidates:
         for suffix in ("", ".yaml", ".yml"):
             probe = cand.with_suffix(cand.suffix) if suffix == "" else Path(str(cand) + suffix)

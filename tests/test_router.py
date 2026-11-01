@@ -51,7 +51,9 @@ def test_explain_returns_full_ranking():
 
 
 # ------------------------------------------------------------------ fallback
-def _async_marker(): pass
+def _async_marker():
+    pass
+
 
 async def test_fallback_to_healthy_provider():
     broken = FakeProvider(name="broken", fail_first=99)
@@ -65,7 +67,9 @@ async def test_fallback_to_healthy_provider():
     assert outcomes["healthy"] == "ok"
 
 
-def _async_marker(): pass
+def _async_marker():
+    pass
+
 
 async def test_receipt_is_verifiable_shape():
     router = _router(FakeProvider(script=["hi"]))
@@ -78,7 +82,9 @@ async def test_receipt_is_verifiable_shape():
     assert "est_input_tokens" in receipt
 
 
-def _async_marker(): pass
+def _async_marker():
+    pass
+
 
 async def test_all_candidates_failed_error_lists_attempts():
     broken = FakeProvider(name="broken", fail_first=99)
@@ -89,7 +95,9 @@ async def test_all_candidates_failed_error_lists_attempts():
 
 
 # ------------------------------------------------------------------- breaker
-def _async_marker(): pass
+def _async_marker():
+    pass
+
 
 async def test_circuit_breaker_opens_and_half_opens():
     flaky = FakeProvider(name="flaky", fail_first=99)
@@ -111,7 +119,9 @@ def test_health_latency_ewma():
 
 
 # -------------------------------------------------------------------- policy
-def _async_marker(): pass
+def _async_marker():
+    pass
+
 
 async def test_policy_filters_candidates_and_requests():
     policy = PolicyEngine(

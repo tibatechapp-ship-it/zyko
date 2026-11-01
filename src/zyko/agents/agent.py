@@ -175,7 +175,13 @@ class Agent:
                 results: list[Message] = []
                 for call in response.tool_calls:
                     output = await self._execute(call)
-                    log.info("agent %s step %d tool %s → %d chars", self.name, step_index, call.name, len(output))
+                    log.info(
+                        "agent %s step %d tool %s → %d chars",
+                        self.name,
+                        step_index,
+                        call.name,
+                        len(output),
+                    )
                     results.append(Message.tool_result(call.id, call.name, output))
                 messages.extend(results)
                 continue

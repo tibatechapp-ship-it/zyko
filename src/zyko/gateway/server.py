@@ -55,7 +55,9 @@ def _response_to_openai(response: Any, receipt: dict[str, Any] | None = None) ->
     body: dict[str, Any] = {
         "id": response.id,
         "object": "chat.completion",
-        "created": int(response.raw.get("created", 0)) if isinstance(response.raw, dict) and response.raw.get("created") else 0,
+        "created": int(response.raw.get("created", 0))
+        if isinstance(response.raw, dict) and response.raw.get("created")
+        else 0,
         "model": response.model,
         "choices": [
             {
@@ -63,7 +65,11 @@ def _response_to_openai(response: Any, receipt: dict[str, Any] | None = None) ->
                 "message": {
                     "role": "assistant",
                     "content": response.content,
-                    **({"tool_calls": [tc.to_openai() for tc in response.tool_calls]} if response.tool_calls else {}),
+                    **(
+                        {"tool_calls": [tc.to_openai() for tc in response.tool_calls]}
+                        if response.tool_calls
+                        else {}
+                    ),
                 },
                 "finish_reason": response.finish_reason,
             }
@@ -182,14 +188,40 @@ class _Handler(BaseHTTPRequestHandler):
         try:
             for event in self.router.stream_route(request):
                 if event.type == "meta":
-                    payload = {"id": "stream", "object": "chat.completion.chunk", "model": event.data["candidate"], "choices": [{"index": 0, "delta": {"role": "assistant"}, "finish_reason": None}], "zyko_receipt": event.data["receipt"]}
+                    payload = {
+                        "id": "stream",
+                        "object": "chat.completion.chunk",
+                        "model": event.data["candidate"],
+                        "choices": [
+                            {"index": 0, "delta": {"role": "assistant"}, "finish_reason": None}
+                        ],
+                        "zyko_receipt": event.data["receipt"],
+                    }
                 elif event.type == "text":
-                    payload = {"id": "stream", "object": "chat.completion.chunk", "model": request.model or "auto", "choices": [{"index": 0, "delta": {"content": event.data["text"]}, "finish_reason": None}]}
+                    payload = {
+                        "id": "stream",
+                        "object": "chat.completion.chunk",
+                        "model": request.model or "auto",
+                        "choices": [
+                            {
+                                "index": 0,
+                                "delta": {"content": event.data["text"]},
+                                "finish_reason": None,
+                            }
+                        ],
+                    }
                 elif event.type == "done":
-                    payload = {"id": "stream", "object": "chat.completion.chunk", "model": request.model or "auto", "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]}
+                    payload = {
+                        "id": "stream",
+                        "object": "chat.completion.chunk",
+                        "model": request.model or "auto",
+                        "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+                    }
                 else:
                     continue
-                send_chunk(b"data: " + json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n\n")
+                send_chunk(
+                    b"data: " + json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n\n"
+                )
             send_chunk(b"data: [DONE]\n\n")
             self.wfile.write(b"0\r\n\r\n")
             self.wfile.flush()

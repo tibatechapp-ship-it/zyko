@@ -1,13 +1,13 @@
 """Declarative agent definitions (YAML)::
 
-    name: coder
-    system: You are a precise coding assistant...
-    model: auto            # or "openai/gpt-4o-mini"
-    max_steps: 10
-    tools: [calculator, read_file, write_file]
-    mcp_servers:
-      - name: fs
-        command: [npx, -y, "@modelcontextprotocol/server-filesystem", /tmp]
+name: coder
+system: You are a precise coding assistant...
+model: auto            # or "openai/gpt-4o-mini"
+max_steps: 10
+tools: [calculator, read_file, write_file]
+mcp_servers:
+  - name: fs
+    command: [npx, -y, "@modelcontextprotocol/server-filesystem", /tmp]
 """
 
 from __future__ import annotations
@@ -27,7 +27,11 @@ def _search_paths(name: str) -> list[Path]:
     path = Path(name)
     if path.is_absolute():
         return [path]
-    return [Path.cwd() / name, config_dir() / "agents" / name, Path.cwd() / "examples" / "agents" / name]
+    return [
+        Path.cwd() / name,
+        config_dir() / "agents" / name,
+        Path.cwd() / "examples" / "agents" / name,
+    ]
 
 
 def load_agent_document(source: str | Path) -> dict[str, Any]:

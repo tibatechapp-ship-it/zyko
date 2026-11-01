@@ -5,8 +5,9 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — Universal AI Orchestration Platform" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-230%20passing-22c55e)](.github/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-92%25-84cc16)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-337%20passing-22c55e)](.github/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-98%25-84cc16)](.github/workflows/ci.yml)
+[![Security](https://img.shields.io/badge/bandit-0%20findings-22c55e?logo=shield&logoColor=white)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Android%20%7C%20Termux-10b981)](android/README.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
@@ -20,7 +21,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.3.1** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
+**النسخة 0.3.2** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -48,6 +49,18 @@
 | بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
+
+## ما الجديد في 0.3.2؟ (جولة تقييم كاملة: تغطية + lint + أمان)
+
+جولة جودة شاملة على كامل الشيفرة — تحليل تغطية، فحص lint، تدقيق أمني — مع إصلاح كل النتائج واختبارها:
+
+| الخلل الحقيقي المُكتشف | المعالجة |
+|---|---|
+| **`Settings.load()` كان يلوّث الإعدادات الافتراضية العامّة**: `_deep_merge` يشارك القواميس المتشعبة مع ثابت `DEFAULTS`، فأول استدعاء بمتغيرات `ZYKO_*` كان يُعيد كتابتها **بشكل دائم** — كل الاستدعاءات اللاحقة ترث بيئة أول استدعاء (تلوّث عمليات البوابة طويلة الأمد والاختبارات معًا) | نسخ عميق للافتراضيات عند كل تحميل + اختبار انحدار مخصص |
+| **`policies_dir()`/`agents_dir(create=True)` لا ينشئان المجلد المُعاد** — الأب فقط | `create=True` يضمن الآن وجود المجلد الطرفي نفسه |
+| **`PolicyEngine` كان ينهار بـ `AttributeError` خام** على أقسام سياسة تالفة (`defaults`/`privacy`/`rate_limit`/`audit` بقيمة غير قاموس) قبل أن تصل آلية التحذيرات | الأقسام التالفة تتحلل إلى التحذيرات الموثّقة بدل الانهيار |
+
+نتائج الجولة: **التغطية 92% → 98%** (3491 عبارة) · الاختبارات 230 → **337** (107 اختبارات جديدة: دورة حياة MCP كاملة، حوكمة البث وأثر التدقيق `estimated: false`، قافز الدائرة والسياسة، اكتشاف المنصات، مصفوفات المزوّدين، رموز خروج POSIX 130/141) · `ruff check` و`ruff format` نظيفان على كامل الشجرة · **بوابة أمان في CI**: `bandit` (0 نتائج) + `pip-audit` على التبعيات المعلنة · **سكربتات التثبيت عادت** لجذر المستودع.
 
 ## ما الجديد في 0.3.1؟ (تصلّب الـ CLI + جولة تغطية)
 
@@ -77,17 +90,35 @@
 
 ## التثبيت
 
-```bash
-# Linux / macOS / Termux
-pip install git+https://github.com/tibatechapp-ship-it/zyko.git
+**الطريق الأسرع — سكربتات جاهزة في جذر المستودع:**
 
-# Windows
+```bash
+# Linux / macOS / Termux — يشغّل ZYKO فورًا (ينشئ بيئة معزولة عند أول استخدام)
+./zyko.sh ask "مرحبًا" --demo
+
+# أو تثبيت دائم ببيئة معزولة (~/.zyko/venv)
+./install.sh            # أضف --dev لأدوات الاختبار
+
+# Windows (PowerShell أو cmd أو مشغّل فوري)
+powershell -ExecutionPolicy Bypass -File install.ps1
+install.bat
+zyko.cmd ask "hello" --demo
+
+# Docker — بوابة متوافقة مع OpenAI بحاوية واحدة
+docker build -t zyko . && docker run --rm -p 8787:8787 zyko
+```
+
+**أو عبر pip مباشرة:**
+
+```bash
 pip install git+https://github.com/tibatechapp-ship-it/zyko.git
 
 # من المصدر (كل المنصات)
 git clone https://github.com/tibatechapp-ship-it/zyko.git && cd zyko
 pip install -e .[dev]
 ```
+
+للمطوّرين: `make test` · `make coverage` · `make lint` · `make security` · `make bench-demo` (راجع [Makefile](Makefile)).
 
 التبعيات الأساسية: `httpx` و`PyYAML` فقط — كلتاهما Python خالص، لذا **لا شيء يُترجم** على أي منصة، بما فيها Termux.
 
@@ -188,13 +219,18 @@ zyko info   # kernel backend: rust
 
 ```bash
 pip install -e .[dev]
-pytest -q            # 230 اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض
-ruff check src tests
+pytest -q            # 337 اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض
+pytest --cov=src/zyko   # تغطية 98%
+ruff check src tests && ruff format --check src tests
+make security        # bandit + pip-audit (نفس بوابة CI)
 ```
 
-يعمل CI على ubuntu/windows/macos × Python 3.11/3.12/3.13 + فحص Rust + تجربة دخان للـCLI — ويعمل أول تشغيل **بلا أي مفاتيح** عبر التراجع التلقائي لمزوّد العرض المدمج.
+يعمل CI على ubuntu/windows/macos × Python 3.11/3.12/3.13 + فحص Rust + تجربة دخان للـCLI + **وظيفة أمان (bandit + pip-audit)** — ويعمل أول تشغيل **بلا أي مفاتيح** عبر التراجع التلقائي لمزوّد العرض المدمج.
 
 ## الأمان
+
+- **حوكمة مدمجة**: أدوات الخطر (`shell`) تبقى مقفلة ما لم تُسمّى صراحةً في `tools.allow` — حتى مع `allow: ["*"]`؛ خادم MCP يُطلق عبر `exec` لا عبر shell؛ `http_get` يرفض المخططات غير HTTP؛ حجب PII حتمي (بفحص Luhn).
+- **بوابة أمان في CI**: `bandit` (0 نتائج؛ استثناء `shell=True` المقصود موثّق داخليًا بـ `nosec` مُحكوم) + `pip-audit` على التبعيات المعلنة.
 
 بلّغ ثغرة أمنية خاصًة عبر [SECURITY.md](SECURITY.md) — لا تفتح issue عامًا للثغرات.
 
@@ -218,7 +254,17 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.3.1** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.3.2** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.3.2 — full evaluation round (coverage + lint + security)
+
+A complete quality round across the whole codebase, every finding fixed and regression-tested:
+
+- **`Settings.load()` leaked overrides into module-level defaults.** `_deep_merge` shared nested dicts with the `DEFAULTS` constant, so the first `load()` with `ZYKO_*` env vars (or YAML values) permanently rewrote the defaults for the whole process — later calls inherited the first call's environment, contaminating long-lived gateway processes and unrelated tests. Defaults are now deep-copied per call.
+- **`policies_dir()` / `agents_dir(create=True)` did not create the returned directory** — only its parent. `create=True` now guarantees the leaf exists.
+- **`PolicyEngine` crashed with a raw `AttributeError` on malformed policy sections** (`defaults`/`privacy`/`rate_limit`/`audit` holding a non-mapping value) before the schema-warnings machinery could report them. Malformed sections now degrade to the documented warnings.
+
+Round results: **coverage 92% → 98%** · tests 230 → **337** (107 new: full MCP client lifecycle, streaming governance with vendor-usage audit `estimated: false`, breaker/policy routing paths, platform detection, provider payload matrices, POSIX exit codes 130/141) · `ruff check` + `ruff format` clean across the tree · a **security gate in CI** (`bandit` 0 findings + `pip-audit` on declared deps) · **install scripts restored** to the repo root (`zyko.sh`, `zyko.cmd`, `install.sh`/`install.bat`/`install.ps1`, `Makefile`, `Dockerfile`).
 
 ## What's new in 0.3.1 — CLI robustness + coverage round
 
@@ -253,6 +299,11 @@ ZYKO's edge is not reinvention but **verifiability**: routing receipts you can r
 ## Quickstart
 
 ```bash
+# Linux / macOS / Termux — instant runner (isolated venv on first use):
+./zyko.sh ask "hello" --demo
+# Windows: zyko.cmd ask "hello" --demo   ·   Docker: docker build -t zyko . && docker run -p 8787:8787 zyko
+
+# Or install permanently:
 pip install git+https://github.com/tibatechapp-ship-it/zyko.git
 
 # Fastest first run — no keys, no network (deterministic demo mode):
@@ -282,7 +333,14 @@ print(outcome.response.text, "←", outcome.receipt["chosen"])
 
 ## Tests
 
-`pytest -q` → 230 tests (92% coverage) covering routing (incl. snapshot/parity and explicit model pinning), policy (incl. schema warnings), MCP over real subprocesses plus in-memory server frames, the gateway over a real HTTP socket (auth + keep-alive integrity), agents, the loader search path, every provider adapter against canned HTTP, session memory, the audit-based cost report, streaming cost accounting, `Retry-After` resilience, CLI robustness (broken pipes, busy ports, JSON-only `--json`), tool-loop failure modes, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12/3.13.
+`pytest -q` → 337 tests (98% coverage) covering routing (incl. snapshot/parity and explicit model pinning), policy (incl. schema warnings and malformed-document degradation), MCP over real subprocesses plus in-memory server frames and the full client lifecycle (timeouts, server errors, pagination, closed streams), the gateway over a real HTTP socket (auth + keep-alive integrity + 502 upstream errors), agents, every provider adapter against canned HTTP, session memory, the audit-based cost report, streaming cost accounting, `Retry-After` resilience, CLI robustness (broken pipes, busy ports, JSON-only `--json`), tool-loop failure modes, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12/3.13, plus lint (`ruff check` + `ruff format --check`), a security job (`bandit` + `pip-audit`), and a Rust kernel check.
+
+## Security
+
+- **Built-in governance**: danger tools (`shell`) stay locked unless explicitly named in `tools.allow` — even under `allow: ["*"]`; the MCP client spawns servers via `exec`, never a shell; `http_get` rejects non-HTTP schemes; deterministic PII redaction with Luhn validation.
+- **CI security gate**: `bandit -c pyproject.toml -r src/zyko` (0 findings; the intentional, policy-gated `shell=True` is documented inline with a scoped `# nosec`) and `pip-audit --skip-editable` over the declared dependency surface (`httpx`, `PyYAML` — clean at release time).
+
+Report a vulnerability privately via [SECURITY.md](SECURITY.md) — please do not open public issues for security reports.
 
 ## License
 

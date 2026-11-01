@@ -31,13 +31,17 @@ class OpenAICompatProvider(BaseProvider):
     STREAM_INCLUDE_USAGE = True
     CATALOG = [
         ModelInfo("openai", "gpt-4o", 128_000, 16_384, True, True, 2.50, 10.00, ["flagship"]),
-        ModelInfo("openai", "gpt-4o-mini", 128_000, 16_384, True, True, 0.15, 0.60, ["cheap", "fast"]),
+        ModelInfo(
+            "openai", "gpt-4o-mini", 128_000, 16_384, True, True, 0.15, 0.60, ["cheap", "fast"]
+        ),
         ModelInfo("openai", "gpt-4.1", 1_000_000, 32_768, True, True, 2.00, 8.00, ["long-context"]),
         ModelInfo("openai", "gpt-4.1-mini", 1_000_000, 32_768, True, True, 0.40, 1.60, ["cheap"]),
         ModelInfo("openai", "o4-mini", 200_000, 100_000, True, False, 1.10, 4.40, ["reasoning"]),
     ]
 
-    def _build(self, request: ChatRequest, *, stream: bool) -> tuple[str, dict[str, Any], dict[str, str]]:
+    def _build(
+        self, request: ChatRequest, *, stream: bool
+    ) -> tuple[str, dict[str, Any], dict[str, str]]:
         model = self._resolve_model(request)
         payload: dict[str, Any] = {
             "model": model,
@@ -74,11 +78,15 @@ class OpenAICompatProvider(BaseProvider):
             content=message.get("content"),
             tool_calls=tool_calls,
             usage=usage,
-            finish_reason={"tool_calls": "tool_calls"}.get(choice.get("finish_reason", "stop"), choice.get("finish_reason", "stop")),
+            finish_reason={"tool_calls": "tool_calls"}.get(
+                choice.get("finish_reason", "stop"), choice.get("finish_reason", "stop")
+            ),
             raw=data,
         )
 
-    def _parse_stream_chunk(self, data: dict[str, Any], state: dict[str, Any]) -> StreamEvent | None:
+    def _parse_stream_chunk(
+        self, data: dict[str, Any], state: dict[str, Any]
+    ) -> StreamEvent | None:
         choice = (data.get("choices") or [{}])[0]
         delta = choice.get("delta") or {}
         if delta.get("content"):
@@ -110,8 +118,20 @@ class GroqProvider(OpenAICompatProvider):
     KEY_ENV = "GROQ_API_KEY"
     STREAM_INCLUDE_USAGE = False  # vendor support for stream_options unconfirmed
     CATALOG = [
-        ModelInfo("groq", "llama-3.3-70b-versatile", 128_000, 32_768, True, False, 0.59, 0.79, ["open"]),
-        ModelInfo("groq", "llama-3.1-8b-instant", 128_000, 131_072, True, False, 0.05, 0.08, ["open", "fast"]),
+        ModelInfo(
+            "groq", "llama-3.3-70b-versatile", 128_000, 32_768, True, False, 0.59, 0.79, ["open"]
+        ),
+        ModelInfo(
+            "groq",
+            "llama-3.1-8b-instant",
+            128_000,
+            131_072,
+            True,
+            False,
+            0.05,
+            0.08,
+            ["open", "fast"],
+        ),
     ]
 
 
@@ -122,9 +142,15 @@ class MistralProvider(OpenAICompatProvider):
     KEY_ENV = "MISTRAL_API_KEY"
     STREAM_INCLUDE_USAGE = False  # vendor support for stream_options unconfirmed
     CATALOG = [
-        ModelInfo("mistral", "mistral-large-latest", 128_000, 8_192, True, False, 2.00, 6.00, ["flagship"]),
-        ModelInfo("mistral", "mistral-small-latest", 128_000, 8_192, True, False, 0.20, 0.60, ["cheap"]),
-        ModelInfo("mistral", "open-mistral-nemo", 128_000, 8_192, True, False, 0.15, 0.15, ["open"]),
+        ModelInfo(
+            "mistral", "mistral-large-latest", 128_000, 8_192, True, False, 2.00, 6.00, ["flagship"]
+        ),
+        ModelInfo(
+            "mistral", "mistral-small-latest", 128_000, 8_192, True, False, 0.20, 0.60, ["cheap"]
+        ),
+        ModelInfo(
+            "mistral", "open-mistral-nemo", 128_000, 8_192, True, False, 0.15, 0.15, ["open"]
+        ),
     ]
 
 
@@ -135,8 +161,12 @@ class DeepSeekProvider(OpenAICompatProvider):
     KEY_ENV = "DEEPSEEK_API_KEY"
     STREAM_INCLUDE_USAGE = False  # vendor support for stream_options unconfirmed
     CATALOG = [
-        ModelInfo("deepseek", "deepseek-chat", 64_000, 8_192, True, False, 0.27, 1.10, ["open", "cheap"]),
-        ModelInfo("deepseek", "deepseek-reasoner", 64_000, 8_192, True, False, 0.55, 2.19, ["reasoning"]),
+        ModelInfo(
+            "deepseek", "deepseek-chat", 64_000, 8_192, True, False, 0.27, 1.10, ["open", "cheap"]
+        ),
+        ModelInfo(
+            "deepseek", "deepseek-reasoner", 64_000, 8_192, True, False, 0.55, 2.19, ["reasoning"]
+        ),
     ]
 
 
@@ -148,11 +178,45 @@ class OpenRouterProvider(OpenAICompatProvider):
     DEFAULT_MODEL = "openai/gpt-4o-mini"
     KEY_ENV = "OPENROUTER_API_KEY"
     CATALOG = [
-        ModelInfo("openrouter", "openai/gpt-4o-mini", 128_000, 16_384, True, True, 0.15, 0.60, ["cheap"]),
-        ModelInfo("openrouter", "meta-llama/llama-3.3-70b-instruct", 128_000, 32_768, True, False, 0.12, 0.30, ["open"]),
-        ModelInfo("openrouter", "deepseek/deepseek-chat", 64_000, 8_192, True, False, 0.14, 0.28, ["open"]),
-        ModelInfo("openrouter", "google/gemini-2.0-flash-exp:free", 1_048_576, 8_192, True, True, 0.0, 0.0, ["free"]),
-        ModelInfo("openrouter", "mistralai/mistral-7b-instruct:free", 32_768, 8_192, True, False, 0.0, 0.0, ["free"]),
+        ModelInfo(
+            "openrouter", "openai/gpt-4o-mini", 128_000, 16_384, True, True, 0.15, 0.60, ["cheap"]
+        ),
+        ModelInfo(
+            "openrouter",
+            "meta-llama/llama-3.3-70b-instruct",
+            128_000,
+            32_768,
+            True,
+            False,
+            0.12,
+            0.30,
+            ["open"],
+        ),
+        ModelInfo(
+            "openrouter", "deepseek/deepseek-chat", 64_000, 8_192, True, False, 0.14, 0.28, ["open"]
+        ),
+        ModelInfo(
+            "openrouter",
+            "google/gemini-2.0-flash-exp:free",
+            1_048_576,
+            8_192,
+            True,
+            True,
+            0.0,
+            0.0,
+            ["free"],
+        ),
+        ModelInfo(
+            "openrouter",
+            "mistralai/mistral-7b-instruct:free",
+            32_768,
+            8_192,
+            True,
+            False,
+            0.0,
+            0.0,
+            ["free"],
+        ),
     ]
 
     def __init__(self, **kwargs: Any) -> None:

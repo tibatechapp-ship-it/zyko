@@ -27,7 +27,9 @@ def done_event(finish_reason: str = "stop") -> StreamEvent:
     return StreamEvent("done", {"finish_reason": finish_reason})
 
 
-async def accumulate_stream(events: AsyncIterator[StreamEvent]) -> tuple[str, list[dict[str, Any]], Any]:
+async def accumulate_stream(
+    events: AsyncIterator[StreamEvent],
+) -> tuple[str, list[dict[str, Any]], Any]:
     """Consume a stream and return ``(text, tool_call_accumulators, usage)``.
 
     Tool call accumulators are dicts keyed by provider index:

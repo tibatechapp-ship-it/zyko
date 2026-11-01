@@ -100,7 +100,9 @@ class MCPClient:
                     if "error" in message:
                         err = message["error"]
                         fut.set_exception(
-                            MCPError(f"mcp '{self.name}' error {err.get('code')}: {err.get('message')}")
+                            MCPError(
+                                f"mcp '{self.name}' error {err.get('code')}: {err.get('message')}"
+                            )
                         )
                     else:
                         fut.set_result(message.get("result"))
@@ -148,7 +150,8 @@ class MCPClient:
                     {
                         "name": tool.get("name") or "",
                         "description": tool.get("description") or "",
-                        "parameters": tool.get("inputSchema") or {"type": "object", "properties": {}},
+                        "parameters": tool.get("inputSchema")
+                        or {"type": "object", "properties": {}},
                     }
                 )
             cursor = page.get("nextCursor")
@@ -163,7 +166,9 @@ class MCPClient:
         elapsed = (time.perf_counter() - started) * 1000.0
         result = page.get("content") or []
         text = "\n".join(
-            part.get("text") or "" for part in result if isinstance(part, dict) and part.get("type") == "text"
+            part.get("text") or ""
+            for part in result
+            if isinstance(part, dict) and part.get("type") == "text"
         )
         if page.get("isError"):
             raise MCPError(f"mcp '{self.name}' tool '{name}' failed: {text[:300]}")
@@ -175,7 +180,8 @@ class MCPClient:
         return [
             {
                 "name": f"{self.name}__{tool['name']}",
-                "description": tool.get("description") or f"tool {tool['name']} from MCP server {self.name}",
+                "description": tool.get("description")
+                or f"tool {tool['name']} from MCP server {self.name}",
                 "parameters": tool.get("parameters") or {"type": "object", "properties": {}},
             }
             for tool in (tools if tools is not None else self._tools)

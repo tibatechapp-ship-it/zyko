@@ -29,7 +29,14 @@ def test_initialize_handshake():
     server = ZykoMCPServer(router=object())
     responses = _serve(
         server,
-        [{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": PROTOCOL_VERSION}}],
+        [
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {"protocolVersion": PROTOCOL_VERSION},
+            }
+        ],
     )
     assert len(responses) == 1
     result = responses[0]["result"]
@@ -41,7 +48,14 @@ def test_initialize_downgrades_unknown_protocol():
     server = ZykoMCPServer(router=object())
     responses = _serve(
         server,
-        [{"jsonrpc": "2.0", "id": 7, "method": "initialize", "params": {"protocolVersion": "1999-01-01"}}],
+        [
+            {
+                "jsonrpc": "2.0",
+                "id": 7,
+                "method": "initialize",
+                "params": {"protocolVersion": "1999-01-01"},
+            }
+        ],
     )
     assert responses[0]["result"]["protocolVersion"] == PROTOCOL_VERSION
 
@@ -106,8 +120,13 @@ def test_zyko_route_text_with_prompt():
             return {
                 "strategy": "balanced",
                 "ranking": [
-                    {"candidate": "fake/fake-small", "total": 0.9, "quality": 0.8,
-                     "cost_score": 1.0, "latency_score": 0.5},
+                    {
+                        "candidate": "fake/fake-small",
+                        "total": 0.9,
+                        "quality": 0.8,
+                        "cost_score": 1.0,
+                        "latency_score": 0.5,
+                    },
                 ],
             }
 
@@ -122,7 +141,11 @@ def test_zyko_chat_text_includes_receipt_footer():
 
     outcome = SimpleNamespace(
         response=SimpleNamespace(text="the answer"),
-        receipt={"chosen": "fake/fake-small", "strategy": "balanced", "attempts": [{"candidate": "fake/fake-small"}]},
+        receipt={
+            "chosen": "fake/fake-small",
+            "strategy": "balanced",
+            "attempts": [{"candidate": "fake/fake-small"}],
+        },
     )
 
     class FakeRouter:
@@ -141,7 +164,14 @@ def test_zyko_chat_empty_prompt_is_tool_error():
     server._router_built = True
     responses = _serve(
         server,
-        [{"jsonrpc": "2.0", "id": 9, "method": "tools/call", "params": {"name": "zyko_chat", "arguments": {"prompt": "   "}}}],
+        [
+            {
+                "jsonrpc": "2.0",
+                "id": 9,
+                "method": "tools/call",
+                "params": {"name": "zyko_chat", "arguments": {"prompt": "   "}},
+            }
+        ],
     )
     assert responses[0]["result"]["isError"] is True
     assert "non-empty" in responses[0]["result"]["content"][0]["text"]
@@ -151,7 +181,14 @@ def test_unknown_tool_call_is_error():
     server = ZykoMCPServer(router=object())
     responses = _serve(
         server,
-        [{"jsonrpc": "2.0", "id": 11, "method": "tools/call", "params": {"name": "nope", "arguments": {}}}],
+        [
+            {
+                "jsonrpc": "2.0",
+                "id": 11,
+                "method": "tools/call",
+                "params": {"name": "nope", "arguments": {}},
+            }
+        ],
     )
     assert responses[0]["result"]["isError"] is True
     assert "unknown tool" in responses[0]["result"]["content"][0]["text"]

@@ -30,9 +30,7 @@ class SharedLoop:
         with self._lock:
             if self._loop is None or self._thread is None or not self._thread.is_alive():
                 self._loop = asyncio.new_event_loop()
-                self._thread = threading.Thread(
-                    target=self._run, name="zyko-io", daemon=True
-                )
+                self._thread = threading.Thread(target=self._run, name="zyko-io", daemon=True)
                 self._thread.start()
             return self._loop
 
@@ -52,9 +50,7 @@ class SharedLoop:
         """Run *coro* on the shared loop and block until it finishes."""
         return self.submit(coro).result(timeout)
 
-    def iterate(
-        self, agen: AsyncIterator[T], *, cancel_on_close: bool = True
-    ) -> Iterator[T]:
+    def iterate(self, agen: AsyncIterator[T], *, cancel_on_close: bool = True) -> Iterator[T]:
         """Bridge an async iterator into a sync iterator via a queue."""
         q: "queue.Queue[tuple[str, object]]" = queue.Queue()
         task_holder: dict[str, object] = {}

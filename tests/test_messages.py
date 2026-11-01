@@ -15,7 +15,9 @@ def test_openai_roundtrip_with_tools():
     messages = [
         Message.system("be brief"),
         Message.user("hi"),
-        Message.assistant(tool_calls=[ToolCall(id="c1", name="calculator", arguments={"expression": "2+2"})]),
+        Message.assistant(
+            tool_calls=[ToolCall(id="c1", name="calculator", arguments={"expression": "2+2"})]
+        ),
         Message.tool_result("c1", "calculator", "4"),
     ]
     out = messages_to_openai(messages)

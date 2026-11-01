@@ -26,13 +26,55 @@ class AnthropicProvider(BaseProvider):
     DEFAULT_MODEL = "claude-sonnet-4-20250514"
     KEY_ENV = "ANTHROPIC_API_KEY"
     CATALOG = [
-        ModelInfo("anthropic", "claude-opus-4-20250514", 200_000, 32_000, True, True, 15.00, 75.00, ["flagship"]),
-        ModelInfo("anthropic", "claude-sonnet-4-20250514", 200_000, 64_000, True, True, 3.00, 15.00, ["balanced"]),
-        ModelInfo("anthropic", "claude-3-7-sonnet-20250219", 200_000, 64_000, True, True, 3.00, 15.00, ["balanced"]),
-        ModelInfo("anthropic", "claude-3-5-haiku-20241022", 200_000, 8_192, True, False, 0.80, 4.00, ["fast"]),
+        ModelInfo(
+            "anthropic",
+            "claude-opus-4-20250514",
+            200_000,
+            32_000,
+            True,
+            True,
+            15.00,
+            75.00,
+            ["flagship"],
+        ),
+        ModelInfo(
+            "anthropic",
+            "claude-sonnet-4-20250514",
+            200_000,
+            64_000,
+            True,
+            True,
+            3.00,
+            15.00,
+            ["balanced"],
+        ),
+        ModelInfo(
+            "anthropic",
+            "claude-3-7-sonnet-20250219",
+            200_000,
+            64_000,
+            True,
+            True,
+            3.00,
+            15.00,
+            ["balanced"],
+        ),
+        ModelInfo(
+            "anthropic",
+            "claude-3-5-haiku-20241022",
+            200_000,
+            8_192,
+            True,
+            False,
+            0.80,
+            4.00,
+            ["fast"],
+        ),
     ]
 
-    def _build(self, request: ChatRequest, *, stream: bool) -> tuple[str, dict[str, Any], dict[str, str]]:
+    def _build(
+        self, request: ChatRequest, *, stream: bool
+    ) -> tuple[str, dict[str, Any], dict[str, str]]:
         system, messages = messages_to_anthropic(request.messages)
         payload: dict[str, Any] = {
             "model": self._resolve_model(request),
@@ -61,7 +103,11 @@ class AnthropicProvider(BaseProvider):
                 text_parts.append(block.get("text") or "")
             elif btype == "tool_use":
                 tool_calls.append(
-                    ToolCall(id=block.get("id") or "", name=block.get("name") or "", arguments=block.get("input") or {})
+                    ToolCall(
+                        id=block.get("id") or "",
+                        name=block.get("name") or "",
+                        arguments=block.get("input") or {},
+                    )
                 )
         return ChatResponse(
             id=data.get("id") or "anthropic",
@@ -74,7 +120,9 @@ class AnthropicProvider(BaseProvider):
             raw=data,
         )
 
-    def _parse_stream_chunk(self, data: dict[str, Any], state: dict[str, Any]) -> StreamEvent | None:
+    def _parse_stream_chunk(
+        self, data: dict[str, Any], state: dict[str, Any]
+    ) -> StreamEvent | None:
         etype = data.get("type")
         if etype == "content_block_start":
             block = data.get("content_block") or {}
@@ -87,7 +135,12 @@ class AnthropicProvider(BaseProvider):
                 }
                 return StreamEvent(
                     "tool_call",
-                    {"index": index, "id": block.get("id") or "", "name": block.get("name") or "", "args_delta": ""},
+                    {
+                        "index": index,
+                        "id": block.get("id") or "",
+                        "name": block.get("name") or "",
+                        "args_delta": "",
+                    },
                 )
             state.setdefault("blocks", {})[index] = {"kind": "text"}
             return None
@@ -97,7 +150,12 @@ class AnthropicProvider(BaseProvider):
             if delta.get("type") == "input_json_delta":
                 return StreamEvent(
                     "tool_call",
-                    {"index": index, "id": "", "name": "", "args_delta": delta.get("partial_json") or ""},
+                    {
+                        "index": index,
+                        "id": "",
+                        "name": "",
+                        "args_delta": delta.get("partial_json") or "",
+                    },
                 )
             if delta.get("text"):
                 return StreamEvent("text", {"text": delta["text"]})

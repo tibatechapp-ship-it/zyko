@@ -140,11 +140,46 @@ def test_cost_cli_reports_spend_and_denials(tmp_path, capsys):
     _write_audit(
         audit,
         [
-            {"ts": now, "policy": "p", "event": "allow", "candidate": "fake/small", "redactions": ["EMAIL"]},
-            {"ts": now, "policy": "p", "event": "usage", "candidate": "fake/small", "cost": 0.002, "spent_today": 0.002, "estimated": False},
-            {"ts": now, "policy": "p", "event": "usage", "candidate": "fake/large", "cost": 0.01, "spent_today": 0.012, "estimated": True},
-            {"ts": now - 90 * 86400, "policy": "p", "event": "usage", "candidate": "fake/old", "cost": 5.0},
-            {"ts": now, "policy": "p", "event": "deny", "candidate": None, "rule": "budget_exceeded", "reason": "over cap"},
+            {
+                "ts": now,
+                "policy": "p",
+                "event": "allow",
+                "candidate": "fake/small",
+                "redactions": ["EMAIL"],
+            },
+            {
+                "ts": now,
+                "policy": "p",
+                "event": "usage",
+                "candidate": "fake/small",
+                "cost": 0.002,
+                "spent_today": 0.002,
+                "estimated": False,
+            },
+            {
+                "ts": now,
+                "policy": "p",
+                "event": "usage",
+                "candidate": "fake/large",
+                "cost": 0.01,
+                "spent_today": 0.012,
+                "estimated": True,
+            },
+            {
+                "ts": now - 90 * 86400,
+                "policy": "p",
+                "event": "usage",
+                "candidate": "fake/old",
+                "cost": 5.0,
+            },
+            {
+                "ts": now,
+                "policy": "p",
+                "event": "deny",
+                "candidate": None,
+                "rule": "budget_exceeded",
+                "reason": "over cap",
+            },
             "not-json-line",
         ],
     )
@@ -172,7 +207,13 @@ def test_cost_cli_days_window_excludes_old_entries(tmp_path, capsys):
         audit,
         [
             {"ts": now, "policy": "p", "event": "usage", "candidate": "fake/new", "cost": 0.01},
-            {"ts": now - 30 * 86400, "policy": "p", "event": "usage", "candidate": "fake/old", "cost": 9.0},
+            {
+                "ts": now - 30 * 86400,
+                "policy": "p",
+                "event": "usage",
+                "candidate": "fake/old",
+                "cost": 9.0,
+            },
         ],
     )
     assert main(["cost", "--audit", str(audit), "--days", "7"]) == 0

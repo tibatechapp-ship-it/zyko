@@ -23,7 +23,11 @@ def _req(**kw):
 def test_google_build_full_payload():
     provider = GoogleProvider(api_key="g-key")
     url, payload, headers = provider._build(
-        _req(temperature=0.4, max_tokens=256, tools=[{"name": "calc", "description": "d", "parameters": {"type": "object"}}]),
+        _req(
+            temperature=0.4,
+            max_tokens=256,
+            tools=[{"name": "calc", "description": "d", "parameters": {"type": "object"}}],
+        ),
         stream=False,
     )
     assert url.endswith("/models/gemini-2.5-flash:generateContent")
@@ -43,11 +47,18 @@ def test_google_parse_text_and_function_call():
     data = {
         "responseId": "rid-1",
         "modelVersion": "gemini-2.5-flash-001",
-        "candidates": [{"finishReason": "MAX_TOKENS", "content": {"parts": [
-            {"text": "partial"},
-            {"functionCall": {"name": "calc", "args": {"a": 1}}},
-            {"text": "text after call"},
-        ]}}],
+        "candidates": [
+            {
+                "finishReason": "MAX_TOKENS",
+                "content": {
+                    "parts": [
+                        {"text": "partial"},
+                        {"functionCall": {"name": "calc", "args": {"a": 1}}},
+                        {"text": "text after call"},
+                    ]
+                },
+            }
+        ],
         "usageMetadata": {"promptTokenCount": 12, "candidatesTokenCount": 34},
     }
     response = provider._parse_response(data, _req())
@@ -69,7 +80,9 @@ def test_google_parse_empty_candidates():
 
 def test_google_stream_chunks():
     provider = GoogleProvider(api_key="k")
-    text = provider._parse_stream_chunk({"candidates": [{"content": {"parts": [{"text": "chunk"}]}}]}, {})
+    text = provider._parse_stream_chunk(
+        {"candidates": [{"content": {"parts": [{"text": "chunk"}]}}]}, {}
+    )
     assert text == StreamEvent("text", {"text": "chunk"})
     call = provider._parse_stream_chunk(
         {"candidates": [{"content": {"parts": [{"functionCall": {"name": "t", "args": {}}}]}}]},
@@ -77,10 +90,16 @@ def test_google_stream_chunks():
     )
     assert call.type == "tool_call" and call.data["name"] == "t"
     state = {}
-    one = provider._parse_stream_chunk({"candidates": [{"content": {"parts": [{"functionCall": {"name": "x"}}]}}]}, state)
-    two = provider._parse_stream_chunk({"candidates": [{"content": {"parts": [{"functionCall": {"name": "y"}}]}}]}, state)
+    one = provider._parse_stream_chunk(
+        {"candidates": [{"content": {"parts": [{"functionCall": {"name": "x"}}]}}]}, state
+    )
+    two = provider._parse_stream_chunk(
+        {"candidates": [{"content": {"parts": [{"functionCall": {"name": "y"}}]}}]}, state
+    )
     assert one.data["index"] == 0 and two.data["index"] == 1
-    usage = provider._parse_stream_chunk({"usageMetadata": {"promptTokenCount": 3, "candidatesTokenCount": 4}}, {})
+    usage = provider._parse_stream_chunk(
+        {"usageMetadata": {"promptTokenCount": 3, "candidatesTokenCount": 4}}, {}
+    )
     assert usage.type == "usage"
     assert provider._parse_stream_chunk({"candidates": [{"content": {"parts": []}}]}, {}) is None
 
@@ -122,7 +141,9 @@ def test_ollama_stream_chunk_states():
     provider = OllamaProvider(api_key=None)
     text = provider._parse_stream_chunk({"message": {"content": "hi"}}, {})
     assert text == StreamEvent("text", {"text": "hi"})
-    call = provider._parse_stream_chunk({"message": {"tool_calls": [{"function": {"name": "f"}}]}}, {})
+    call = provider._parse_stream_chunk(
+        {"message": {"tool_calls": [{"function": {"name": "f"}}]}}, {}
+    )
     assert call.type == "tool_call"
     done = provider._parse_stream_chunk({"done": True, "prompt_eval_count": 5, "eval_count": 6}, {})
     assert done.type == "usage"

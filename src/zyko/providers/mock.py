@@ -31,10 +31,12 @@ class MockProvider(BaseProvider):
     local = True
     DEFAULT_MODEL = "mock-mini"
     CATALOG = [
-        ModelInfo("mock", "mock-mini", 32_000, 4_096, True, False, 0.0, 0.0,
-                  ["free", "offline", "test"]),
-        ModelInfo("mock", "mock-large", 128_000, 8_192, True, False, 0.0, 0.0,
-                  ["free", "offline", "test"]),
+        ModelInfo(
+            "mock", "mock-mini", 32_000, 4_096, True, False, 0.0, 0.0, ["free", "offline", "test"]
+        ),
+        ModelInfo(
+            "mock", "mock-large", 128_000, 8_192, True, False, 0.0, 0.0, ["free", "offline", "test"]
+        ),
     ]
 
     def _build(self, request: ChatRequest, *, stream: bool):  # pragma: no cover
@@ -94,10 +96,15 @@ class MockProvider(BaseProvider):
         tool_calls = self._tool_calls(request)
         if tool_calls:
             for tc in tool_calls:
-                yield StreamEvent("tool_call", {
-                    "index": 0, "id": tc.id, "name": tc.name,
-                    "args_delta": json.dumps(tc.arguments),
-                })
+                yield StreamEvent(
+                    "tool_call",
+                    {
+                        "index": 0,
+                        "id": tc.id,
+                        "name": tc.name,
+                        "args_delta": json.dumps(tc.arguments),
+                    },
+                )
             yield StreamEvent("done", {"finish_reason": "tool_calls"})
             return
         for word in self._reply_text(request).split(" "):

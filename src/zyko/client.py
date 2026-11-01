@@ -1,11 +1,11 @@
 """The one-liner client: ``Zyko()`` wires config, providers, policy, router.
 
-    from zyko import Zyko
+from zyko import Zyko
 
-    zk = Zyko()                      # keys from the environment
-    answer = zk.ask("hello")         # routed, policy-checked, receipted
-    print(answer.response.text)
-    print(answer.receipt["chosen"])  # verifiable routing decision
+zk = Zyko()                      # keys from the environment
+answer = zk.ask("hello")         # routed, policy-checked, receipted
+print(answer.response.text)
+print(answer.receipt["chosen"])  # verifiable routing decision
 """
 
 from __future__ import annotations
@@ -39,7 +39,11 @@ class Zyko:
         ledger_path: Path | None = None,
     ) -> None:
         self.settings = Settings.load(config_path)
-        self.providers = providers if providers is not None else configured_providers(self.settings.provider_settings)
+        self.providers = (
+            providers
+            if providers is not None
+            else configured_providers(self.settings.provider_settings)
+        )
         resolved = policy if policy is not None else self.settings.get("default_policy")
         if isinstance(resolved, str):
             self.policy = load_policy(resolved)
@@ -83,7 +87,9 @@ class Zyko:
     def ask(self, prompt: str, **kwargs: Any) -> RouteResult:
         return run_sync(self.aask(prompt, **kwargs))
 
-    async def achat(self, messages: list[Message], *, model: str | None = None, **kwargs: Any) -> RouteResult:
+    async def achat(
+        self, messages: list[Message], *, model: str | None = None, **kwargs: Any
+    ) -> RouteResult:
         return await self.router.aroute(ChatRequest(messages=messages, model=model, **kwargs))
 
     def chat(self, messages: list[Message], **kwargs: Any) -> RouteResult:

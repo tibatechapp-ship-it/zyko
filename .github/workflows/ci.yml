@@ -33,6 +33,23 @@ jobs:
           python-version: "3.12"
       - run: pip install ruff
       - run: ruff check src tests benchmarks
+      - run: ruff format --check src tests benchmarks
+
+  security:
+    name: security (bandit + pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install bandit pip-audit
+      - name: Static analysis (SAST)
+        run: bandit -r src/zyko -q --exit-zero-on-skipped
+      - name: Dependency audit (declared deps only)
+        run: |
+          pip install -e .
+          pip-audit --skip-editable
 
   rust-kernel:
     runs-on: ubuntu-latest

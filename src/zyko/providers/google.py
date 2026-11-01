@@ -11,7 +11,12 @@ from zyko.core.models import ModelInfo
 from zyko.core.response import ChatRequest, ChatResponse
 from zyko.providers.base import BaseProvider, _usage_from
 
-FINISH_MAP = {"STOP": "stop", "MAX_TOKENS": "length", "SAFETY": "content_filter", "RECITATION": "stop"}
+FINISH_MAP = {
+    "STOP": "stop",
+    "MAX_TOKENS": "length",
+    "SAFETY": "content_filter",
+    "RECITATION": "stop",
+}
 
 
 class GoogleProvider(BaseProvider):
@@ -20,12 +25,34 @@ class GoogleProvider(BaseProvider):
     DEFAULT_MODEL = "gemini-2.5-flash"
     KEY_ENV = ("GEMINI_API_KEY", "GOOGLE_API_KEY")
     CATALOG = [
-        ModelInfo("google", "gemini-2.5-pro", 1_048_576, 65_536, True, True, 1.25, 10.00, ["flagship", "reasoning"]),
-        ModelInfo("google", "gemini-2.5-flash", 1_048_576, 65_536, True, True, 0.30, 2.50, ["fast", "cheap"]),
+        ModelInfo(
+            "google",
+            "gemini-2.5-pro",
+            1_048_576,
+            65_536,
+            True,
+            True,
+            1.25,
+            10.00,
+            ["flagship", "reasoning"],
+        ),
+        ModelInfo(
+            "google",
+            "gemini-2.5-flash",
+            1_048_576,
+            65_536,
+            True,
+            True,
+            0.30,
+            2.50,
+            ["fast", "cheap"],
+        ),
         ModelInfo("google", "gemini-2.0-flash", 1_048_576, 8_192, True, True, 0.10, 0.40, ["fast"]),
     ]
 
-    def _build(self, request: ChatRequest, *, stream: bool) -> tuple[str, dict[str, Any], dict[str, str]]:
+    def _build(
+        self, request: ChatRequest, *, stream: bool
+    ) -> tuple[str, dict[str, Any], dict[str, str]]:
         model = self._resolve_model(request)
         system, contents = messages_to_google(request.messages)
         payload: dict[str, Any] = {"contents": contents}
@@ -59,7 +86,11 @@ class GoogleProvider(BaseProvider):
             elif "functionCall" in part:
                 call = part["functionCall"]
                 tool_calls.append(
-                    ToolCall(id=f"call_{len(tool_calls)}_{i}", name=call.get("name") or "", arguments=call.get("args") or {})
+                    ToolCall(
+                        id=f"call_{len(tool_calls)}_{i}",
+                        name=call.get("name") or "",
+                        arguments=call.get("args") or {},
+                    )
                 )
         return ChatResponse(
             id=data.get("responseId") or "google",
@@ -70,14 +101,18 @@ class GoogleProvider(BaseProvider):
             usage=_usage_from(
                 {
                     "prompt_tokens": (data.get("usageMetadata") or {}).get("promptTokenCount"),
-                    "completion_tokens": (data.get("usageMetadata") or {}).get("candidatesTokenCount"),
+                    "completion_tokens": (data.get("usageMetadata") or {}).get(
+                        "candidatesTokenCount"
+                    ),
                 }
             ),
             finish_reason=FINISH_MAP.get(candidate.get("finishReason", "STOP"), "stop"),
             raw=data,
         )
 
-    def _parse_stream_chunk(self, data: dict[str, Any], state: dict[str, Any]) -> StreamEvent | None:
+    def _parse_stream_chunk(
+        self, data: dict[str, Any], state: dict[str, Any]
+    ) -> StreamEvent | None:
         candidates = data.get("candidates") or [{}]
         parts = ((candidates[0].get("content") or {}).get("parts")) or []
         for part in parts:
@@ -89,7 +124,12 @@ class GoogleProvider(BaseProvider):
                 state["call_index"] = idx + 1
                 return StreamEvent(
                     "tool_call",
-                    {"index": idx, "id": f"call_{idx}", "name": call.get("name") or "", "args_delta": ""},
+                    {
+                        "index": idx,
+                        "id": f"call_{idx}",
+                        "name": call.get("name") or "",
+                        "args_delta": "",
+                    },
                 )
         if data.get("usageMetadata"):
             meta = data["usageMetadata"]

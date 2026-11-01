@@ -73,4 +73,13 @@ class ChatResponse:
         return self.content or ""
 
 
-FINISH_ALIASES = {"stop": "stop", "end_turn": "stop", "tool_use": "tool_calls", "tool_calls": "tool_calls", "length": "length", "MAX_TOKENS": "length", "SAFETY": "content_filter", "content_filter": "content_filter"}
+FINISH_ALIASES = {
+    "stop": "stop",
+    "end_turn": "stop",
+    "tool_use": "tool_calls",
+    "tool_calls": "tool_calls",
+    "length": "length",
+    "MAX_TOKENS": "length",
+    "SAFETY": "content_filter",
+    "content_filter": "content_filter",
+}

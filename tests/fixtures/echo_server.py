@@ -41,17 +41,36 @@ for raw in sys.stdin:
         params = msg.get("params") or {}
         name = params.get("name")
         if name != "echo":
-            sys.stdout.write(json.dumps({"jsonrpc": "2.0", "id": msg_id,
-                                         "error": {"code": -32602, "message": f"unknown tool: {name}"}}) + "\n")
+            sys.stdout.write(
+                json.dumps(
+                    {
+                        "jsonrpc": "2.0",
+                        "id": msg_id,
+                        "error": {"code": -32602, "message": f"unknown tool: {name}"},
+                    }
+                )
+                + "\n"
+            )
             sys.stdout.flush()
             continue
         args = params.get("arguments") or {}
-        result = {"content": [{"type": "text", "text": f"echo: {args.get('text', '')}"}], "isError": False}
+        result = {
+            "content": [{"type": "text", "text": f"echo: {args.get('text', '')}"}],
+            "isError": False,
+        }
     elif method == "ping":
         result = {}
     else:
-        sys.stdout.write(json.dumps({"jsonrpc": "2.0", "id": msg_id,
-                                     "error": {"code": -32601, "message": "no such method"}}) + "\n")
+        sys.stdout.write(
+            json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "error": {"code": -32601, "message": "no such method"},
+                }
+            )
+            + "\n"
+        )
         sys.stdout.flush()
         continue
     sys.stdout.write(json.dumps({"jsonrpc": "2.0", "id": msg_id, "result": result}) + "\n")

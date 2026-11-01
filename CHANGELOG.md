@@ -1,5 +1,55 @@
 # Changelog
 
+## 0.3.2 — full evaluation round: coverage 92% → 98%, security gate in CI, 3 real bugs fixed
+
+A complete quality round — coverage analysis, lint, security audit — executed
+on the whole codebase, with every finding fixed and regression-tested.
+
+### Real bugs found & fixed
+- **`Settings.load()` leaked environment overrides into module-level
+  defaults.** `_deep_merge` shared nested dicts with the `DEFAULTS` constant,
+  so the first `load()` with `ZYKO_*` env vars (or YAML values) permanently
+  rewrote the defaults for the whole process — later calls inherited the
+  first call's environment, cross-contaminating long-lived gateway processes
+  and unrelated tests. Defaults are now deep-copied per call
+  (`tests/test_eval_round.py::test_settings_env_overrides_do_not_poison_defaults`).
+- **`policies_dir()` / `agents_dir(create=True)` did not create the returned
+  directory** — only its parent. `create=True` now guarantees the leaf
+  exists, as every caller reasonably assumed.
+- **`PolicyEngine` crashed with a raw `AttributeError` on malformed policy
+  sections** (`defaults`/`privacy`/`rate_limit`/`audit` set to a non-mapping
+  value) *before* the schema-warnings machinery could report them. Malformed
+  sections now degrade to the documented warnings.
+
+### Evaluation results
+- **Coverage 92% → 98%** (3491 statements, 84 uncovered) with 107 new tests
+  in `tests/test_eval_round.py` + `tests/test_eval_round2.py`: settings
+  layering/interpolation/templates, quality-ledger EWMA/persistence/garbage
+  input, gateway 401/404/400/502 + tool-message parsing, full MCP client
+  lifecycle (timeouts, server errors, `isError`, pagination, closed streams,
+  sync wrappers), streaming governance charging (vendor usage → audit with
+  `estimated: false`), circuit-breaker skip + policy-deny routing, platform
+  detection (Windows/macOS/Android/Termux), OpenAI/Anthropic payload &
+  stream-chunk matrices, benchmark graders matrix + demo run with
+  `--update-ledger`, CLI surfaces (`models`, `route --json`, `ask --explain
+  --receipt`, `serve` happy path + Ctrl-C, `sessions`, `cost` from a real
+  audit log, `doctor`, `policy`), POSIX exit codes 130/141 via subprocesses,
+  and the event/JSON message primitives.
+- **Lint**: `ruff check` clean and the whole tree now `ruff format`-clean;
+  the CI lint job enforces `ruff format --check` from now on.
+- **Security gate added to CI**: a `security` job runs
+  `bandit -c pyproject.toml -r src/zyko` (0 findings) and `pip-audit` on the
+  declared dependency surface (`httpx`, `PyYAML` — clean). The intentional
+  `shell=True` in the policy-gated `shell` tool is documented inline and
+  suppressed with a scoped `# nosec B602`; assert-based invariants (B101)
+  and retry-jitter `random` (B311) are covered by the project bandit config.
+- **CLI smoke**: `zyko --version` via `python -m zyko` is now tested.
+- **Install scripts restored** to the repo root: `zyko.sh` / `zyko.cmd`
+  zero-install runners, `install.sh` / `install.bat` / `install.ps1`
+  installers, a developer `Makefile`, and a gateway `Dockerfile`
+  (stdlib-only runtime, healthcheck on `/healthz`).
+- Tests: 230 → **337**.
+
 ## 0.3.1 — CLI robustness round: no more raw tracebacks
 
 A targeted audit of the CLI surfaced three defects a user could hit on a

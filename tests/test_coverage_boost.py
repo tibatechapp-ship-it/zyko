@@ -114,7 +114,7 @@ async def test_mcp_server_subprocess_round_trip(tmp_path, monkeypatch):
         answer = await client.call_tool("zyko_chat", {"prompt": "hello zyko"})
         assert "routed via" in answer
         namespaced = client.as_tools()
-        assert all(n.startswith("zyko__") for n, in [(t["name"],) for t in namespaced])
+        assert all(n.startswith("zyko__") for (n,) in [(t["name"],) for t in namespaced])
         assert MCPClient.split_qualified("zyko__chat") == ("zyko", "chat")
         assert MCPClient.split_qualified("chat") is None
     finally:

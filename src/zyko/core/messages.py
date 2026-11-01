@@ -76,7 +76,9 @@ class Message:
         return cls(role=Role.USER, content=text)
 
     @classmethod
-    def assistant(cls, text: str | None = None, tool_calls: list[ToolCall] | None = None) -> "Message":
+    def assistant(
+        cls, text: str | None = None, tool_calls: list[ToolCall] | None = None
+    ) -> "Message":
         return cls(role=Role.ASSISTANT, content=text, tool_calls=tool_calls)
 
     @classmethod

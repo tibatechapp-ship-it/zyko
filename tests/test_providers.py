@@ -33,12 +33,21 @@ def test_openai_request_shape_and_parse():
         captured["url"] = str(request.url)
         captured["auth"] = request.headers.get("Authorization")
         captured["payload"] = json.loads(request.content)
-        return httpx.Response(200, json={
-            "id": "x1", "model": "gpt-4o-mini",
-            "choices": [{"index": 0, "message": {"role": "assistant", "content": "hello!"},
-                         "finish_reason": "stop"}],
-            "usage": {"prompt_tokens": 12, "completion_tokens": 5},
-        })
+        return httpx.Response(
+            200,
+            json={
+                "id": "x1",
+                "model": "gpt-4o-mini",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"role": "assistant", "content": "hello!"},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {"prompt_tokens": 12, "completion_tokens": 5},
+            },
+        )
 
     provider = OpenAICompatProvider(api_key="sk-test", transport=httpx.MockTransport(handler))
     resp = provider.complete(_request(model="gpt-4o-mini", temperature=0.2))
@@ -56,13 +65,42 @@ def test_openai_tools_payload():
 
     def handler(request: httpx.Request) -> httpx.Response:
         captured["payload"] = json.loads(request.content)
-        return httpx.Response(200, json={"id": "x", "choices": [{"message": {"content": None,
-            "tool_calls": [{"id": "c1", "type": "function",
-                            "function": {"name": "calculator", "arguments": "{\"expression\": \"2+2\"}"}}],
-            }, "finish_reason": "tool_calls"}], "usage": {}})
+        return httpx.Response(
+            200,
+            json={
+                "id": "x",
+                "choices": [
+                    {
+                        "message": {
+                            "content": None,
+                            "tool_calls": [
+                                {
+                                    "id": "c1",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "calculator",
+                                        "arguments": '{"expression": "2+2"}',
+                                    },
+                                }
+                            ],
+                        },
+                        "finish_reason": "tool_calls",
+                    }
+                ],
+                "usage": {},
+            },
+        )
 
     provider = OpenAICompatProvider(api_key="k", transport=httpx.MockTransport(handler))
-    request = _request(tools=[{"name": "calculator", "description": "calc", "parameters": {"type": "object", "properties": {}}}])
+    request = _request(
+        tools=[
+            {
+                "name": "calculator",
+                "description": "calc",
+                "parameters": {"type": "object", "properties": {}},
+            }
+        ]
+    )
     resp = provider.complete(request)
     assert captured["payload"]["tools"][0]["type"] == "function"
     assert resp.tool_calls[0].name == "calculator"
@@ -122,15 +160,27 @@ def test_anthropic_build_and_parse():
         captured["url"] = str(request.url)
         captured["headers"] = dict(request.headers)
         captured["payload"] = json.loads(request.content)
-        return httpx.Response(200, json={
-            "id": "msg_1", "model": "claude-sonnet-4-20250514",
-            "content": [{"type": "text", "text": "answer"}, {"type": "tool_use", "id": "tu1", "name": "t", "input": {"a": 1}}],
-            "stop_reason": "tool_use", "usage": {"input_tokens": 9, "output_tokens": 4},
-        })
+        return httpx.Response(
+            200,
+            json={
+                "id": "msg_1",
+                "model": "claude-sonnet-4-20250514",
+                "content": [
+                    {"type": "text", "text": "answer"},
+                    {"type": "tool_use", "id": "tu1", "name": "t", "input": {"a": 1}},
+                ],
+                "stop_reason": "tool_use",
+                "usage": {"input_tokens": 9, "output_tokens": 4},
+            },
+        )
 
     provider = AnthropicProvider(api_key="ak", transport=httpx.MockTransport(handler))
     request = ChatRequest(
-        messages=[Message.system("be nice"), Message.user("hi"), Message.tool_result("tu0", "t", "prev")],
+        messages=[
+            Message.system("be nice"),
+            Message.user("hi"),
+            Message.tool_result("tu0", "t", "prev"),
+        ],
         max_tokens=123,
     )
     resp = provider.complete(request)
@@ -180,10 +230,13 @@ def test_google_build_and_parse():
         captured["url"] = str(request.url)
         captured["key"] = request.headers.get("x-goog-api-key")
         captured["payload"] = json.loads(request.content)
-        return httpx.Response(200, json={
-            "candidates": [{"finishReason": "STOP", "content": {"parts": [{"text": "g'day"}]}}],
-            "usageMetadata": {"promptTokenCount": 8, "candidatesTokenCount": 3},
-        })
+        return httpx.Response(
+            200,
+            json={
+                "candidates": [{"finishReason": "STOP", "content": {"parts": [{"text": "g'day"}]}}],
+                "usageMetadata": {"promptTokenCount": 8, "candidatesTokenCount": 3},
+            },
+        )
 
     provider = GoogleProvider(api_key="gk", transport=httpx.MockTransport(handler))
     request = ChatRequest(messages=[Message.system("s"), Message.user("hi")], temperature=0.1)
@@ -198,9 +251,19 @@ def test_google_build_and_parse():
 
 def test_google_function_call_parse():
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json={
-            "candidates": [{"finishReason": "STOP", "content": {"parts": [
-                {"functionCall": {"name": "find", "args": {"q": "x"}}}]}}]})
+        return httpx.Response(
+            200,
+            json={
+                "candidates": [
+                    {
+                        "finishReason": "STOP",
+                        "content": {
+                            "parts": [{"functionCall": {"name": "find", "args": {"q": "x"}}}]
+                        },
+                    }
+                ]
+            },
+        )
 
     provider = GoogleProvider(api_key="k", transport=httpx.MockTransport(handler))
     resp = provider.complete(_request())
@@ -215,12 +278,22 @@ def test_ollama_native_chat_and_tools():
     def handler(request: httpx.Request) -> httpx.Response:
         captured["url"] = str(request.url)
         captured["payload"] = json.loads(request.content)
-        return httpx.Response(200, json={
-            "model": "llama3.2",
-            "message": {"role": "assistant", "content": "local answer",
-                        "tool_calls": [{"function": {"name": "calc", "arguments": {"expression": "1+1"}}}]},
-            "prompt_eval_count": 15, "eval_count": 6, "done": True,
-        })
+        return httpx.Response(
+            200,
+            json={
+                "model": "llama3.2",
+                "message": {
+                    "role": "assistant",
+                    "content": "local answer",
+                    "tool_calls": [
+                        {"function": {"name": "calc", "arguments": {"expression": "1+1"}}}
+                    ],
+                },
+                "prompt_eval_count": 15,
+                "eval_count": 6,
+                "done": True,
+            },
+        )
 
     provider = OllamaProvider(transport=httpx.MockTransport(handler))
     resp = provider.complete(_request(model="llama3.2"))

@@ -39,11 +39,17 @@ def test_route_without_providers_falls_back_to_demo(capsys):
 
 def test_policy_check_valid_file(tmp_path, capsys):
     path = tmp_path / "p.yaml"
-    path.write_text(yaml.safe_dump({
-        "version": 1, "name": "ci-policy",
-        "defaults": {"budget_usd_per_day": 3.0},
-        "privacy": {"redact": ["email"]},
-    }), encoding="utf-8")
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "version": 1,
+                "name": "ci-policy",
+                "defaults": {"budget_usd_per_day": 3.0},
+                "privacy": {"redact": ["email"]},
+            }
+        ),
+        encoding="utf-8",
+    )
     assert main(["policy", "check", str(path)]) == 0
     out = capsys.readouterr().out
     assert "ci-policy" in out and "valid" in out
@@ -70,7 +76,17 @@ def test_receipt_json_written(tmp_path, capsys, monkeypatch):
     fake = FakeProvider(script=["routed answer"])
     monkeypatch.setattr("zyko.cli.commands.configured_providers", lambda *_a, **_k: {"fake": fake})
     receipt_path = tmp_path / "receipt.json"
-    code = main(["ask", "hello", "--receipt", str(receipt_path), "--explain", "--ledger", str(tmp_path / "l.json")])
+    code = main(
+        [
+            "ask",
+            "hello",
+            "--receipt",
+            str(receipt_path),
+            "--explain",
+            "--ledger",
+            str(tmp_path / "l.json"),
+        ]
+    )
     assert code == 0
     out = capsys.readouterr().out
     assert "routed answer" in out

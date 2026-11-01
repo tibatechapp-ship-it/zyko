@@ -48,7 +48,9 @@ def test_429_parses_retry_after_seconds():
 
 
 def test_429_parses_retry_after_http_date():
-    resp = httpx.Response(429, headers={"Retry-After": "Fri, 01 Jan 2038 00:00:00 GMT"}, text="busy")
+    resp = httpx.Response(
+        429, headers={"Retry-After": "Fri, 01 Jan 2038 00:00:00 GMT"}, text="busy"
+    )
     value = _retry_after_seconds(resp)
     assert value is not None and value > 0
 
@@ -109,7 +111,10 @@ async def test_stream_cost_recorded_from_vendor_usage(tmp_path):
             content=_sse(
                 [
                     {"choices": [{"delta": {"content": "hello"}}]},
-                    {"choices": [{"delta": {}}], "usage": {"prompt_tokens": 1000, "completion_tokens": 500}},
+                    {
+                        "choices": [{"delta": {}}],
+                        "usage": {"prompt_tokens": 1000, "completion_tokens": 500},
+                    },
                     {"choices": [{"delta": {}, "finish_reason": "stop"}]},
                 ]
             ),
@@ -118,13 +123,12 @@ async def test_stream_cost_recorded_from_vendor_usage(tmp_path):
     from zyko.policy.engine import PolicyEngine
 
     provider = _OpenAIStub(handler)
-    policy = PolicyEngine({"version": 1, "name": "t", "defaults": {"budget_usd_per_day": 1.0}}, state_dir=tmp_path)
+    policy = PolicyEngine(
+        {"version": 1, "name": "t", "defaults": {"budget_usd_per_day": 1.0}}, state_dir=tmp_path
+    )
     router = Router({"openai": provider}, ledger=QualityLedger.empty(), policy=policy)
 
-    events = [
-        ev
-        async for ev in router.astream_route(ChatRequest(messages=[Message.user("hi")]))
-    ]
+    events = [ev async for ev in router.astream_route(ChatRequest(messages=[Message.user("hi")]))]
     assert any(e.type == "text" and e.data.get("text") == "hello" for e in events)
     assert any(e.type == "done" for e in events)
     # the request asked the vendor to report usage
@@ -149,13 +153,12 @@ async def test_stream_cost_estimated_without_vendor_usage(tmp_path):
     from zyko.policy.engine import PolicyEngine
 
     provider = _OpenAIStub(handler)
-    policy = PolicyEngine({"version": 1, "name": "t", "defaults": {"budget_usd_per_day": 1.0}}, state_dir=tmp_path)
+    policy = PolicyEngine(
+        {"version": 1, "name": "t", "defaults": {"budget_usd_per_day": 1.0}}, state_dir=tmp_path
+    )
     router = Router({"openai": provider}, ledger=QualityLedger.empty(), policy=policy)
 
-    events = [
-        ev
-        async for ev in router.astream_route(ChatRequest(messages=[Message.user("hi")]))
-    ]
+    events = [ev async for ev in router.astream_route(ChatRequest(messages=[Message.user("hi")]))]
     assert any(e.type == "text" for e in events)
     est_in = max(kernel.messages_tokens([Message.user("hi")]), 1)
     expected = (est_in * 0.15 + 400 * 0.60) / 1_000_000.0  # DEFAULT_EST_OUT = 400

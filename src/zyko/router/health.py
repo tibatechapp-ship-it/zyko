@@ -40,7 +40,9 @@ class HealthTracker:
             state.failures = 0
             state.opened_at = None
             state.latency_ms = (
-                latency_ms if state.latency_ms is None else state.latency_ms * (1 - ALPHA) + latency_ms * ALPHA
+                latency_ms
+                if state.latency_ms is None
+                else state.latency_ms * (1 - ALPHA) + latency_ms * ALPHA
             )
         else:
             state.total_failures += 1

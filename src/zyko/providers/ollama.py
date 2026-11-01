@@ -27,13 +27,17 @@ class OllamaProvider(BaseProvider):
     local = True
     _stream_protocol = "ndjson"
     CATALOG_FALLBACK = [
-        ModelInfo("ollama", "llama3.2", 128_000, 8_192, True, False, 0.0, 0.0, ["local"], local=True),
+        ModelInfo(
+            "ollama", "llama3.2", 128_000, 8_192, True, False, 0.0, 0.0, ["local"], local=True
+        ),
         ModelInfo("ollama", "qwen2.5", 32_768, 8_192, True, False, 0.0, 0.0, ["local"], local=True),
         ModelInfo("ollama", "gemma2", 8_192, 8_192, False, False, 0.0, 0.0, ["local"], local=True),
         ModelInfo("ollama", "mistral", 32_768, 8_192, True, False, 0.0, 0.0, ["local"], local=True),
     ]
 
-    def _build(self, request: ChatRequest, *, stream: bool) -> tuple[str, dict[str, Any], dict[str, str]]:
+    def _build(
+        self, request: ChatRequest, *, stream: bool
+    ) -> tuple[str, dict[str, Any], dict[str, str]]:
         payload: dict[str, Any] = {
             "model": self._resolve_model(request),
             "messages": [m.to_openai() for m in request.messages],
@@ -73,7 +77,9 @@ class OllamaProvider(BaseProvider):
             raw=data,
         )
 
-    def _parse_stream_chunk(self, data: dict[str, Any], state: dict[str, Any]) -> StreamEvent | None:
+    def _parse_stream_chunk(
+        self, data: dict[str, Any], state: dict[str, Any]
+    ) -> StreamEvent | None:
         message = data.get("message") or {}
         if message.get("content"):
             return StreamEvent("text", {"text": message["content"]})

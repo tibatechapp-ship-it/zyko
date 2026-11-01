@@ -109,9 +109,7 @@ class MemoryStore:
     def delete_session(self, session: str) -> bool:
         """Remove a session and all of its messages. True if it existed."""
         with self._lock:
-            row = self._conn.execute(
-                "SELECT 1 FROM sessions WHERE id = ?", (session,)
-            ).fetchone()
+            row = self._conn.execute("SELECT 1 FROM sessions WHERE id = ?", (session,)).fetchone()
             existed = row is not None
             if existed:
                 self._conn.execute("DELETE FROM messages WHERE session_id = ?", (session,))

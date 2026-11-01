@@ -1,3 +1,72 @@
+# ZYKO v0.3.2 — Readiness Report (release QA)
+
+Status: **READY** — all gates green on the reference environment (Linux, Python 3.12),
+after a **full evaluation round**: coverage analysis, lint, and a security audit,
+with every finding fixed and regression-tested.
+
+## Gates
+
+| Gate | Command | Result |
+|---|---|---|
+| Unit/integration tests (plain `pytest`, same as CI) | `pytest` | **337 passed** (0 failed, 0 skipped, ~19s) |
+| Lint | `ruff check src tests benchmarks` | **0 findings** |
+| Formatting | `ruff format --check src tests benchmarks` | **clean** (79 files) — now enforced in CI |
+| Coverage (reference platform) | `pytest --cov=src/zyko` | **98% total** (3491 stmts, 84 uncovered; `router/quality` 100%, `utils/loop` 98%, `providers/base` 98%, `gateway` 93%+, `mcp/client` 94%+) |
+| Security (SAST) | `bandit -c pyproject.toml -r src/zyko` | **0 findings** — new CI `security` job; intentional policy-gated `shell=True` documented with scoped `# nosec B602` |
+| Security (dependencies) | `pip-audit --skip-editable` | `httpx` + `PyYAML` **clean** at release time — new CI `security` job |
+| Byte-compile | `python -m compileall src tests` | clean |
+| Secret scan | `git grep` for token/key patterns | clean — no credentials in tree |
+| Version sync | `src/zyko/version.py` ↔ `pyproject.toml` | both **0.3.2** (enforced by `test_pyproject_version_matches_package`) |
+| CLI smoke (all commands, demo mode) | `zyko version/info/doctor/models/route/ask/chat/sessions/policy/mcp/run/serve+curl/bench/cost` | all exit 0 or fail cleanly with hints |
+| CLI failure paths | busy port · closed pipe · `--json` without audit log · Ctrl-C | exit 141/130 quiet · valid empty-report JSON · friendly `[FAIL]` + hint |
+| Danger-tool lock | `allow: ["*"]` + `shell` call | blocked — wildcard never unlocks danger tools; explicit `tools.allow` entry required |
+| Keyless first run (no flags) | `zyko route "hello"` with zero keys | exit 0 — auto-fallback to the demo provider with a notice |
+| MCP stdio protocol | `initialize` → `tools/list` → `tools/call` + malformed-frame probe | correct JSON-RPC 2.0; bad frames get `-32700`, server survives |
+| Gateway | OpenAI-compatible `/v1/chat/completions` incl. SSE, real socket, keep-alive | 401 then 200 on the same connection; 502 with typed `zyko_upstream_error` on total upstream failure |
+| Install scripts (restored) | `./zyko.sh --version` · `ZYKO_VENV=/tmp/x ./install.sh` | runner execs `zyko 0.3.2`; clean-venv install verified end-to-end |
+| Landing site | `docs/site` AR(RTL)/EN | badges refreshed (337 · 98% · bandit 0) |
+| Social card | `docs/assets/social-card.png` | version chip repainted **v0.3.2** (in-place patch, pixel-verified) |
+
+## Fixed in the v0.3.2 round (real bugs from the evaluation)
+
+1. **`Settings.load()` global-state leak** — `_deep_merge` shared nested dicts
+   with the module-level `DEFAULTS`, so the first `load()` with `ZYKO_*` env
+   vars (or YAML values) permanently rewrote the defaults for the whole
+   process; later calls inherited the first call's environment
+   (cross-contaminating long-lived gateway processes and tests). Defaults are
+   now deep-copied per call, pinned by a dedicated regression test.
+2. **`policies_dir()` / `agents_dir(create=True)` returned a directory that
+   did not exist** — only the parent was created. `create=True` now
+   guarantees the leaf itself exists.
+3. **`PolicyEngine` crashed with a raw `AttributeError` on malformed policy
+   sections** (`defaults`/`privacy`/`rate_limit`/`audit` set to a non-mapping)
+   before the schema-warnings machinery could run. Malformed sections now
+   degrade to the documented warnings.
+
+## Added in v0.3.2
+
+- **CI `security` job**: bandit (SAST) + pip-audit (declared deps), plus
+  `ruff format --check` in the lint job.
+- **107 new tests** (`tests/test_eval_round.py`, `tests/test_eval_round2.py`):
+  settings layering/interpolation/templates + the defaults-poisoning
+  regression, quality-ledger EWMA/persistence/garbage input, gateway
+  401/404/400/502 and tool-message parsing, full MCP client lifecycle
+  (timeouts, server errors, `isError`, pagination, closed streams, sync
+  wrappers), streaming governance charging (vendor usage → audit
+  `estimated: false`), circuit-breaker skip and policy-deny routing paths,
+  platform detection (Windows/macOS/Android/Termux), OpenAI/Anthropic payload
+  and stream-chunk matrices, benchmark graders matrix + demo run with
+  `--update-ledger`, CLI surfaces (`models`, `route --json`, `ask --explain
+  --receipt`, `serve` happy path + Ctrl-C, `sessions`, `cost` from a real
+  audit log, `doctor`, `policy`), POSIX exit codes 130/141 via subprocesses,
+  and the event/JSON message primitives.
+- **Install scripts restored** to the repo root: `zyko.sh` / `zyko.cmd`
+  zero-install runners, `install.sh` / `install.bat` / `install.ps1`, a
+  developer `Makefile` (test/coverage/lint/format/security/bench), and a
+  gateway `Dockerfile` with a `/healthz` healthcheck.
+
+---
+
 # ZYKO v0.3.1 — Readiness Report (release QA)
 
 Status: **READY** — all gates green on the reference environment (Linux, Python 3.12),

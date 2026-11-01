@@ -92,7 +92,11 @@ def build_provider(
     api_key = kwargs.pop("api_key", None) or _resolve_key(cls, settings)
     base_url = kwargs.pop("base_url", None) or settings.get("base_url")
     if not api_key and not cls.local:
-        env_hint = cls.KEY_ENV if isinstance(cls.KEY_ENV, str) else (cls.KEY_ENV[0] if cls.KEY_ENV else "<KEY>")
+        env_hint = (
+            cls.KEY_ENV
+            if isinstance(cls.KEY_ENV, str)
+            else (cls.KEY_ENV[0] if cls.KEY_ENV else "<KEY>")
+        )
         raise ConfigError(
             f"provider '{name}' has no API key",
             hint=f"export {env_hint}=<your-key> or set providers.{name}.api_key in the config",

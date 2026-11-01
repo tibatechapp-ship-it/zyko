@@ -86,7 +86,10 @@ def test_cli_route_demo_table(capsys, monkeypatch):
 def test_cli_bench_demo_json_report(tmp_path, capsys, monkeypatch):
     monkeypatch.delenv("ZYKO_DEMO", raising=False)
     out_path = tmp_path / "bench.json"
-    assert main(["bench", "--demo", "--json-out", str(out_path), "--ledger", str(tmp_path / "l.json")]) == 0
+    assert (
+        main(["bench", "--demo", "--json-out", str(out_path), "--ledger", str(tmp_path / "l.json")])
+        == 0
+    )
     report = json.loads(out_path.read_text(encoding="utf-8"))
     assert report["seed"] == 42 and report["suite_hash"]
     mock_result = report["results"][0]
@@ -120,30 +123,43 @@ def test_rank_is_stable_across_calls():
 
 # ------------------------------------------------- policy schema warnings
 def test_policy_warns_on_unknown_keys():
-    engine = PolicyEngine({
-        "version": 1, "name": "typo",
-        "privcy": {"redact": ["email"]},          # typo'd top-level key
-        "defaults": {"budget_per_day": 5.0},       # typo'd defaults key
-    })
+    engine = PolicyEngine(
+        {
+            "version": 1,
+            "name": "typo",
+            "privcy": {"redact": ["email"]},  # typo'd top-level key
+            "defaults": {"budget_per_day": 5.0},  # typo'd defaults key
+        }
+    )
     assert any("privcy" in w for w in engine.warnings)
     assert any("budget_per_day" in w for w in engine.warnings)
     assert "warnings" in engine.snapshot()
 
 
 def test_policy_no_warnings_for_clean_doc():
-    engine = PolicyEngine({
-        "version": 1, "name": "clean",
-        "defaults": {"budget_usd_per_day": 5.0},
-        "privacy": {"redact": ["email"]},
-    })
+    engine = PolicyEngine(
+        {
+            "version": 1,
+            "name": "clean",
+            "defaults": {"budget_usd_per_day": 5.0},
+            "privacy": {"redact": ["email"]},
+        }
+    )
     assert engine.warnings == []
 
 
 def test_cli_policy_check_prints_warnings(tmp_path, capsys):
     path = tmp_path / "typo.yaml"
-    path.write_text(yaml.safe_dump({
-        "version": 1, "name": "typo-check", "modelz": {"allow": ["*"]},
-    }), encoding="utf-8")
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "version": 1,
+                "name": "typo-check",
+                "modelz": {"allow": ["*"]},
+            }
+        ),
+        encoding="utf-8",
+    )
     assert main(["policy", "check", str(path)]) == 0
     out = capsys.readouterr().out
     assert "modelz" in out and "warning" in out
@@ -160,9 +176,15 @@ def test_mcp_router_honors_demo_and_policy(monkeypatch):
     router = server._ensure_router()
     assert "mock" in router.providers
 
-    response = asyncio.run(server.handle({
-        "jsonrpc": "2.0", "id": 7, "method": "tools/call",
-        "params": {"name": "zyko_chat", "arguments": {"prompt": "hi"}},
-    }))
+    response = asyncio.run(
+        server.handle(
+            {
+                "jsonrpc": "2.0",
+                "id": 7,
+                "method": "tools/call",
+                "params": {"name": "zyko_chat", "arguments": {"prompt": "hi"}},
+            }
+        )
+    )
     assert response["result"]["isError"] is False
     assert "[zyko-mock/" in response["result"]["content"][0]["text"]

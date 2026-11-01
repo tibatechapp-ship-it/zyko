@@ -12,9 +12,7 @@ from tests.fakes import FakeProvider
 @pytest.fixture()
 def fake_router(monkeypatch):
     fake = FakeProvider(script=["facade answer"])
-    monkeypatch.setattr(
-        "zyko.client.configured_providers", lambda *_a, **_k: {"fake": fake}
-    )
+    monkeypatch.setattr("zyko.client.configured_providers", lambda *_a, **_k: {"fake": fake})
     return fake
 
 

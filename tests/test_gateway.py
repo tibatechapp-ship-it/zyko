@@ -30,7 +30,9 @@ def secured_gateway():
     httpd.shutdown()
 
 
-def _post(base: str, path: str, payload: dict, headers: dict | None = None) -> tuple[int, dict | str]:
+def _post(
+    base: str, path: str, payload: dict, headers: dict | None = None
+) -> tuple[int, dict | str]:
     request = urllib.request.Request(
         base + path,
         data=json.dumps(payload).encode(),
@@ -56,10 +58,14 @@ def test_healthz(gateway):
 
 
 def test_chat_completions_shape_and_receipt(gateway):
-    status, body = _post(gateway, "/v1/chat/completions", {
-        "model": "auto",
-        "messages": [{"role": "user", "content": "hi"}],
-    })
+    status, body = _post(
+        gateway,
+        "/v1/chat/completions",
+        {
+            "model": "auto",
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
     assert status == 200
     assert body["object"] == "chat.completion"
     assert body["choices"][0]["message"]["content"] == "gateway answer"
@@ -83,9 +89,12 @@ def test_404_route(gateway):
 def test_auth_required_without_token(secured_gateway):
     status, body = _post(secured_gateway, "/v1/chat/completions", {"messages": []})
     assert status == 401
-    status, _ = _post(secured_gateway, "/v1/chat/completions",
-                      {"messages": [{"role": "user", "content": "x"}]},
-                      headers={"Authorization": "Bearer topsecret"})
+    status, _ = _post(
+        secured_gateway,
+        "/v1/chat/completions",
+        {"messages": [{"role": "user", "content": "x"}]},
+        headers={"Authorization": "Bearer topsecret"},
+    )
     assert status == 200
 
 

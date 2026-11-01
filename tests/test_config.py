@@ -39,9 +39,17 @@ def test_env_interpolation_in_yaml(tmp_path, monkeypatch):
 
 def test_provider_sections(tmp_path):
     path = tmp_path / "config.yaml"
-    path.write_text(yaml.safe_dump({
-        "providers": {"openai": {"api_key": "sk-x"}, "ollama": {"base_url": "http://localhost:11434"}}
-    }), encoding="utf-8")
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "providers": {
+                    "openai": {"api_key": "sk-x"},
+                    "ollama": {"base_url": "http://localhost:11434"},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
     settings = Settings.load(path)
     assert settings.provider_setting("openai")["api_key"] == "sk-x"
     assert "openai" in settings.provider_settings

@@ -155,7 +155,9 @@ class BaseProvider(ABC):
                 hint="raise router.request_timeout_s in the config",
             ) from exc
         except httpx.HTTPError as exc:
-            raise ProviderError(f"{self.name}: network error: {exc}", provider=self.name, retryable=True) from exc
+            raise ProviderError(
+                f"{self.name}: network error: {exc}", provider=self.name, retryable=True
+            ) from exc
         if resp.status_code >= 400:
             self._raise_for_status(resp)
         try:
@@ -247,7 +249,11 @@ class BaseProvider(ABC):
         """Convenience: run a streaming request and materialise the response."""
         text, tool_accs, usage = await accumulate_stream(self.astream(request))
         tool_calls = [
-            ToolCall(id=acc["id"] or f"call_{i}", name=acc["name"], arguments=_safe_json(acc["arguments"]))
+            ToolCall(
+                id=acc["id"] or f"call_{i}",
+                name=acc["name"],
+                arguments=_safe_json(acc["arguments"]),
+            )
             for i, acc in enumerate(tool_accs)
         ]
         started = time.perf_counter()
@@ -306,9 +312,17 @@ def _usage_from(data: dict[str, Any] | None) -> Any:
     if not data:
         return Usage()
     return Usage(
-        input_tokens=int(data.get("input_tokens") or data.get("prompt_tokens") or data.get("prompt_eval_count") or 0),
+        input_tokens=int(
+            data.get("input_tokens")
+            or data.get("prompt_tokens")
+            or data.get("prompt_eval_count")
+            or 0
+        ),
         output_tokens=int(
-            data.get("output_tokens") or data.get("completion_tokens") or data.get("eval_count") or 0
+            data.get("output_tokens")
+            or data.get("completion_tokens")
+            or data.get("eval_count")
+            or 0
         ),
     )
 

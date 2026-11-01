@@ -8,4 +8,11 @@ from zyko.policy.engine import (
     load_policy,
 )
 
-__all__ = ["PolicyEngine", "PolicyDecision", "Redactor", "load_policy", "builtin_default_policy", "BUILTIN_PATTERNS"]
+__all__ = [
+    "PolicyEngine",
+    "PolicyDecision",
+    "Redactor",
+    "load_policy",
+    "builtin_default_policy",
+    "BUILTIN_PATTERNS",
+]

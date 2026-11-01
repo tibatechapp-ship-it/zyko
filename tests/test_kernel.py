@@ -57,7 +57,14 @@ def test_bench_suite_is_deterministic():
     assert suite_hash(a) == suite_hash(b)
     assert len(a) == 24
     categories = {t.category for t in a}
-    assert categories == {"instruction_following", "extraction", "classification", "math", "summarization", "format"}
+    assert categories == {
+        "instruction_following",
+        "extraction",
+        "classification",
+        "math",
+        "summarization",
+        "format",
+    }
 
 
 def test_bench_graders():

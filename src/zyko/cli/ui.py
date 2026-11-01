@@ -10,7 +10,9 @@ import os
 import sys
 from typing import Any, Iterable
 
-_SUPPORTS_COLOR = hasattr(sys.stdout, "isatty") and sys.stdout.isatty() and os.environ.get("NO_COLOR") is None
+_SUPPORTS_COLOR = (
+    hasattr(sys.stdout, "isatty") and sys.stdout.isatty() and os.environ.get("NO_COLOR") is None
+)
 
 
 def _paint(text: str, code: str) -> str:

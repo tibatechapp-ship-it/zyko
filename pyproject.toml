@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zyko"
-version = "0.3.1"
+version = "0.3.2"
 description = "ZYKO — Universal AI Orchestration Platform: multi-provider routing, Policy-as-Code, MCP-native agents. Runs on Linux, Windows, macOS, Android and Termux."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -66,3 +66,11 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 ignore = ["E501"]
+
+[tool.bandit]
+# B101: asserts are internal invariants (tests and optimised builds aside, they
+#       guard protocol assumptions, not security boundaries).
+# B311: random is used for retry-jitter only, never for secrets.
+# B404/B602: the policy-gated `shell` agent tool intentionally runs commands
+#       via a shell; it stays locked until a policy names it in tools.allow.
+skips = ["B101", "B311", "B404"]

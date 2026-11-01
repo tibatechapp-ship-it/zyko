@@ -71,9 +71,17 @@ class ScoreBreakdown:
             "cost_score": round(self.cost_score, 4),
             "latency_score": round(self.latency_score, 4),
             "total": round(self.total, 4),
-            "weights": {"quality": self.weights[0], "cost": self.weights[1], "latency": self.weights[2]},
-            "estimated_cost_usd": None if self.estimated_cost_usd is None else round(self.estimated_cost_usd, 8),
-            "measured_latency_ms": None if self.measured_latency_ms is None else round(self.measured_latency_ms, 1),
+            "weights": {
+                "quality": self.weights[0],
+                "cost": self.weights[1],
+                "latency": self.weights[2],
+            },
+            "estimated_cost_usd": None
+            if self.estimated_cost_usd is None
+            else round(self.estimated_cost_usd, 8),
+            "measured_latency_ms": None
+            if self.measured_latency_ms is None
+            else round(self.measured_latency_ms, 1),
         }
 
 
@@ -159,8 +167,7 @@ class Router:
             pool = [
                 c
                 for c in self.candidates()
-                if c.provider == provider_name
-                and (model_id in ("", "*") or c.model == model_id)
+                if c.provider == provider_name and (model_id in ("", "*") or c.model == model_id)
             ]
         else:
             pool = [c for c in self.candidates() if c.model == wanted]
@@ -183,10 +190,7 @@ class Router:
         cands = self.candidates()
         prices = [
             c
-            for c in (
-                self._cost_of(other, DEFAULT_EST_IN, DEFAULT_EST_OUT)
-                for other in cands
-            )
+            for c in (self._cost_of(other, DEFAULT_EST_IN, DEFAULT_EST_OUT) for other in cands)
             if c is not None
         ]
         latencies = [
@@ -324,7 +328,9 @@ class Router:
                     cost = response.usage.cost_usd(info)
                     self.policy.record_cost(cost, candidate)
                 attempts.append(RouteAttempt(candidate.key, "ok", latency_ms=latency))
-                receipt = self._receipt(request, candidate, breakdown, attempts, ranking, est_in, est_out)
+                receipt = self._receipt(
+                    request, candidate, breakdown, attempts, ranking, est_in, est_out
+                )
                 receipt["usage"] = {
                     "input_tokens": response.usage.input_tokens,
                     "output_tokens": response.usage.output_tokens,
@@ -333,14 +339,14 @@ class Router:
             except ProviderError as exc:
                 latency = (time.perf_counter() - started) * 1000.0
                 self.health.record(candidate.key, latency_ms=latency, ok=False)
-                attempts.append(RouteAttempt(candidate.key, "error", str(exc).splitlines()[0][:200], latency))
+                attempts.append(
+                    RouteAttempt(candidate.key, "error", str(exc).splitlines()[0][:200], latency)
+                )
                 log.warning("route %s failed: %s", candidate.key, exc)
 
         raise _all_failed(attempts)
 
-    async def astream_route(
-        self, request: ChatRequest
-    ) -> AsyncIterator[StreamEvent]:
+    async def astream_route(self, request: ChatRequest) -> AsyncIterator[StreamEvent]:
         """Streaming route: falls back only *before* the first token arrives."""
         est_in = max(kernel.messages_tokens(request.messages), 1)
         est_out = request.max_tokens or DEFAULT_EST_OUT
@@ -376,13 +382,24 @@ class Router:
                         emitted = True
                         yield StreamEvent(
                             "meta",
-                            {"candidate": candidate.key, "receipt": self._receipt(
-                                request, candidate, breakdown, attempts, ranking, est_in, est_out
-                            )},
+                            {
+                                "candidate": candidate.key,
+                                "receipt": self._receipt(
+                                    request,
+                                    candidate,
+                                    breakdown,
+                                    attempts,
+                                    ranking,
+                                    est_in,
+                                    est_out,
+                                ),
+                            },
                         )
                     yield event
                 if not emitted:
-                    raise ProviderError(f"{candidate.key}: empty stream", provider=candidate.provider)
+                    raise ProviderError(
+                        f"{candidate.key}: empty stream", provider=candidate.provider
+                    )
                 # Close the streaming governance gap: charge the budget for
                 # streams too, from vendor-reported usage when available,
                 # kernel estimation otherwise (recorded in the audit trail).
@@ -396,7 +413,11 @@ class Router:
                 latency = (time.perf_counter() - started) * 1000.0
                 if not emitted:
                     self.health.record(candidate.key, latency_ms=latency, ok=False)
-                    attempts.append(RouteAttempt(candidate.key, "error", str(exc).splitlines()[0][:200], latency))
+                    attempts.append(
+                        RouteAttempt(
+                            candidate.key, "error", str(exc).splitlines()[0][:200], latency
+                        )
+                    )
                     log.warning("stream route %s failed pre-token: %s", candidate.key, exc)
                     continue
                 self.health.record(candidate.key, latency_ms=latency, ok=False)
@@ -458,9 +479,7 @@ class Router:
             "est_input_tokens": est_in,
             "est_output_tokens": est_out,
             "score_components": breakdown.as_dict(),
-            "ranking": [
-                {"candidate": cand.key, **bd.as_dict()} for cand, bd in ranking[:10]
-            ],
+            "ranking": [{"candidate": cand.key, **bd.as_dict()} for cand, bd in ranking[:10]],
             "attempts": [a.as_dict() for a in attempts],
             "policy": self.policy.snapshot() if self.policy else None,
             "ledger_updated": self.ledger.meta.get("updated"),

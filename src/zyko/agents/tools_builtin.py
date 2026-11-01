@@ -54,7 +54,11 @@ _CONSTS = {"pi": math.pi, "e": math.e, "tau": math.tau}
 def _safe_eval(node: ast.AST) -> float:
     if isinstance(node, ast.Expression):
         return _safe_eval(node.body)
-    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) and not isinstance(node.value, bool):
+    if (
+        isinstance(node, ast.Constant)
+        and isinstance(node.value, (int, float))
+        and not isinstance(node.value, bool)
+    ):
         return node.value
     if isinstance(node, ast.BinOp) and type(node.op) in _BIN_OPS:
         left, right = _safe_eval(node.left), _safe_eval(node.right)
@@ -129,9 +133,15 @@ async def _shell(command: str, timeout: float = DEFAULT_TIMEOUT_S, **_kw: Any) -
     loop = __import__("asyncio").get_running_loop()
 
     def run() -> subprocess.CompletedProcess:
+        # shell=True is the *documented purpose* of this tool (pipes, env
+        # expansion, redirection). It is a `danger` tool: policy blocks it
+        # unless a policy names "shell" explicitly in tools.allow — a "*"
+        # wildcard never unlocks it — and every call is capped by timeout and
+        # output size (see module docstring and tests/test_hardening.py).
+        # (bandit reports B602 on the shell=True line — suppressed there.)
         return subprocess.run(
             command,
-            shell=True,
+            shell=True,  # nosec B602
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -186,7 +196,10 @@ def builtin_tools(workspace: str = ".") -> dict[str, BuiltinTool]:
             "Fetch a public http(s) URL and return the first bytes of the body (text).",
             {
                 "type": "object",
-                "properties": {"url": {"type": "string"}, "max_bytes": {"type": "integer", "default": 20000}},
+                "properties": {
+                    "url": {"type": "string"},
+                    "max_bytes": {"type": "integer", "default": 20000},
+                },
                 "required": ["url"],
             },
             _http_get,
@@ -194,7 +207,11 @@ def builtin_tools(workspace: str = ".") -> dict[str, BuiltinTool]:
         BuiltinTool(
             "shell",
             "Run a shell command on this machine (DANGEROUS; needs explicit policy opt-in).",
-            {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]},
+            {
+                "type": "object",
+                "properties": {"command": {"type": "string"}},
+                "required": ["command"],
+            },
             _shell,
             danger=True,
         ),

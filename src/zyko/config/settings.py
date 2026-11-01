@@ -12,6 +12,7 @@ the file entirely — important on shared machines and mobile devices.
 
 from __future__ import annotations
 
+import copy
 import os
 import re
 from pathlib import Path
@@ -90,7 +91,12 @@ class Settings:
 
     @classmethod
     def load(cls, path: str | Path | None = None) -> "Settings":
-        data = _deep_merge(DEFAULTS, {})
+        # Deep-copy the module-level DEFAULTS first: _deep_merge shares nested
+        # dicts, and env/YAML overrides used to mutate DEFAULTS permanently —
+        # every later Settings.load() in the same process inherited the first
+        # call's environment (a global-state leak that also cross-contaminated
+        # tests and long-lived gateway processes).
+        data = _deep_merge(copy.deepcopy(DEFAULTS), {})
         source: Path | None = None
         candidates = [Path(path)] if path else [config_file()]
         for cand in candidates:

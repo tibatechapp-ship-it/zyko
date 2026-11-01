@@ -30,7 +30,9 @@ ZYKO_TOOLS: list[dict[str, Any]] = [
         "description": "Explain how ZYKO would route a prompt: ranked candidates with quality/cost/latency scores (no API call).",
         "inputSchema": {
             "type": "object",
-            "properties": {"prompt": {"type": "string", "description": "sample prompt to size the estimate"}},
+            "properties": {
+                "prompt": {"type": "string", "description": "sample prompt to size the estimate"}
+            },
             "required": [],
         },
     },
@@ -69,7 +71,9 @@ class ZykoMCPServer:
                 return protocol.result(
                     msg_id,
                     {
-                        "protocolVersion": requested if requested in (None, PROTOCOL_VERSION) else PROTOCOL_VERSION,
+                        "protocolVersion": requested
+                        if requested in (None, PROTOCOL_VERSION)
+                        else PROTOCOL_VERSION,
                         "capabilities": {"tools": {"listChanged": False}},
                         "serverInfo": {"name": "zyko", "version": __version__},
                     },
@@ -80,13 +84,21 @@ class ZykoMCPServer:
                 return protocol.result(msg_id, {"tools": ZYKO_TOOLS})
             if method == "tools/call":
                 params = message.get("params") or {}
-                return protocol.result(msg_id, await self._call_tool(params.get("name") or "", params.get("arguments") or {}))
+                return protocol.result(
+                    msg_id,
+                    await self._call_tool(params.get("name") or "", params.get("arguments") or {}),
+                )
             return protocol.error(msg_id, protocol.METHOD_NOT_FOUND, f"unknown method: {method}")
         except ZykoError as exc:
-            return protocol.result(msg_id, {"content": [{"type": "text", "text": str(exc)}], "isError": True})
+            return protocol.result(
+                msg_id, {"content": [{"type": "text", "text": str(exc)}], "isError": True}
+            )
         except Exception as exc:  # noqa: BLE001 - surfaced to the host, never crashes the loop
             log.exception("mcp tool call failed")
-            return protocol.result(msg_id, {"content": [{"type": "text", "text": f"internal error: {exc}"}], "isError": True})
+            return protocol.result(
+                msg_id,
+                {"content": [{"type": "text", "text": f"internal error: {exc}"}], "isError": True},
+            )
 
     async def _call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         if name == "zyko_models":

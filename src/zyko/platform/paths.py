@@ -92,11 +92,19 @@ def config_file() -> Path:
 
 
 def policies_dir(create: bool = False) -> Path:
-    return config_dir(create=create) / "policies"
+    p = config_dir(create=create) / "policies"
+    if create:
+        # create=True must guarantee the *returned* directory exists, not only
+        # its parent — the previous behaviour left callers with a missing leaf.
+        p.mkdir(parents=True, exist_ok=True)
+    return p
 
 
 def agents_dir(create: bool = False) -> Path:
-    return config_dir(create=create) / "agents"
+    p = config_dir(create=create) / "agents"
+    if create:
+        p.mkdir(parents=True, exist_ok=True)
+    return p
 
 
 def policies_search_dirs() -> list[Path]:
