@@ -42,7 +42,12 @@ fn top_k(py: Python<'_>, scores: Vec<f64>, k: usize) -> PyResult<Bound<'_, PyLis
     let mut order: Vec<usize> = (0..scores.len()).collect();
     order.sort_by(|&i, &j| scores[j].partial_cmp(&scores[i]).unwrap_or(std::cmp::Ordering::Equal));
     order.truncate(k);
-    Ok(PyList::new(py, order))
+    // PyList::new does not exist on pyo3 0.22 — build incrementally.
+    let out = PyList::empty(py);
+    for i in order {
+        out.append(i)?;
+    }
+    Ok(out)
 }
 
 #[pyfunction]
