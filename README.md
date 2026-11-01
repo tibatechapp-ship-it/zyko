@@ -5,7 +5,7 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — Universal AI Orchestration Platform" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-337%20passing-22c55e)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-347%20passing-22c55e)](.github/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-98%25-84cc16)](.github/workflows/ci.yml)
 [![Security](https://img.shields.io/badge/bandit-0%20findings-22c55e?logo=shield&logoColor=white)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776ab?logo=python&logoColor=white)](pyproject.toml)
@@ -21,7 +21,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.3.2** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
+**النسخة 0.3.3** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -49,6 +49,10 @@
 | بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
+
+## ما الجديد في 0.3.3؟ (بوابة الأمان التي لم تكن تعمل أبدًا)
+
+جولة 0.3.2 أضافت بوابة أمان في CI — لكنها كانت ستفشل عند أول تشغيل حقيقي: **bandit لا يقرأ `pyproject.toml` أصلًا** (حتى الإصدار 1.9.x)، فتُتجاهل الاستثناءات الموثّقة (B101/B311/B404) بصمت ويظهر 11 نتيجة LOW. الإصلاح: ملف `.bandit.yml` حقيقي بتعليقات التبرير، يستهلكه CI و`make security` معًا، وحُذف قسم `[tool.bandit]` المضلل. إضافة إلى **10 اختبارات حوافّ جديدة** (الإجمالي 347): ربط أخطاء 500 الداخلية في البوابة، رؤوس `Content-Length` الكاذبة، انقطاع العميل أثناء البث (RST) مع بقاء الخادم صحيًا، إظهار MCP للأخطاء غير المتوقعة كـ `isError` دون انهيار الحلقة، جولة `zyko_chat` مع إيصال التوجيه، ربط `default_policy`، نقطة دخول `python -m zyko.mcp.server`، تسوية التكلفة/الزمن Degenerate، وقفزات القاطع/السياسة في `astream_route`. التغطية 98% والأسطر غير المغطاة 84 → 69.
 
 ## ما الجديد في 0.3.2؟ (جولة تقييم كاملة: تغطية + lint + أمان)
 
@@ -219,7 +223,7 @@ zyko info   # kernel backend: rust
 
 ```bash
 pip install -e .[dev]
-pytest -q            # 337 اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض
+pytest -q            # 347 اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض
 pytest --cov=src/zyko   # تغطية 98%
 ruff check src tests && ruff format --check src tests
 make security        # bandit + pip-audit (نفس بوابة CI)
@@ -254,7 +258,11 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.3.2** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.3.3** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.3.3 — the security gate that never worked
+
+The 0.3.2 round added a CI security job — but it would have failed on its first real run: **bandit does not read `pyproject.toml` at all** (through 1.9.x), so the documented suppressions (B101/B311/B404) were silently ignored and 11 LOW findings surfaced. Fixed with a real `.bandit.yml` (justification comments included) consumed by both CI and `make security`; the misleading `[tool.bandit]` section is gone. Plus **10 new edge-path tests** (347 total): gateway 500 mapping for unexpected router exceptions, lying `Content-Length` headers, mid-stream client disconnect (RST) with the worker staying healthy, the MCP server surfacing unexpected exceptions as `isError` without crashing the loop, the `zyko_chat` round-trip with a routing receipt, `default_policy` wiring, the `python -m zyko.mcp.server` entrypoint, degenerate cost/latency normalisation, and breaker/policy skips in `astream_route`. Coverage holds at 98% with uncovered lines down 84 → 69.
 
 ## What's new in 0.3.2 — full evaluation round (coverage + lint + security)
 
@@ -333,12 +341,12 @@ print(outcome.response.text, "←", outcome.receipt["chosen"])
 
 ## Tests
 
-`pytest -q` → 337 tests (98% coverage) covering routing (incl. snapshot/parity and explicit model pinning), policy (incl. schema warnings and malformed-document degradation), MCP over real subprocesses plus in-memory server frames and the full client lifecycle (timeouts, server errors, pagination, closed streams), the gateway over a real HTTP socket (auth + keep-alive integrity + 502 upstream errors), agents, every provider adapter against canned HTTP, session memory, the audit-based cost report, streaming cost accounting, `Retry-After` resilience, CLI robustness (broken pipes, busy ports, JSON-only `--json`), tool-loop failure modes, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12/3.13, plus lint (`ruff check` + `ruff format --check`), a security job (`bandit` + `pip-audit`), and a Rust kernel check.
+`pytest -q` → 347 tests (98% coverage) covering routing (incl. snapshot/parity and explicit model pinning), policy (incl. schema warnings and malformed-document degradation), MCP over real subprocesses plus in-memory server frames and the full client lifecycle (timeouts, server errors, pagination, closed streams), the gateway over a real HTTP socket (auth + keep-alive integrity + 502 upstream errors), agents, every provider adapter against canned HTTP, session memory, the audit-based cost report, streaming cost accounting, `Retry-After` resilience, CLI robustness (broken pipes, busy ports, JSON-only `--json`), tool-loop failure modes, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12/3.13, plus lint (`ruff check` + `ruff format --check`), a security job (`bandit` + `pip-audit`), and a Rust kernel check.
 
 ## Security
 
 - **Built-in governance**: danger tools (`shell`) stay locked unless explicitly named in `tools.allow` — even under `allow: ["*"]`; the MCP client spawns servers via `exec`, never a shell; `http_get` rejects non-HTTP schemes; deterministic PII redaction with Luhn validation.
-- **CI security gate**: `bandit -c pyproject.toml -r src/zyko` (0 findings; the intentional, policy-gated `shell=True` is documented inline with a scoped `# nosec`) and `pip-audit --skip-editable` over the declared dependency surface (`httpx`, `PyYAML` — clean at release time).
+- **CI security gate**: `bandit -c .bandit.yml -r src/zyko` (0 findings; the intentional, policy-gated `shell=True` is documented inline with a scoped `# nosec`) and `pip-audit --skip-editable` over the declared dependency surface (`httpx`, `PyYAML` — clean at release time).
 
 Report a vulnerability privately via [SECURITY.md](SECURITY.md) — please do not open public issues for security reports.
 

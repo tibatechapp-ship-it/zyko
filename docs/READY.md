@@ -1,4 +1,4 @@
-# ZYKO v0.3.2 — Readiness Report (release QA)
+# ZYKO v0.3.3 — Readiness Report (release QA)
 
 Status: **READY** — all gates green on the reference environment (Linux, Python 3.12),
 after a **full evaluation round**: coverage analysis, lint, and a security audit,
@@ -12,7 +12,7 @@ with every finding fixed and regression-tested.
 | Lint | `ruff check src tests benchmarks` | **0 findings** |
 | Formatting | `ruff format --check src tests benchmarks` | **clean** (79 files) — now enforced in CI |
 | Coverage (reference platform) | `pytest --cov=src/zyko` | **98% total** (3491 stmts, 84 uncovered; `router/quality` 100%, `utils/loop` 98%, `providers/base` 98%, `gateway` 93%+, `mcp/client` 94%+) |
-| Security (SAST) | `bandit -c pyproject.toml -r src/zyko` | **0 findings** — new CI `security` job; intentional policy-gated `shell=True` documented with scoped `# nosec B602` |
+| Security (SAST) | `bandit -c .bandit.yml -r src/zyko` | **0 findings** — new CI `security` job; intentional policy-gated `shell=True` documented with scoped `# nosec B602` |
 | Security (dependencies) | `pip-audit --skip-editable` | `httpx` + `PyYAML` **clean** at release time — new CI `security` job |
 | Byte-compile | `python -m compileall src tests` | clean |
 | Secret scan | `git grep` for token/key patterns | clean — no credentials in tree |

@@ -34,7 +34,7 @@ format:
 	ruff check --fix src tests benchmarks
 
 security:
-	bandit -c pyproject.toml -r src/zyko
+	bandit -c .bandit.yml -r src/zyko
 	pip-audit --skip-editable
 
 bench-demo:

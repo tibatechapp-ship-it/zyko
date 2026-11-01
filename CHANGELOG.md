@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.3.3 — the security gate that never ran: bandit config was silently ignored
+
+The 0.3.2 round added a CI `security` job — but its bandit invocation could
+never see the intended suppressions and would have gone red on the first real
+run. This release makes the gate actually green and widens last-mile coverage
+around the gateway, MCP server and streaming router.
+
+### Real bug found & fixed
+- **bandit never read `[tool.bandit]` from `pyproject.toml`.** bandit
+  (through 1.9.x) has no pyproject.toml support at all — the documented skips
+  for B101 (internal-invariant asserts), B311 (retry-jitter / benchmark
+  `random`) and B404 (the policy-gated `shell` agent tool) were silently
+  ignored, so `bandit -r src/zyko` reported 11 LOW findings and the CI
+  `security` job would have failed. The suppressions now live in a real
+  `.bandit.yml` (justification comments included) consumed everywhere: CI
+  runs `bandit -r src/zyko -q -c .bandit.yml --exit-zero-on-skipped`,
+  `make security` uses the same file, and the misleading `[tool.bandit]`
+  section was removed from `pyproject.toml`. Verified locally: exit 0.
+
+### Tests & coverage
+- 10 new edge-path tests in `tests/test_eval_round3.py` (347 total): gateway
+  500 mapping for unexpected router exceptions, lying `Content-Length`
+  headers, client disconnect mid-stream (RST) leaving the worker healthy, the
+  MCP server surfacing unexpected exceptions as `isError` without crashing
+  the loop, the `zyko_chat` tool round-trip with a routing receipt,
+  `default_policy` wiring in `_ensure_router`, the
+  `python -m zyko.mcp.server` entrypoint, degenerate cost/latency
+  normalisation, and breaker/policy skips inside `astream_route`.
+- Coverage 98% with uncovered lines down 84 → 69.
+
+### Docs
+- `README.md` and `docs/READY.md` now reference the real verification command
+  (`bandit -c .bandit.yml -r src/zyko`).
+
 ## 0.3.2 — full evaluation round: coverage 92% → 98%, security gate in CI, 3 real bugs fixed
 
 A complete quality round — coverage analysis, lint, security audit — executed
