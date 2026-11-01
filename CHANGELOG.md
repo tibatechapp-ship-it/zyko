@@ -4,6 +4,25 @@
 
 The first complete implementation of the ZYKO orchestration platform.
 
+### Review hardening (pre-release QA pass)
+- **Offline demo mode**: `zyko ask/route/chat/serve/run/bench --demo` (and `ZYKO_DEMO=1`)
+  run the full pipeline — routing, policy, receipts, streaming — through a new
+  deterministic `MockProvider`, with zero API keys and zero network. First-run
+  experience on any platform (including Termux) now works out of the box.
+- **Router scoring O(n²) → O(n)**: normalization ranges are snapshotted once per
+  ranking pass instead of being recomputed per candidate; scores are bit-identical
+  (parity-tested). Matters on phones where routing overhead is part of latency.
+- **Prompt-aware planning**: `zyko route "<prompt>"` now estimates tokens from the
+  actual prompt, and `explain()`/`--json` output includes the estimate.
+- **Policy typo guard**: unknown top-level / `defaults` keys in a policy file now
+  produce loud warnings in `zyko policy check` and appear in receipts via
+  `policy.snapshot()` (silently-ignored YAML typos previously looked like active controls).
+- **MCP governance parity**: `zyko mcp serve` now loads `default_policy`, the
+  quality ledger and demo mode exactly like the CLI.
+- **Bench honesty + fixes**: cost is computed from tokens vendors actually report
+  (kernel estimate only as fallback); fixed `--ledger` crash (string path was never
+  converted to `Path`); fixed `median ms = None` for sub-0.05 ms candidates.
+
 ### Core
 - Unified provider-neutral contracts (`Message`, `ChatRequest`, `ChatResponse`, streaming events).
 - Provider adapters: OpenAI (+ Groq, Mistral, DeepSeek, OpenRouter via the OpenAI-compatible base), Anthropic, Google Gemini, Ollama (local, keyless) — with retries/backoff, per-event-loop connection reuse, and HTTP error mapping.

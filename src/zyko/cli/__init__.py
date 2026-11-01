@@ -27,6 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
             "examples:\n"
             "  zyko ask 'Explain MCP in one line' --explain\n"
             "  zyko route 'summarize this file'          # planning only, no API call\n"
+            "  zyko ask 'hello' --demo                   # offline, no keys needed\n"
             "  zyko serve --port 8787                    # OpenAI-compatible gateway\n"
             "  zyko mcp serve                            # expose ZYKO as an MCP server\n"
             "  zyko doctor                               # diagnose platform + keys\n"
@@ -40,6 +41,7 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--strategy", choices=["quality", "cost", "latency", "balanced"], default=None)
         p.add_argument("--policy", default=None, help="policy name or path (Policy-as-Code)")
         p.add_argument("--ledger", default=None, help="quality ledger JSON path")
+        p.add_argument("--demo", action="store_true", help="offline mock provider: no keys, no network")
 
     # info / doctor
     sub.add_parser("info", help="platform, config and provider summary").set_defaults(func=cmd.cmd_info)
@@ -122,6 +124,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--json-out", default=None, help="write full results JSON here")
     p.add_argument("--ledger", default=None)
     p.add_argument("--concurrency", type=int, default=4)
+    p.add_argument("--demo", action="store_true", help="benchmark the offline mock provider (CI/pipeline check)")
     p.set_defaults(func=cmd.cmd_bench)
 
     return parser

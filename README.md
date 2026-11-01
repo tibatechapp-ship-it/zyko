@@ -47,10 +47,14 @@ cd zyko/android && bash install-termux.sh
 ## ابدأ في 60 ثانية
 
 ```bash
+# أسرع تجربة — بلا مفاتيح، بلا شبكة، وضع عرض حتمي:
+zyko ask "مرحبًا يا زيكو" --demo --explain
+zyko route "ملخص هذا الملف" --demo
+
+# ثم بمزوّد حقيقي:
 export OPENAI_API_KEY=sk-...        # أو أنشئ ollama محليًا ليعمل بلا مفاتيح
 
 zyko ask "اشرح MCP في سطر واحد" --explain   # إجابة + قرار التوجيه
-zyko route "ملخص هذا الملف"                 # خطة التوجيه بلا أي تكلفة
 zyko serve                                   # بوابة متوافقة مع OpenAI
 zyko doctor                                  # تشخيص البيئة والمفاتيح
 ```
@@ -84,6 +88,7 @@ print(agent.run_sync("كم 47 × 16 × 7؟").output)
 | `zyko mcp serve` | **اعرض ZYKO نفسه كخادم MCP** عبر stdio |
 | `zyko mcp tools -- CMD` | فحص أدوات أي خادم MCP |
 | `zyko bench` | المقياس المرجعي القابل لإعادة الإنتاج (وبـ`--update-ledger` يغذّي الموجّه) |
+| `--demo` (مع أغلب الأوامر) | **وضع عرض بدون مفاتيح ولا شبكة** عبر مزوّد المحاكاة الحتمي — يمرّ بالمسار الحقيقي كله: توجيه، سياسة، إيصالات، بث |
 | `zyko doctor` / `zyko info` | تشخيص البيئة، المفاتيح، والمسارات |
 
 ## المزوّدون
@@ -127,8 +132,8 @@ zyko info   # kernel backend: rust
 
 ```bash
 pip install -e .[dev]
-pytest -q            # 93+ اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)
-ruff check src tests benchmarks
+pytest -q            # 106 اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، وضع العرض
+ruff check src tests
 ```
 
 يعمل CI على ubuntu/windows/macos × Python 3.11/3.12 + فحص Rust + تجربة دخان للـCLI.
@@ -162,6 +167,12 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 ```bash
 pip install git+https://github.com/tibatechapp-ship-it/zyko.git
+
+# Fastest first run — no keys, no network (deterministic demo mode):
+zyko ask "hello zyko" --demo --explain
+zyko bench --demo
+
+# Then with a real provider:
 export OPENAI_API_KEY=sk-...        # or run Ollama locally for a keyless setup
 zyko ask "Explain MCP in one line" --explain
 zyko serve                          # OpenAI-compatible gateway on :8787
@@ -175,7 +186,7 @@ print(outcome.response.text, "←", outcome.receipt["chosen"])
 
 ## Highlights
 
-- **CLI**: `ask` · `chat` · `route` (planning-only) · `models` · `policy` · `run` (agents) · `serve` · `mcp` · `bench` · `doctor` — argparse-only, zero CLI dependencies.
+- **CLI**: `ask` · `chat` · `route` (planning-only) · `models` · `policy` · `run` (agents) · `serve` · `mcp` · `bench` · `doctor` — argparse-only, zero CLI dependencies. `--demo` runs the whole stack offline through a deterministic mock provider (no keys, no network).
 - **Gateway**: stdlib HTTP server, streaming SSE included, `zyko.receipt` embedded in responses and chunks.
 - **Agents**: ReAct loop, builtin tools (calculator/file/http/shell-guarded), MCP tools namespaced as `server__tool`, SQLite session memory, step/timeout/policy guards.
 - **Providers**: OpenAI · Anthropic · Google · Groq · Mistral · DeepSeek · OpenRouter · Ollama(local). Retries with backoff, circuit breakers, latency EWMA.
@@ -184,7 +195,7 @@ print(outcome.response.text, "←", outcome.receipt["chosen"])
 
 ## Tests
 
-`pytest -q` → 90+ tests covering routing, policy, MCP over real subprocesses, the gateway, agents, and every provider adapter against canned HTTP. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12.
+`pytest -q` → 106 tests covering routing (incl. snapshot/parity), policy (incl. schema warnings), MCP over real subprocesses, the gateway, agents, every provider adapter against canned HTTP, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12.
 
 ## License
 

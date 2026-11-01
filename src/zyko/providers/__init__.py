@@ -10,6 +10,7 @@ from zyko.log import get_logger
 from zyko.providers.anthropic import AnthropicProvider
 from zyko.providers.base import BaseProvider
 from zyko.providers.google import GoogleProvider
+from zyko.providers.mock import MockProvider
 from zyko.providers.ollama import OllamaProvider
 from zyko.providers.openai_compat import (
     DeepSeekProvider,
@@ -158,6 +159,7 @@ __all__ = [
     "DeepSeekProvider",
     "OpenRouterProvider",
     "OllamaProvider",
+    "MockProvider",
     "register",
     "provider_names",
     "get_provider_class",

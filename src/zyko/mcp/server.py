@@ -109,13 +109,27 @@ class ZykoMCPServer:
     def _ensure_router(self) -> Any:
         if not self._router_built:
             from zyko.config.settings import Settings
+            from zyko.platform.paths import ledger_file
+            from zyko.policy.engine import load_policy
             from zyko.providers import configured_providers
+            from zyko.providers.mock import MockProvider, demo_enabled
             from zyko.router.engine import Router
+            from zyko.router.quality import QualityLedger
 
             settings = Settings.load()
-            providers = configured_providers(settings.provider_settings)
+            if demo_enabled(settings):
+                providers: dict[str, Any] = {"mock": MockProvider()}
+            else:
+                providers = configured_providers(settings.provider_settings)
+            # Same governance as the CLI: default_policy, ledger, demo mode.
+            policy = None
+            policy_name = settings.get("default_policy")
+            if policy_name:
+                policy = load_policy(policy_name)
             self._router = Router(
                 providers,
+                ledger=QualityLedger.load(ledger_file()),
+                policy=policy,
                 strategy=settings.get("router.strategy", "balanced"),
                 max_fallbacks=settings.get("router.max_fallbacks", 3),
             )

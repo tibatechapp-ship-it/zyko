@@ -59,6 +59,15 @@ BUILTIN_PATTERNS: dict[str, tuple[str, str]] = {
 # them, so pattern application order is fixed regardless of user list order.
 _PATTERN_PRIORITY = {"credit_card": 0, "iban": 1, "ssn": 2, "email": 3, "phone": 4}
 
+# Keys the policy schema understands; anything else is almost certainly a
+# typo that would otherwise silently disable a control the author believed
+# was active ("privcy:", "budget_per_day:", ...).
+KNOWN_TOP_LEVEL = {
+    "version", "name", "defaults", "models", "providers", "tools",
+    "privacy", "rate_limit", "audit",
+}
+KNOWN_DEFAULTS_KEYS = {"budget_usd_per_day", "max_tokens_per_request"}
+
 
 def _luhn_ok(digits: str) -> bool:
     total, alt = 0, False
@@ -202,8 +211,27 @@ class PolicyEngine:
         self.bucket = _TokenBucket(int(rate)) if rate else None
         self.audit_enabled = bool((doc.get("audit") or {}).get("enabled", True))
         self.stats = {"requests_allowed": 0, "requests_denied": 0, "redactions": 0, "denied_by_rule": {}}
+        self.warnings = self._schema_warnings(doc)
 
     # ------------------------------------------------------------------ models
+    @staticmethod
+    def _schema_warnings(doc: dict[str, Any]) -> list[str]:
+        warnings: list[str] = []
+        for key in doc:
+            if key not in KNOWN_TOP_LEVEL:
+                warnings.append(f"unknown top-level key '{key}' (typo? ignored)")
+        defaults = doc.get("defaults") or {}
+        if not isinstance(defaults, dict):
+            warnings.append("'defaults' must be a mapping")
+        else:
+            for key in defaults:
+                if key not in KNOWN_DEFAULTS_KEYS:
+                    warnings.append(f"unknown key 'defaults.{key}' (typo? ignored)")
+        privacy = doc.get("privacy")
+        if privacy is not None and not isinstance(privacy, dict):
+            warnings.append("'privacy' must be a mapping")
+        return warnings
+
     def _matches(self, name: str, patterns: list[str]) -> bool:
         return any(fnmatch.fnmatchcase(name, p) for p in patterns)
 
@@ -338,6 +366,7 @@ class PolicyEngine:
             "budget_remaining_usd": self.budget.remaining(),
             "redaction_active": bool(self.redactor),
             "rate_limit_rpm": self.bucket.capacity if self.bucket else None,
+            "warnings": list(self.warnings),
             "stats": dict(self.stats),
         }
 

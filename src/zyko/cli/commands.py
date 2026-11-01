@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -31,7 +32,12 @@ log = get_logger("cli")
 # --------------------------------------------------------------------- helpers
 def _build_router(args: Any) -> Router:
     settings = Settings.load()
-    providers = configured_providers(settings.provider_settings)
+    if getattr(args, "demo", False) or os.environ.get("ZYKO_DEMO") == "1":
+        from zyko.providers.mock import MockProvider
+
+        providers = {"mock": MockProvider()}
+    else:
+        providers = configured_providers(settings.provider_settings)
     ledger = QualityLedger.load(_ledger_path(args))
     policy = None
     name = getattr(args, "policy", None) or settings.get("default_policy")
@@ -110,7 +116,6 @@ def cmd_models(args: Any) -> int:
 
 def cmd_ask(args: Any) -> int:
     router = _build_router(args)
-    started = time.perf_counter()
     outcome = router.route(_request_from(args))
     assert outcome.response is not None
     print(outcome.response.text)
@@ -123,13 +128,18 @@ def cmd_ask(args: Any) -> int:
     if args.receipt:
         Path(args.receipt).write_text(json.dumps(outcome.receipt, indent=2), encoding="utf-8")
         print(ui.info(f"receipt written to {args.receipt}"), file=sys.stderr)
-    _ = started
     return 0
 
 
 def cmd_route(args: Any) -> int:
     router = _build_router(args)
-    explanation = router.explain()
+    prompt = (getattr(args, "prompt", "") or "").strip()
+    if prompt:
+        # A prompt makes the token estimate (and therefore the cost column)
+        # reflect the actual request instead of a generic default.
+        explanation = router.explain(est_input_tokens=max(kernel.estimate_tokens(prompt), 1))
+    else:
+        explanation = router.explain()
     if args.json:
         print(json.dumps(explanation, indent=2))
         return 0
@@ -212,7 +222,12 @@ def cmd_policy(args: Any) -> int:
     if args.policy_cmd == "check":
         engine = load_policy(args.file)
         _print_policy(engine)
-        print(ui.ok(f"policy '{engine.name}' is valid"))
+        for warning in engine.warnings:
+            print(ui.warn(warning))
+        if engine.warnings:
+            print(ui.warn(f"policy '{engine.name}' is valid with {len(engine.warnings)} warning(s)"))
+        else:
+            print(ui.ok(f"policy '{engine.name}' is valid"))
         return 0
     if args.policy_cmd == "show":
         if args.name:
@@ -309,7 +324,7 @@ def cmd_doctor(args: Any) -> int:
         any_key = any_key or configured
         print(f"  {'OK ' if configured else '-- '} {name:<12} ({env})")
     if not any_key:
-        print(ui.warn("no provider keys found — set one, or install Ollama for a keyless local setup"))
+        print(ui.warn("no provider keys found — set one, install Ollama, or try --demo for an offline keyless run"))
     print()
     print(bold("Local inference"))
     try:

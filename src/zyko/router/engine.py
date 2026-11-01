@@ -143,12 +143,37 @@ class Router:
                 out.append(RouteCandidate(provider_name, info.id))
         return out
 
+    def _board_snapshot(self) -> tuple[list[float], list[float]]:
+        """Candidate price/latency ranges, computed once per scoring pass.
+
+        Normalisation ranges depend on the whole candidate board, so they are
+        collected a single time instead of once per candidate — this keeps
+        ``rank()`` O(n) instead of O(n²), which matters on phones (Termux)
+        where routing overhead is part of the latency budget.
+        """
+        cands = self.candidates()
+        prices = [
+            c
+            for c in (
+                self._cost_of(other, DEFAULT_EST_IN, DEFAULT_EST_OUT)
+                for other in cands
+            )
+            if c is not None
+        ]
+        latencies = [
+            value
+            for value in (self.health.latency(other.key) for other in cands)
+            if value is not None
+        ]
+        return prices, latencies
+
     def score_candidate(
         self,
         candidate: RouteCandidate,
         *,
         est_input_tokens: int = DEFAULT_EST_IN,
         est_output_tokens: int = DEFAULT_EST_OUT,
+        snapshot: tuple[list[float], list[float]] | None = None,
     ) -> ScoreBreakdown:
         provider = self.providers[candidate.provider]
         info = provider.find_model(candidate.model)
@@ -157,10 +182,11 @@ class Router:
         est_cost: float | None = None
         if info is not None:
             est_cost = info.cost_usd(est_input_tokens, est_output_tokens)
-        cost_score = self._normalize_cost(candidate, est_cost)
+        prices, latencies = snapshot if snapshot is not None else self._board_snapshot()
+        cost_score = self._normalize_cost(est_cost, prices)
 
         measured = self.health.latency(candidate.key)
-        latency_score = self._normalize_latency(candidate, measured)
+        latency_score = self._normalize_latency(measured, latencies)
 
         wq, wc, wl = STRATEGY_WEIGHTS[self.strategy]
         total = wq * mscore.quality + wc * cost_score + wl * latency_score
@@ -178,16 +204,8 @@ class Router:
         info = self.providers[candidate.provider].find_model(candidate.model)
         return info.cost_usd(est_in, est_out) if info else None
 
-    def _normalize_cost(self, candidate: RouteCandidate, est_cost: float | None) -> float:
+    def _normalize_cost(self, est_cost: float | None, prices: list[float]) -> float:
         """Cheapest candidate on the board → 1.0, priciest → ~0.0."""
-        prices = [
-            c
-            for c in (
-                self._cost_of(other, DEFAULT_EST_IN, DEFAULT_EST_OUT)
-                for other in self.candidates()
-            )
-            if c is not None
-        ]
         if est_cost is None or not prices:
             return 0.5
         lo, hi = min(prices), max(prices)
@@ -195,12 +213,7 @@ class Router:
             return 1.0
         return max(0.0, (hi - est_cost) / (hi - lo))
 
-    def _normalize_latency(self, candidate: RouteCandidate, measured: float | None) -> float:
-        latencies = [
-            value
-            for value in (self.health.latency(other.key) for other in self.candidates())
-            if value is not None
-        ]
+    def _normalize_latency(self, measured: float | None, latencies: list[float]) -> float:
         if measured is None or not latencies:
             return 0.5
         lo, hi = min(latencies), max(latencies)
@@ -214,8 +227,17 @@ class Router:
         est_input_tokens: int = DEFAULT_EST_IN,
         est_output_tokens: int = DEFAULT_EST_OUT,
     ) -> list[tuple[RouteCandidate, ScoreBreakdown]]:
+        snapshot = self._board_snapshot()
         ranked = [
-            (cand, self.score_candidate(cand, est_input_tokens=est_input_tokens, est_output_tokens=est_output_tokens))
+            (
+                cand,
+                self.score_candidate(
+                    cand,
+                    est_input_tokens=est_input_tokens,
+                    est_output_tokens=est_output_tokens,
+                    snapshot=snapshot,
+                ),
+            )
             for cand in self.candidates()
         ]
         ranked.sort(key=lambda pair: pair[1].total, reverse=True)
@@ -236,6 +258,8 @@ class Router:
         return {
             "strategy": self.strategy,
             "ledger_backend": self.ledger.path.name if self.ledger.path else None,
+            "est_input_tokens": est_input_tokens,
+            "est_output_tokens": est_output_tokens,
             "ranking": ranking,
         }
 

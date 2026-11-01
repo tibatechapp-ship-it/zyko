@@ -22,10 +22,12 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import os
 import random
 import re
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Callable
 
 from zyko import kernel
@@ -203,7 +205,9 @@ async def _run_candidate(router: Router, provider_name: str, model: str, tasks: 
                 latency = (time.perf_counter() - started) * 1000.0
                 passed = GRADERS[task.grader](answer, task.expected, task.extra)
                 return {"task": task.tid, "category": task.category, "ok": passed,
-                        "latency_ms": round(latency, 1), "answer": answer[:200]}
+                        "latency_ms": round(latency, 1), "answer": answer[:200],
+                        "input_tokens": outcome.usage.input_tokens,
+                        "output_tokens": outcome.usage.output_tokens}
             except ZykoError as exc:
                 return {"task": task.tid, "category": task.category, "ok": False,
                         "latency_ms": round((time.perf_counter() - started) * 1000.0, 1),
@@ -216,11 +220,17 @@ async def _run_candidate(router: Router, provider_name: str, model: str, tasks: 
         per_category.setdefault(r["category"], []).append(1 if r["ok"] else 0)
     categories = {cat: sum(v) / len(v) for cat, v in sorted(per_category.items())}
     overall = sum(categories.values()) / len(categories) if categories else 0.0
-    latencies = [r["latency_ms"] for r in results if r.get("latency_ms")]
+    latencies = [r["latency_ms"] for r in results if r.get("latency_ms") is not None]
+    # Cost from the tokens vendors actually reported; kernel estimates only
+    # as a fallback when a provider omits usage data.
+    in_tok = sum(int(r.get("input_tokens") or 0) for r in results)
+    out_tok = sum(int(r.get("output_tokens") or 0) for r in results)
+    if in_tok == 0:
+        in_tok = sum(kernel.estimate_tokens(t.prompt) for t in tasks)
+    if out_tok == 0:
+        out_tok = len(tasks) * 60
     cost = None
     if info is not None:
-        in_tok = sum(1 for _ in tasks) * 60  # prompts are tiny; estimate
-        out_tok = sum(1 for _ in tasks) * 60
         cost = info.cost_usd(in_tok, out_tok)
     return {
         "candidate": f"{provider_name}/{model}",
@@ -228,20 +238,27 @@ async def _run_candidate(router: Router, provider_name: str, model: str, tasks: 
         "categories": {k: round(v, 4) for k, v in categories.items()},
         "median_latency_ms": round(sorted(latencies)[len(latencies) // 2], 1) if latencies else None,
         "estimated_cost_usd": cost,
+        "token_usage": {"input": in_tok, "output": out_tok},
         "tasks": results,
     }
 
 
 def run_bench(args: Any) -> int:
     settings = Settings.load()
-    providers = configured_providers(settings.provider_settings)
+    if getattr(args, "demo", False) or os.environ.get("ZYKO_DEMO") == "1":
+        from zyko.providers.mock import MockProvider
+
+        providers: dict[str, Any] = {"mock": MockProvider()}
+    else:
+        providers = configured_providers(settings.provider_settings)
     if not providers:
         print(ui.warn("no providers configured — set an API key or start Ollama, then retry"))
         return 1
 
     tasks = build_suite(SEED)
     print(ui.info(f"suite: {len(tasks)} deterministic tasks (seed={SEED}, hash={suite_hash(tasks)})"))
-    ledger = QualityLedger.load(ledger_file() if not getattr(args, "ledger", None) else args.ledger)
+    ledger_arg = ledger_file() if not getattr(args, "ledger", None) else Path(args.ledger)
+    ledger = QualityLedger.load(ledger_arg)
     router = Router(providers, ledger=ledger, strategy="quality", max_fallbacks=1)
 
     async def gather_all():
@@ -282,9 +299,9 @@ def run_bench(args: Any) -> int:
             win_rate = wins / len(others) if others else 0.5
             ledger.update(*r["candidate"].split("/", 1), quality=r["overall"],
                           win_rate=win_rate, samples=len(r["tasks"]), categories=r["categories"])
-        path = ledger_file() if not getattr(args, "ledger", None) else args.ledger
-        ledger.save(path)
-        print(ui.ok(f"ledger updated → {path}"))
+        ledger_path = ledger_file() if not getattr(args, "ledger", None) else Path(args.ledger)
+        ledger.save(ledger_path)
+        print(ui.ok(f"ledger updated → {ledger_path}"))
         print(ledger.to_table())
     return 0
 
