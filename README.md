@@ -5,8 +5,8 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — Universal AI Orchestration Platform" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-106%20passing-22c55e)](.github/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-3776ab?logo=python&logoColor=white)](pyproject.toml)
+[![Tests](https://img.shields.io/badge/tests-133%20passing-22c55e)](.github/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Android%20%7C%20Termux-10b981)](android/README.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-native-8b5cf6)](https://modelcontextprotocol.io)
@@ -19,7 +19,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.1.0** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
+**النسخة 0.2.0** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -35,6 +35,18 @@
 | **جودة صادقة** | درجات الجودة تأتي فقط من مقاييس مرجعية **قابلة لإعادة الإنتاج** (`zyko bench`) ببذور ثابتة ومصحّحات موضوعية — لا من جداول تسويقية. |
 | **حوكمة شيفرة-كسياسة** | سقف إنفاق يومي، حجب PII حتمي، قوائم سماح للنماذج والأدوات، حدود معدل، وسجل تدقيق — كل ذلك في ملف YAML واحد مُطبَّق على **كل** نداء. |
 | **MCP أولًا** | ZYKO **يستهلك** خوادم MCP كأدوات لوكلائه، **ويعرض نفسه** كخادم MCP (`zyko mcp serve`) لأي مضيف MCP. |
+
+## من أين استلهم ZYKO؟ (أنماط المشاريع الكبيرة)
+
+| النمط المُعتمد | المصدر |
+|---|---|
+| محوّلات موحّدة بصيغة OpenAI، إعادة محاولة أُسّية، واحترام `Retry-After` من الخادم | [LiteLLM](https://github.com/BerriAI/litellm) |
+| مزوّد فوق المزوّدين، تسمية `provider/model`، ورؤوس الإحالة (HTTP-Referer/X-Title) | [OpenRouter](https://openrouter.ai) |
+| درجات جودة مشتقّة من مقاييس مرجعية قابلة لإعادة الإنتاج لا من جداول تسويقية | [RouteLLM](https://github.com/lmcache/routellm) |
+| الحوكمة كإعدادات مُعلنة: سقوف إنفاق، قوائم سماح، تدقيق | [Portkey Gateway](https://github.com/Portkey-AI/gateway) |
+| بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
+
+تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
 
 ## التثبيت
 
@@ -104,9 +116,9 @@ print(agent.run_sync("كم 47 × 16 × 7؟").output)
 | `zyko serve` | بوابة `/v1/chat/completions` متوافقة مع OpenAI (بما فيها البث SSE) |
 | `zyko mcp serve` | **اعرض ZYKO نفسه كخادم MCP** عبر stdio |
 | `zyko mcp tools -- CMD` | فحص أدوات أي خادم MCP |
-| `zyko bench` | المقياس المرجعي القابل لإعادة الإنتاج (وبـ`--update-ledger` يغذّي الموجّه) |
+| `zyko bench` | المقياس المرجعي القابل لإعادة الإنتاج (`--repeats N` لوسائط أثبت، و`--update-ledger` يغذّي الموجّه) |
 | `--demo` (مع أغلب الأوامر) | **وضع عرض بدون مفاتيح ولا شبكة** عبر مزوّد المحاكاة الحتمي — يمرّ بالمسار الحقيقي كله: توجيه، سياسة، إيصالات، بث |
-| `zyko doctor` / `zyko info` | تشخيص البيئة، المفاتيح، والمسارات |
+| `zyko doctor` / `zyko info` / `zyko version` | تشخيص البيئة، المفاتيح، والمسارات |
 
 ## المزوّدون
 
@@ -149,11 +161,11 @@ zyko info   # kernel backend: rust
 
 ```bash
 pip install -e .[dev]
-pytest -q            # 106 اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، وضع العرض
+pytest -q            # 133 اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، وضع العرض
 ruff check src tests
 ```
 
-يعمل CI على ubuntu/windows/macos × Python 3.11/3.12 + فحص Rust + تجربة دخان للـCLI — ويعمل أول تشغيل **بلا أي مفاتيح** عبر التراجع التلقائي لمزوّد العرض المدمج.
+يعمل CI على ubuntu/windows/macos × Python 3.11/3.12/3.13 + فحص Rust + تجربة دخان للـCLI — ويعمل أول تشغيل **بلا أي مفاتيح** عبر التراجع التلقائي لمزوّد العرض المدمج.
 
 ## الأمان
 
@@ -179,7 +191,7 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.1.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.2.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
 
 ## Four differentiators
 
@@ -187,6 +199,18 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 2. **Honest quality scores** — ledger scores come only from the reproducible benchmark (`zyko bench`, fixed seed, objective graders), never vendor marketing tables. No data yet → neutral 0.5 for everyone.
 3. **Policy-as-Code** — daily USD budget, deterministic PII redaction (email/phone/card/IBAN/SSN with Luhn), model & tool allowlists, rate limits, JSONL audit trail — one YAML enforced on every call.
 4. **MCP-first** — ZYKO consumes MCP servers as agent tools *and* exposes itself as one (`zyko mcp serve`).
+
+## Design lineage — patterns from the big projects
+
+| Adopted pattern | Source |
+|---|---|
+| Unified OpenAI-format adapters, exponential-backoff retries, `Retry-After` honoring | [LiteLLM](https://github.com/BerriAI/litellm) |
+| Meta-provider `provider/model` naming, attribution headers | [OpenRouter](https://openrouter.ai) |
+| Routing quality derived from reproducible benchmarks, not marketing tables | [RouteLLM](https://github.com/lmcache/routellm) |
+| Config-as-code gateway governance (budgets, allowlists, audit) | [Portkey Gateway](https://github.com/Portkey-AI/gateway) |
+| An open protocol unifying agent tooling (client + server) | [Model Context Protocol](https://modelcontextprotocol.io) |
+
+ZYKO's edge is not reinvention but **verifiability**: routing receipts you can replay offline, an honest reproducible quality ledger, and governance enforced on every call — on every platform.
 
 ## Quickstart
 
@@ -220,7 +244,7 @@ print(outcome.response.text, "←", outcome.receipt["chosen"])
 
 ## Tests
 
-`pytest -q` → 106 tests covering routing (incl. snapshot/parity), policy (incl. schema warnings), MCP over real subprocesses, the gateway, agents, every provider adapter against canned HTTP, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12.
+`pytest -q` → 133 tests covering routing (incl. snapshot/parity), policy (incl. schema warnings), MCP over real subprocesses, the gateway, agents, every provider adapter against canned HTTP, streaming cost accounting, `Retry-After` resilience, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12/3.13.
 
 ## License
 

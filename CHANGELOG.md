@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.2.0 — evaluation-driven hardening round
+
+A full re-evaluation of the platform (tests, lint, coverage, functional smokes)
+followed by targeted fixes and big-project parity improvements.
+
+### Evaluation findings → fixes
+- **Coverage gaps closed** (`platform/paths` 54%, `mcp/server` 63%, `mcp/protocol`
+  67%, `google` 73%): new test groups for path resolution (env overrides +
+  Windows/macOS branches), a real-subprocess MCP server round-trip, protocol
+  framing edges, and the Google adapter build/parse path.
+- **`zyko version`**: new first-class command (`zyko 0.2.0 (MCP protocol …)`) —
+  the CLI previously only exposed `--version` / `info`.
+- **`python -m zyko`** now works (proper `__main__.py`), matching how pip-installed
+  CLIs are expected to behave.
+- **`zyko bench --repeats N`**: repeat the deterministic suite N times for stabler
+  medians; recorded in the JSON report.
+- **Lint**: examples import order fixed (`ruff check` now clean across the tree).
+
+### Resilience — patterns adopted from the big projects
+- **`Retry-After` honored on HTTP 429** (LiteLLM/OpenAI-SDK pattern): the header
+  is parsed (delay-seconds *and* HTTP-date), carried on `RateLimitError.retry_after`,
+  and used by the retry loop instead of the generic backoff curve (clamped 0.05–30 s).
+- **Streaming cost accounting closed** (governance parity with the non-streaming
+  path): OpenAI/OpenRouter streams now request `stream_options.include_usage`,
+  and after every stream the router charges the policy budget from the
+  vendor-reported usage — falling back to the kernel token estimate when the
+  vendor omits it. The audit entry records the accounting source
+  (`estimated: true/false`), so budgets are enforced on *every* call shape.
+
+### Platform
+- CI matrix extended to Python 3.13 (3 OSes × 3 Pythons).
+
 ## 0.1.0 — initial platform release
 
 The first complete implementation of the ZYKO orchestration platform.

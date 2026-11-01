@@ -1,4 +1,4 @@
-# ZYKO v0.1.0 — Readiness Report (release QA)
+# ZYKO v0.2.0 — Readiness Report (release QA)
 
 Status: **READY** — all gates green on the reference environment (Linux, Python 3.12.16),
 and the CI-blocking defects found by the release review are fixed.
@@ -7,8 +7,9 @@ and the CI-blocking defects found by the release review are fixed.
 
 | Gate | Command | Result |
 |---|---|---|
-| Unit/integration tests (plain `pytest`, same as CI) | `pytest -q` | **106 passed** (0 failed, 0 skipped) |
+| Unit/integration tests (plain `pytest`, same as CI) | `pytest -q` | **133 passed** (0 failed, 0 skipped) |
 | Lint | `ruff check src tests benchmarks` | **0 findings** |
+| Coverage (reference platform) | `pytest --cov=zyko` | **81% total** (core paths ≥ 94%) |
 | Byte-compile | `python -m compileall src tests` | clean |
 | Secret scan | `git grep` for token/key patterns | clean — no credentials in tree |
 | CLI smoke (all commands) | `zyko info/doctor/models/route/ask/policy/mcp/bench` | all exit 0 or fail cleanly with hints |
@@ -18,7 +19,25 @@ and the CI-blocking defects found by the release review are fixed.
 | Cross-platform paths | XDG (Linux/Termux), macOS, Windows layouts | covered by `platform/paths.py` + tests |
 | Landing site | `docs/site` rendered AR(RTL)/EN via Playwright | verified both languages + install tabs |
 
-## Review findings fixed in the release pass
+## Review findings fixed in the v0.2.0 evaluation round
+
+1. **`Retry-After` was ignored on HTTP 429** — the header is now parsed
+   (delay-seconds and HTTP-date), carried on `RateLimitError.retry_after`, and
+   the retry loop honors the vendor's own backoff instruction (LiteLLM pattern).
+2. **Streaming calls bypassed the budget** — streams now request
+   `stream_options.include_usage` (OpenAI/OpenRouter), and the router charges
+   the policy budget after every stream from vendor-reported usage, falling
+   back to the kernel estimate; the audit entry records the accounting source.
+3. **Coverage gaps** (`platform/paths` 54%, `mcp/server` 63%, `mcp/protocol`
+   67%, `google` 73%) — new test groups incl. a real-subprocess MCP server
+   round-trip; overall coverage 80% → 81% with the suite growing 106 → 133.
+4. **`zyko version` missing** — added as a first-class command; `python -m zyko`
+   now works too (`__main__.py`).
+5. **`zyko bench --repeats N`** — repeat the deterministic suite for stabler medians.
+6. **`ZYKO_GATEWAY_PORT` stayed a string** — `_coerce` now converts `*port` keys.
+7. **CI matrix extended to Python 3.13** (3 OSes × 3 Pythons).
+
+## Review findings fixed in the v0.1.0 release pass
 
 1. **Plain `pytest` could not collect 4 test modules** — tests imported `tests.fakes`
    which only resolved under `python -m pytest` (cwd on sys.path). `tests/` is now a
@@ -59,7 +78,7 @@ and the CI-blocking defects found by the release review are fixed.
 
 ```bash
 pip install -e .[dev]
-pytest -q                 # 106 passed
+pytest -q                 # 133 passed
 ruff check src tests benchmarks
 zyko ask "hello" --demo --explain
 zyko route "hello"        # no keys needed — auto demo fallback
