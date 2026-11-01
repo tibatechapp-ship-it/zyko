@@ -1,4 +1,5 @@
-"""OpenAI and every OpenAI-compatible vendor (Groq, Mistral, DeepSeek, OpenRouter).
+"""OpenAI and every OpenAI-compatible vendor (Groq, Mistral, DeepSeek, OpenRouter,
+xAI, Together AI).
 
 One request builder, one parser, many subclasses that only declare endpoints,
 catalogs and vendor-specific headers. Adding another OpenAI-compatible vendor
@@ -166,6 +167,109 @@ class DeepSeekProvider(OpenAICompatProvider):
         ),
         ModelInfo(
             "deepseek", "deepseek-reasoner", 64_000, 8_192, True, False, 0.55, 2.19, ["reasoning"]
+        ),
+    ]
+
+
+class XAIProvider(OpenAICompatProvider):
+    """xAI — Grok models, OpenAI-compatible at api.x.ai (docs.x.ai)."""
+
+    name = "xai"
+    DEFAULT_BASE_URL = "https://api.x.ai/v1"
+    DEFAULT_MODEL = "grok-4.7"
+    KEY_ENV = "XAI_API_KEY"
+    STREAM_INCLUDE_USAGE = False  # vendor support for stream_options unconfirmed
+    # List prices from docs.x.ai/developers/pricing (short-context rates;
+    # long-context prompts >= 200k tokens bill higher). max_output is left at
+    # the ModelInfo default where xAI does not publish a per-model cap.
+    CATALOG = [
+        ModelInfo(
+            "xai",
+            "grok-4.7",
+            500_000,
+            input_price_per_mtok=2.00,
+            output_price_per_mtok=6.00,
+            tags=["flagship"],
+        ),
+        ModelInfo(
+            "xai",
+            "grok-4.3",
+            1_000_000,
+            input_price_per_mtok=1.25,
+            output_price_per_mtok=2.50,
+            tags=["long-context", "reasoning"],
+        ),
+        ModelInfo(
+            "xai",
+            "grok-build-0.1",
+            256_000,
+            input_price_per_mtok=1.00,
+            output_price_per_mtok=2.00,
+            tags=["code"],
+        ),
+    ]
+
+
+class TogetherProvider(OpenAICompatProvider):
+    """Together AI — serverless open-model aggregation behind one key."""
+
+    name = "together"
+    DEFAULT_BASE_URL = "https://api.together.ai/v1"
+    DEFAULT_MODEL = "zai-org/GLM-5.3-Flash"
+    KEY_ENV = "TOGETHER_API_KEY"
+    STREAM_INCLUDE_USAGE = False  # vendor support for stream_options unconfirmed
+    # Slugs / context lengths / list prices from the docs.together.ai
+    # serverless chat-models table (function calling confirmed for every
+    # model below). max_output stays at the ModelInfo default where Together
+    # does not publish a per-model cap.
+    CATALOG = [
+        ModelInfo(
+            "together",
+            "moonshotai/Kimi-K3",
+            1_048_576,
+            input_price_per_mtok=3.00,
+            output_price_per_mtok=15.00,
+            tags=["flagship", "open"],
+        ),
+        ModelInfo(
+            "together",
+            "zai-org/GLM-5.3",
+            1_048_575,
+            input_price_per_mtok=1.40,
+            output_price_per_mtok=4.40,
+            tags=["open"],
+        ),
+        ModelInfo(
+            "together",
+            "zai-org/GLM-5.3-Flash",
+            1_048_575,
+            input_price_per_mtok=0.15,
+            output_price_per_mtok=0.50,
+            tags=["cheap", "open"],
+        ),
+        ModelInfo(
+            "together",
+            "deepseek-ai/DeepSeek-V4.1-Flash",
+            1_000_000,
+            input_price_per_mtok=0.30,
+            output_price_per_mtok=1.20,
+            tags=["cheap", "open"],
+        ),
+        ModelInfo(
+            "together",
+            "openai/gpt-oss-120b",
+            131_072,
+            input_price_per_mtok=0.15,
+            output_price_per_mtok=0.60,
+            tags=["open"],
+        ),
+        ModelInfo(
+            "together",
+            "Qwen/Qwen3.5-9B",
+            262_144,
+            input_price_per_mtok=0.17,
+            output_price_per_mtok=0.25,
+            tags=["cheap", "open"],
         ),
     ]
 

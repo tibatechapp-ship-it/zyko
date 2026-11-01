@@ -18,6 +18,8 @@ from zyko.providers.openai_compat import (
     MistralProvider,
     OpenAICompatProvider,
     OpenRouterProvider,
+    TogetherProvider,
+    XAIProvider,
 )
 
 log = get_logger("providers")
@@ -40,6 +42,8 @@ for _cls in (
     MistralProvider,
     DeepSeekProvider,
     OpenRouterProvider,
+    TogetherProvider,
+    XAIProvider,
     OllamaProvider,
 ):
     register(_cls)
@@ -162,6 +166,8 @@ __all__ = [
     "MistralProvider",
     "DeepSeekProvider",
     "OpenRouterProvider",
+    "TogetherProvider",
+    "XAIProvider",
     "OllamaProvider",
     "MockProvider",
     "register",

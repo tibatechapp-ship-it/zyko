@@ -5,7 +5,7 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — Universal AI Orchestration Platform" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-347%20passing-22c55e)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-355%20passing-22c55e)](.github/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-98%25-84cc16)](.github/workflows/ci.yml)
 [![Security](https://img.shields.io/badge/bandit-0%20findings-22c55e?logo=shield&logoColor=white)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776ab?logo=python&logoColor=white)](pyproject.toml)
@@ -21,7 +21,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.3.7** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
+**النسخة 0.3.8** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -50,6 +50,15 @@
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
 
+## ما الجديد في 0.3.8؟ (+xAI وTogether AI — عشرة مزوّدين مسجّلين)
+
+مزوّدان جديدان متوافقان مع OpenAI على نفس رافعة الفئة (~30 سطرًا)، كل حقول الكتالوج مأخوذة من التوثيق الرسمي لكل بائع (الـ slugs ونوافذ السياق والأسعار المعلنة):
+
+- **`xai`** (`XAI_API_KEY`) — `grok-4.7` (سياق 500 ألف، $2/$6)، `grok-4.3` (سياق مليون، $1.25/$2.50)، `grok-build-0.1` (سياق 256 ألف، $1/$2).
+- **`together`** (`TOGETHER_API_KEY`) — `Kimi-K3`، `GLM-5.3`، `GLM-5.3-Flash`، `DeepSeek-V4.1-Flash`، `gpt-oss-120b`، `Qwen3.5-9B` — باب واحد لنماذج مفتوحة بأسعار منافسة وسياقات تصل مليون رمز.
+
+8 اختبارات جديدة (شكل الطلب، سلامة الكتالوج، حلّ المفاتيح) — **355 اختبارًا ناجحًا**.
+
 ## ما الجديد في 0.3.7؟ (سباق موت خادم MCP أصبح مُنمّطًا على كل منصة)
 
 التقطتها ذراع macOS/py3.11 في CI بعد 0.3.6: عندما يموت خادم MCP بين `write()` و`drain()` لدى العميل، كان `drain()` يرمي `ConnectionResetError` خام في بعض المنصات بدلاً من `MCPError` الموثّقة. الآن يسلك المسارَان (`_request` و`_notify`) سلوكًا واحدًا حتميًا على Linux وmacOS وWindows: خطأ مُنمّط واحد `MCPError("closed the stream")`، مع تنظيف الطلب المعلّق فورًا (يزيل تحذير "Future exception was never retrieved"). **347 اختبارًا ناجحًا**.
@@ -62,7 +71,7 @@
 
 ثلاثة مستندات مرجعية جديدة، كل توقيع فيها مأخوذ حرفيًا من الكود (لا اختراع):
 
-- **[مرجع API](docs/API.md)** — العميل `Zyko`، محرك التوجيه وإيصاله، المزوّدون التسعة، `PolicyEngine`، البوابة، MCP بالاتجاهين، الوكلاء، الإعدادات والمسارات، شجرة الاستثناءات، خريطة CLI الكاملة.
+- **[مرجع API](docs/API.md)** — العميل `Zyko`، محرك التوجيه وإيصاله، المزوّدون العشرة، `PolicyEngine`، البوابة، MCP بالاتجاهين، الوكلاء، الإعدادات والمسارات، شجرة الاستثناءات، خريطة CLI الكاملة.
 - **[المعمارية](docs/ARCHITECTURE.md)** — مخططات mermaid لدورة حياة الطلب، لماذا الإيصال قابل للتحقق بالبناء، جودة مُقاسة لا مُدّعاة، الحوكمة على كل نداء، وقابلية النقل بين المنصات.
 - **[دليل المزوّدين](docs/PROVIDERS.md)** — الاكتشاف التلقائي، إعداد YAML، أي بائع متوافق مع OpenAI، تسعير يغذّي التوجيه، المرونة (إعادة المحاولة/القاطع/البدائل)، وسير العمل بلا مفاتيح.
 
@@ -210,7 +219,7 @@ print(agent.run_sync("كم 47 × 16 × 7؟").output)
 
 ## المزوّدون
 
-OpenAI · Anthropic · Google Gemini · Groq · Mistral · DeepSeek · OpenRouter · **Ollama (محلي/بلا مفاتيح)** — والمعمارية موحّدة: إضافة مزوّد متوافق مع OpenAI = فئة من ~30 سطرًا.
+OpenAI · Anthropic · Google Gemini · Groq · Mistral · DeepSeek · OpenRouter · **Together AI** · **xAI (Grok)** · **Ollama (محلي/بلا مفاتيح)** — والمعمارية موحّدة: إضافة مزوّد متوافق مع OpenAI = فئة من ~30 سطرًا.
 
 ## التوثيق
 
@@ -292,7 +301,16 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.3.7** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.3.8** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.3.8 — +xAI (Grok) and +Together AI: ten registered providers
+
+Two new OpenAI-compatible vendors on the same ~30-line subclass lever. Every catalog fact comes from each vendor's official documentation (slugs, context windows, list prices):
+
+- **`xai`** (`XAI_API_KEY`) — `grok-4.7` (500k ctx, $2/$6), `grok-4.3` (1M ctx, $1.25/$2.50), `grok-build-0.1` (256k ctx, $1/$2).
+- **`together`** (`TOGETHER_API_KEY`) — `Kimi-K3`, `GLM-5.3`, `GLM-5.3-Flash`, `DeepSeek-V4.1-Flash`, `gpt-oss-120b`, `Qwen3.5-9B` — one key to a deep open-model catalog with contexts up to 1M tokens.
+
+8 new tests (request shape, catalog integrity, key-env resolution) — **355 tests passing**.
 
 ## What's new in 0.3.7 — MCP dead-server race now fails typed, on every OS
 
@@ -306,7 +324,7 @@ Zero-impact hygiene round: ruff 0.17 changed formatting behaviour (and now forma
 
 Three new reference documents, every signature taken verbatim from the code (nothing invented):
 
-- **[API reference](docs/API.md)** — the `Zyko` client, the router and its receipt, all nine providers, `PolicyEngine`, the gateway, MCP in both directions, agents, settings & paths, the exception tree, the full CLI map.
+- **[API reference](docs/API.md)** — the `Zyko` client, the router and its receipt, all ten providers, `PolicyEngine`, the gateway, MCP in both directions, agents, settings & paths, the exception tree, the full CLI map.
 - **[Architecture](docs/ARCHITECTURE.md)** — mermaid diagrams of the request lifecycle, why the receipt is verifiable by construction, measured (not claimed) quality, governance on every call, and cross-platform portability.
 - **[Providers guide](docs/PROVIDERS.md)** — auto-discovery, YAML config, any OpenAI-compatible vendor, pricing that feeds routing, resilience (retries/breaker/fallbacks), and keyless workflows.
 
@@ -396,7 +414,7 @@ print(outcome.response.text, "←", outcome.receipt["chosen"])
 - **CLI**: `ask` · `chat` · `route` (planning-only) · `models` · `policy` · `run` (agents) · `sessions` (inspect SQLite memory) · `cost` (spend & governance report) · `serve` · `mcp` · `bench` · `doctor` — argparse-only, zero CLI dependencies. `--demo` runs the whole stack offline through a deterministic mock provider (no keys, no network). Explicit `--model provider/name` pins are enforced by the router, not ignored.
 - **Gateway**: stdlib HTTP server, streaming SSE included, `zyko.receipt` embedded in responses and chunks.
 - **Agents**: ReAct loop, builtin tools (calculator/file/http/shell-guarded), MCP tools namespaced as `server__tool`, SQLite session memory, step/timeout/policy guards.
-- **Providers**: OpenAI · Anthropic · Google · Groq · Mistral · DeepSeek · OpenRouter · Ollama(local). Retries with backoff, circuit breakers, latency EWMA.
+- **Providers**: OpenAI · Anthropic · Google · Groq · Mistral · DeepSeek · OpenRouter · Together AI · xAI (Grok) · Ollama(local). Retries with backoff, circuit breakers, latency EWMA.
 - **Android/Termux**: one-command installer, offline models via Ollama, widget shortcut for the gateway, optional Kivy UI. Nothing compiles.
 - **Rust kernel (optional)**: PyO3 accelerator with enforced Python-parity; graceful fallback everywhere.
 

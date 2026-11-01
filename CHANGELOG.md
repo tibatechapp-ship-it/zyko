@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.3.8 — provider ecosystem: +xAI (Grok) and +Together AI
+
+Two new OpenAI-compatible vendors built on the same ~30-line subclass lever,
+taking the registry from 8 to **10 registered providers** (plus the internal
+demo mock). Every catalog fact below was taken from the vendor's official
+documentation at the time of writing — slugs, context windows and list prices
+— with `max_output` left at the `ModelInfo` default where a vendor publishes
+no per-model cap.
+
+### Added
+- **`xai`** (`XAI_API_KEY`, `https://api.x.ai/v1`) — `grok-4.7` (500k ctx,
+  $2/$6), `grok-4.3` (1M ctx, $1.25/$2.50), `grok-build-0.1` (256k ctx,
+  $1/$2). Short-context list prices from docs.x.ai; long-context prompts
+  bill higher and the YAML override is the knob for that.
+- **`together`** (`TOGETHER_API_KEY`, `https://api.together.ai/v1`) —
+  `moonshotai/Kimi-K3`, `zai-org/GLM-5.3`, `zai-org/GLM-5.3-Flash`,
+  `deepseek-ai/DeepSeek-V4.1-Flash`, `openai/gpt-oss-120b`,
+  `Qwen/Qwen3.5-9B` — slugs, contexts and prices from the
+  docs.together.ai serverless table (function calling confirmed for all).
+
+### Tests & docs
+- 8 new tests (`tests/test_providers_new.py`): registry size, request shape
+  against both base URLs with default-model resolution, catalog integrity
+  (provider prefix / positive prices / tags / tool support / cost math),
+  exact model-ID sets, key-env resolution for both vendors.
+- Docs updated everywhere the vendor list appears: README (AR+EN),
+  `docs/PROVIDERS.md` table, `docs/API.md` registry table, landing site.
+- Suite: **355 passed** (347 + 8) · `ruff check` clean · `ruff format --check .`
+  clean (98 files).
+Version synced: version.py / pyproject.toml / CITATION.cff → 0.3.8.
+
 ## 0.3.7 — MCP: dead-server race now fails typed, on every OS
 
 Caught by the macOS py3.11 CI leg after 0.3.6: `test_mcp_closed_stream_fails_pending_request`

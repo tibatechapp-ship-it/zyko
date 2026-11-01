@@ -147,6 +147,8 @@ All providers subclass `zyko.providers.base.BaseProvider`
 | `MistralProvider` | `MISTRAL_API_KEY` | `https://api.mistral.ai/v1` |
 | `DeepSeekProvider` | `DEEPSEEK_API_KEY` | `https://api.deepseek.com/v1` |
 | `OpenRouterProvider` | `OPENROUTER_API_KEY` | `https://openrouter.ai/api/v1` |
+| `TogetherProvider` | `TOGETHER_API_KEY` | `https://api.together.ai/v1` |
+| `XAIProvider` | `XAI_API_KEY` | `https://api.x.ai/v1` |
 | `OllamaProvider` | — (keyless, local) | `http://127.0.0.1:11434` |
 | `MockProvider` | — (offline demo, `ZYKO_DEMO=1`) | `mock://local` |
 

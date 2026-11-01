@@ -24,6 +24,8 @@ No key at all? ZYKO still boots in demo mode and tells you so — nothing crashe
 | Mistral | `MISTRAL_API_KEY` | `https://api.mistral.ai/v1` | OpenAI-compatible |
 | DeepSeek | `DEEPSEEK_API_KEY` | `https://api.deepseek.com/v1` | OpenAI-compatible |
 | OpenRouter | `OPENROUTER_API_KEY` | `https://openrouter.ai/api/v1` | hundreds of models behind one key |
+| Together AI | `TOGETHER_API_KEY` | `https://api.together.ai/v1` | OpenAI-compatible; Kimi K3, GLM-5.3, DeepSeek V4.1 Flash, gpt-oss-120b, Qwen3.5 |
+| xAI | `XAI_API_KEY` | `https://api.x.ai/v1` | OpenAI-compatible; grok-4.7 (500k ctx), grok-4.3 (1M ctx), grok-build-0.1 |
 | Ollama | — | `http://127.0.0.1:11434` | keyless, local, offline |
 | Mock | — | `mock://local` | deterministic, `ZYKO_DEMO=1` |
 
