@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.3.5 — deep developer documentation
+
+Three new reference documents, every signature taken verbatim from the code:
+
+- **`docs/API.md`** — the `Zyko` client, `Router` + receipt, all nine
+  providers, `PolicyEngine`, gateway, MCP (server & client), agents,
+  settings/paths, the exception tree, and the full CLI map.
+- **`docs/ARCHITECTURE.md`** — mermaid diagrams of the request lifecycle,
+  the verifiable-by-construction receipt, measured quality, per-call
+  governance, platform portability, and extension points.
+- **`docs/PROVIDERS.md`** — discovery, per-provider YAML, any
+  OpenAI-compatible vendor, pricing feeding the router, resilience
+  (retries / breaker / fallbacks), keyless workflows.
+
+README now links all three from its Arabic and English sections.
+Version synced: version.py / pyproject.toml / CITATION.cff → 0.3.5.
+
 ## 0.3.4 — the real CI fix: green on Ubuntu + macOS + Windows
 
 The 0.3.3 release fixed the bandit gate locally, but the GitHub CI matrix was

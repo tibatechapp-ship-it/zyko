@@ -21,7 +21,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.3.4** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
+**النسخة 0.3.5** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -49,6 +49,14 @@
 | بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
+
+## ما الجديد في 0.3.5؟ (توثيق عميق للمطوّرين)
+
+ثلاثة مستندات مرجعية جديدة، كل توقيع فيها مأخوذ حرفيًا من الكود (لا اختراع):
+
+- **[مرجع API](docs/API.md)** — العميل `Zyko`، محرك التوجيه وإيصاله، المزوّدون التسعة، `PolicyEngine`، البوابة، MCP بالاتجاهين، الوكلاء، الإعدادات والمسارات، شجرة الاستثناءات، خريطة CLI الكاملة.
+- **[المعمارية](docs/ARCHITECTURE.md)** — مخططات mermaid لدورة حياة الطلب، لماذا الإيصال قابل للتحقق بالبناء، جودة مُقاسة لا مُدّعاة، الحوكمة على كل نداء، وقابلية النقل بين المنصات.
+- **[دليل المزوّدين](docs/PROVIDERS.md)** — الاكتشاف التلقائي، إعداد YAML، أي بائع متوافق مع OpenAI، تسعير يغذّي التوجيه، المرونة (إعادة المحاولة/القاطع/البدائل)، وسير العمل بلا مفاتيح.
 
 ## ما الجديد في 0.3.4؟ (إصلاح CI الحقيقي: الأخضر على المنصات الثلاث)
 
@@ -196,6 +204,14 @@ print(agent.run_sync("كم 47 × 16 × 7؟").output)
 
 OpenAI · Anthropic · Google Gemini · Groq · Mistral · DeepSeek · OpenRouter · **Ollama (محلي/بلا مفاتيح)** — والمعمارية موحّدة: إضافة مزوّد متوافق مع OpenAI = فئة من ~30 سطرًا.
 
+## التوثيق
+
+| المستند | ماذا يغطي |
+|---|---|
+| [مرجع API](docs/API.md) | كل التوقيعات من الكود: `Zyko`، `Router`، السياسات، البوابة، MCP، الوكلاء، الاستثناءات، خريطة CLI |
+| [المعمارية](docs/ARCHITECTURE.md) | دورة حياة الطلب، إيصال التوجيه القابل للتحقق، الطبقات ونقاط الامتداد (مخططات mermaid) |
+| [دليل المزوّدين](docs/PROVIDERS.md) | كل المزوّدين، إعداد YAML، أي بائع متوافق مع OpenAI، التسعير والمرونة وسير العمل بلا مفاتيح |
+
 ## السياسات (Policy-as-Code)
 
 ```yaml
@@ -268,7 +284,15 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.3.4** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.3.5** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.3.5 — deep developer documentation
+
+Three new reference documents, every signature taken verbatim from the code (nothing invented):
+
+- **[API reference](docs/API.md)** — the `Zyko` client, the router and its receipt, all nine providers, `PolicyEngine`, the gateway, MCP in both directions, agents, settings & paths, the exception tree, the full CLI map.
+- **[Architecture](docs/ARCHITECTURE.md)** — mermaid diagrams of the request lifecycle, why the receipt is verifiable by construction, measured (not claimed) quality, governance on every call, and cross-platform portability.
+- **[Providers guide](docs/PROVIDERS.md)** — auto-discovery, YAML config, any OpenAI-compatible vendor, pricing that feeds routing, resilience (retries/breaker/fallbacks), and keyless workflows.
 
 ## What's new in 0.3.4 — the real CI fix: green on all three platforms
 
@@ -358,6 +382,14 @@ print(outcome.response.text, "←", outcome.receipt["chosen"])
 - **Providers**: OpenAI · Anthropic · Google · Groq · Mistral · DeepSeek · OpenRouter · Ollama(local). Retries with backoff, circuit breakers, latency EWMA.
 - **Android/Termux**: one-command installer, offline models via Ollama, widget shortcut for the gateway, optional Kivy UI. Nothing compiles.
 - **Rust kernel (optional)**: PyO3 accelerator with enforced Python-parity; graceful fallback everywhere.
+
+## Documentation
+
+| Document | Covers |
+|---|---|
+| [API reference](docs/API.md) | every signature from the code: `Zyko`, `Router`, policies, gateway, MCP, agents, exceptions, CLI map |
+| [Architecture](docs/ARCHITECTURE.md) | request lifecycle, the verifiable receipt, layers and extension points (mermaid diagrams) |
+| [Providers guide](docs/PROVIDERS.md) | all vendors, YAML config, any OpenAI-compatible endpoint, pricing & resilience, keyless workflows |
 
 ## Tests
 
