@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from typing import Any, AsyncIterator
 
 from zyko import kernel
+from zyko.cache import ResponseCache
 from zyko.core.events import StreamEvent, done_event
 from zyko.core.response import ChatRequest, ChatResponse, Usage
 from zyko.exceptions import ProviderError
@@ -122,6 +123,7 @@ class Router:
         max_fallbacks: int = 3,
         breaker_threshold: int = 3,
         breaker_cooldown_s: float = 30.0,
+        cache: ResponseCache | None = None,
     ) -> None:
         if not providers:
             raise ProviderError(
@@ -140,6 +142,7 @@ class Router:
         self.strategy = strategy
         self.max_fallbacks = max_fallbacks
         self.health = HealthTracker(breaker_threshold, breaker_cooldown_s)
+        self.cache = cache
 
     # ------------------------------------------------------------- scoring
     def candidates(self) -> list[RouteCandidate]:
@@ -304,6 +307,8 @@ class Router:
         pool = self.candidates_for(request)
         ranking = self.rank(est_input_tokens=est_in, est_output_tokens=est_out, pool=pool)
         attempts: list[RouteAttempt] = []
+        cache = self.cache
+        mode = cache.cache_mode(request) if cache is not None else "bypass"
 
         for candidate, breakdown in ranking[: max(1, self.max_fallbacks)]:
             if not self.health.available(candidate.key):
@@ -317,6 +322,25 @@ class Router:
                     continue
                 request = decision.request
 
+            # Cache lookup happens *after* the policy rewrite so the key covers
+            # the exact outbound payload (redactions included) and per-candidate
+            # provider/model — a cached answer from vendor A is never served for
+            # a request that routed to vendor B.
+            cache_key: str | None = None
+            if cache is not None and mode != "bypass":
+                cache_key = cache.key_for(
+                    request, provider=candidate.provider, model=candidate.model
+                )
+                if mode != "refresh":
+                    cached = cache.get(cache_key)
+                    if cached is not None:
+                        attempts.append(RouteAttempt(candidate.key, "cache-hit"))
+                        receipt = self._receipt(
+                            request, candidate, breakdown, attempts, ranking, est_in, est_out
+                        )
+                        receipt["cached"] = True
+                        return RouteResult(cached, candidate.key, attempts, receipt)
+
             provider = self.providers[candidate.provider]
             started = time.perf_counter()
             try:
@@ -328,6 +352,9 @@ class Router:
                     cost = response.usage.cost_usd(info)
                     self.policy.record_cost(cost, candidate)
                 attempts.append(RouteAttempt(candidate.key, "ok", latency_ms=latency))
+                if cache is not None and cache_key is not None and not response.tool_calls:
+                    # Tool-call responses stay uncached (agent replay hazard).
+                    cache.set(cache_key, response)
                 receipt = self._receipt(
                     request, candidate, breakdown, attempts, ranking, est_in, est_out
                 )
@@ -482,6 +509,7 @@ class Router:
             "ranking": [{"candidate": cand.key, **bd.as_dict()} for cand, bd in ranking[:10]],
             "attempts": [a.as_dict() for a in attempts],
             "policy": self.policy.snapshot() if self.policy else None,
+            "cached": False,
             "ledger_updated": self.ledger.meta.get("updated"),
         }
 

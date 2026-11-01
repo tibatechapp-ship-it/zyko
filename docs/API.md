@@ -182,6 +182,11 @@ engine.record_stream_open(candidate)            # rpm metering for streams
 Enforced per call: provider/model allow-deny, tool allow-deny, PII redaction
 (email/phone/IP/card patterns), local rate limits, daily budget (audited to
 `budget_file()`), plus a full audit trail consumed by `zyko cost`.
+An optional **`cache:` section** (`{enabled: true, ttl_s: 300, max_entries:
+512}`) builds a policy-owned `ResponseCache` the router consults before any
+vendor call — exact-match keys over the post-policy outbound payload,
+`"cached": true` receipts on hits, no budget charge, `tool_calls` responses
+never stored, per-call overrides via `metadata={"cache": "bypass" or "refresh"}`.
 Malformed sections degrade to documented schema warnings — never a raw
 crash. Schema: [examples/policies/strict.yaml](../examples/policies/strict.yaml).
 
@@ -315,6 +320,7 @@ rejections (the audit log records them automatically).
 | `zyko run agent.yaml "task"` | run a YAML-defined agent |
 | `zyko sessions list\|show\|rm\|clear` | inspect SQLite session memory |
 | `zyko cost [--days N] [--json]` | spend & governance report from the audit log |
+| `zyko cache [--json] [--clear]` | inspect or clear the policy-gated response cache |
 | `zyko bench [suite] [--demo]` | reproducible routing benchmark (fixed seeds) |
 
 Environment: `ZYKO_DEMO=1` → keyless offline mock mode (great for CI).

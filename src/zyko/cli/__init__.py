@@ -159,6 +159,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd.cmd_cost)
 
+    # cache (response cache visibility)
+    p = sub.add_parser("cache", help="inspect or clear the policy-gated response cache")
+    with_router(p)
+    p.add_argument("--clear", action="store_true", help="drop every cached response")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd.cmd_cache)
+
     # bench
     p = sub.add_parser("bench", help="run the reproducible routing benchmark")
     p.add_argument(

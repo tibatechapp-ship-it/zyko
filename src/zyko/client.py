@@ -60,6 +60,7 @@ class Zyko:
             policy=self.policy,
             strategy=strategy or self.settings.get("router.strategy", "balanced"),
             max_fallbacks=int(self.settings.get("router.max_fallbacks", 3)),
+            cache=self.policy.cache if self.policy else None,
         )
 
     # ------------------------------------------------------------- completion

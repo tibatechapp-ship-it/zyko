@@ -71,6 +71,7 @@ KNOWN_TOP_LEVEL = {
     "tools",
     "privacy",
     "rate_limit",
+    "cache",
     "audit",
 }
 KNOWN_DEFAULTS_KEYS = {"budget_usd_per_day", "max_tokens_per_request"}
@@ -236,6 +237,25 @@ class PolicyEngine:
         rate_limit = doc.get("rate_limit") or {}
         rate = rate_limit.get("requests_per_minute") if isinstance(rate_limit, dict) else None
         self.bucket = _TokenBucket(int(rate)) if rate else None
+        cache_cfg = doc.get("cache") or {}
+        if not isinstance(cache_cfg, dict):  # _schema_warnings reports the shape error
+            cache_cfg = {}
+        self.cache = None  # type: ResponseCache | None — built only when enabled
+        if cache_cfg.get("enabled"):
+            from zyko.cache import ResponseCache
+
+            try:
+                self.cache = ResponseCache(
+                    ttl_s=float(cache_cfg.get("ttl_s", 300)),
+                    max_entries=int(cache_cfg.get("max_entries", 512)),
+                )
+            except ValueError as exc:
+                raise ConfigError(f"invalid cache section: {exc}") from exc
+            log.info(
+                "policy cache enabled: ttl=%.0fs max_entries=%d",
+                self.cache.ttl_s,
+                self.cache.max_entries,
+            )
         audit = doc.get("audit") or {}
         self.audit_enabled = bool(audit.get("enabled", True)) if isinstance(audit, dict) else True
         self.stats = {
@@ -263,6 +283,15 @@ class PolicyEngine:
         privacy = doc.get("privacy")
         if privacy is not None and not isinstance(privacy, dict):
             warnings.append("'privacy' must be a mapping")
+        cache_cfg = doc.get("cache")
+        if cache_cfg is not None and not isinstance(cache_cfg, dict):
+            warnings.append("'cache' must be a mapping")
+        elif isinstance(cache_cfg, dict):
+            from zyko.cache import KNOWN_CACHE_KEYS
+
+            for key in cache_cfg:
+                if key not in KNOWN_CACHE_KEYS:
+                    warnings.append(f"unknown key 'cache.{key}' (typo? ignored)")
         return warnings
 
     def _matches(self, name: str, patterns: list[str]) -> bool:
@@ -411,6 +440,7 @@ class PolicyEngine:
             "budget_remaining_usd": self.budget.remaining(),
             "redaction_active": bool(self.redactor),
             "rate_limit_rpm": self.bucket.capacity if self.bucket else None,
+            "cache": self.cache.snapshot() if self.cache is not None else None,
             "warnings": list(self.warnings),
             "stats": dict(self.stats),
         }

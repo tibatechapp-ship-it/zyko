@@ -1,5 +1,56 @@
 # Changelog
 
+## 0.3.9 — response cache: the #1 capability ZYKO lacked vs LiteLLM/Portkey
+
+A competitive-matrix review against LiteLLM and Portkey Gateway showed ZYKO
+already matched their retry/backoff, failover, circuit breakers, budget and
+PII governance — but shipped **no response cache**. This release adds a
+policy-gated, exact-match TTL cache so identical requests inside the window
+are answered from memory instead of billing the vendor again.
+
+### Added
+- **`zyko.cache.ResponseCache`** — thread-safe, bounded, exact-match cache:
+  SHA-256 key over the canonical outbound payload (provider, model,
+  messages, temperature, max_tokens, tools, tool_choice via
+  `messages_to_openai`), TTL expiry on a monotonic clock (default 300 s),
+  LRU eviction at `max_entries` (default 512), hit/miss/store/bypass/
+  eviction/expiry statistics.
+- **Policy section `cache:`** — `cache: {enabled: true, ttl_s: 300,
+  max_entries: 512}` in any policy YAML builds the cache and hands it to the
+  router through `PolicyEngine.cache`. No policy section → no cache → zero
+  behaviour change for existing users. Unknown `cache.*` keys and malformed
+  sections degrade to the same schema warnings as every other control.
+- **Router integration** (`Router(cache=...)`, wired automatically by
+  `Zyko()` and the CLI): lookup happens *after* the policy rewrite, so the
+  key covers the exact outbound payload (redactions included); keys are
+  per-candidate, so a cached `openai/*` answer is never served for a request
+  that routed to `anthropic/*`. Cache hits produce a `cache-hit` attempt, a
+  `"cached": true` receipt flag, **no vendor call, no budget charge, no
+  health-tracker write**. Responses carrying `tool_calls` are never stored
+  (agent replay hazard). Streaming bypasses the cache in v1.
+- **Request-level overrides** — `metadata={"cache": "bypass"}` skips read
+  and write for one call; `metadata={"cache": "refresh"}` skips the read but
+  stores the fresh answer (revalidation).
+- **CLI `zyko cache`** — inspect entries/TTL/hit-rate (`--json` always valid
+  JSON, mirroring `zyko cost --json`) and `--clear`. Disabled state prints an
+  actionable policy snippet.
+
+### Fixed
+- **Empty-cache truthiness trap** — an early draft kept `__len__` on
+  `ResponseCache`, which made an *empty* cache falsy and silently disabled
+  `if cache:` fast paths. Removed `__len__` in favour of an explicit
+  `size()`; every router/policy call site now uses `is not None`.
+
+### Tests & docs
+- 20 new tests (`tests/test_cache.py`): key stability/sensitivity, TTL
+  expiry, LRU eviction + touch protection, thread-safety smoke (8 threads),
+  policy gating (missing section, typos, malformed section, invalid values),
+  router hit/bypass/refresh/redaction-key/failover-shadowing/tool-call
+  skip/stream-bypass, CLI disabled hint + JSON + clear.
+- Docs: README (AR+EN), `docs/API.md` (policy section + CLI map), policy
+  schema example `examples/policies/strict.yaml` untouched (cache is opt-in).
+- Suite: **375 passed** (355 + 20) · `ruff check` clean · `ruff format --check` clean.
+
 ## 0.3.8 — provider ecosystem: +xAI (Grok) and +Together AI
 
 Two new OpenAI-compatible vendors built on the same ~30-line subclass lever,

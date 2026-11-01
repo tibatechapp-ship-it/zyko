@@ -65,6 +65,7 @@ def _build_router(args: Any) -> Router:
         policy=policy,
         strategy=getattr(args, "strategy", None) or settings.get("router.strategy", "balanced"),
         max_fallbacks=int(settings.get("router.max_fallbacks", 3)),
+        cache=policy.cache if policy else None,
     )
 
 
@@ -554,6 +555,51 @@ def cmd_cost(args: Any) -> int:
         )
     if redaction_events:
         ui.kv("redaction events", redaction_events)
+    return 0
+
+
+def cmd_cache(args: Any) -> int:
+    """`zyko cache` — inspect or clear the policy-gated response cache."""
+    router = _build_router(args)
+    cache = router.cache
+    if cache is None:
+        if args.json:
+            # Machine consumers (`zyko cache --json | jq`) must always get valid
+            # JSON — the same contract `zyko cost --json` holds.
+            print(json.dumps({"enabled": False, "entries": 0, "hit_rate": 0.0}, indent=2))
+            return 0
+        print(
+            ui.warn(
+                "response cache is disabled — enable it in the policy:\n"
+                "  cache:\n"
+                "    enabled: true\n"
+                "    ttl_s: 300        # seconds an entry stays valid\n"
+                "    max_entries: 512  # LRU bound"
+            )
+        )
+        return 0
+    if getattr(args, "clear", False):
+        removed = cache.clear()
+        print(ui.ok(f"cleared {removed} cached response(s)"))
+        return 0
+    snap = cache.snapshot()
+    if args.json:
+        print(json.dumps(snap, indent=2))
+        return 0
+    print(bold("Response cache"))
+    ui.kv("entries", f"{snap['entries']} / {snap['max_entries']}")
+    ui.kv("ttl", f"{snap['ttl_s']:.0f}s")
+    ui.kv("hits", snap["hits"])
+    ui.kv("misses", snap["misses"])
+    ui.kv("hit rate", f"{snap['hit_rate'] * 100:.1f}%")
+    ui.kv(
+        "stores / evictions / expiries",
+        f"{snap['stores']} / {snap['evictions']} / {snap['expiries']}",
+    )
+    ui.kv(
+        "bypass hints",
+        "metadata={'cache': 'bypass'} skips the cache; 'refresh' revalidates a single call",
+    )
     return 0
 
 

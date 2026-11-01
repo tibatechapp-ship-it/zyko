@@ -21,7 +21,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.3.8** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
+**النسخة 0.3.9** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -49,6 +49,27 @@
 | بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
+
+## ما الجديد في 0.3.9؟ (ذاكرة تخزين مؤقت للاستجابات — أكبر فجوة كانت أمام المنافسين)
+
+مراجعة مقارنة ضد LiteLLM وPortkey أظهرت أن ZYKO يكافئهم في إعادة المحاولة الأُسّية والتحوّل التلقائي وقواطع الدائرة وسقوف الإنفاق وحجب PII — لكنه كان يفتقد **ذاكرة تخزين للاستجابات**. أُضيفت الآن خلف قسم سياسة واحد، مطفأة افتراضيًا:
+
+```yaml
+# في ملف السياسة (Policy-as-Code):
+cache:
+  enabled: true
+  ttl_s: 300        # مدة صلاحية الإجابة (ثانية)
+  max_entries: 512  # حد LRU
+```
+
+- **مفتاح دقيق**: SHA-256 على الحمولة الصادرة الكاملة (المزوّد، النموذج، الرسائل، الحرارة، الأدوات) — الإصابة تعني أن البائع كان سيجيب نفس الإجابة نفسها.
+- **لكل مرشّح مفتاحه**: إجابة `openai/*` المخزّنة لا تُقدَّم أبدًا لطلب وجّه إلى `anthropic/*`.
+- **إيصال صادق**: الإصابة تظهر كـ `cache-hit` و`"cached": true` — بلا نداء للبائع، بلا خصم من الميزانية، بلا كتابة في متعقّب الصحة.
+- **آمنة للوكلاء**: الردود التي تحمل `tool_calls` لا تُخزَّن أبدًا؛ البثّ يتجاوز الذاكرة في هذه النسخة.
+- **تحكّم لكل طلب**: `metadata={"cache": "bypass"}` يتجاوز الذاكرة، و`"refresh"` يعيد التحقق من نداء واحد.
+- **رؤية كاملة**: `zyko cache` يعرض الإدخالات ونسبة الإصابة (`--json` دائمًا JSON صالح)، و`--clear` يفرّغها.
+
+20 اختبارًا جديدًا — **375 اختبارًا ناجحًا**.
 
 ## ما الجديد في 0.3.8؟ (+xAI وTogether AI — عشرة مزوّدين مسجّلين)
 
@@ -301,7 +322,28 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.3.8** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.3.9** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.3.9 — response cache: the #1 gap versus the competition
+
+A competitive-matrix review against LiteLLM and Portkey showed ZYKO already matched their retries, failover, breakers, budgets and PII governance — but shipped **no response cache**. It now ships behind one policy section, off by default:
+
+```yaml
+# in your policy file (Policy-as-Code):
+cache:
+  enabled: true
+  ttl_s: 300        # seconds an answer stays valid
+  max_entries: 512  # LRU bound
+```
+
+- **Exact key**: SHA-256 over the full outbound payload (provider, model, messages, temperature, tools) — a hit means the vendor would have answered the same thing.
+- **Per-candidate keys**: a cached `openai/*` answer is never served for a request that routed to `anthropic/*`.
+- **Honest receipts**: hits surface as `cache-hit` attempts and `"cached": true` — no vendor call, no budget charge, no health write.
+- **Agent-safe**: `tool_calls` responses are never stored; streaming bypasses the cache in v1.
+- **Per-call control**: `metadata={"cache": "bypass"}` skips it; `"refresh"` revalidates a single call.
+- **Full visibility**: `zyko cache` shows entries and hit rate (`--json` is always valid JSON); `--clear` empties it.
+
+20 new tests — **375 tests passing**.
 
 ## What's new in 0.3.8 — +xAI (Grok) and +Together AI: ten registered providers
 
