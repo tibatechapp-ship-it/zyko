@@ -181,3 +181,63 @@ def test_python_dash_m_zyko_entry():
     )
     assert proc.returncode == 0
     assert "zyko" in proc.stdout
+
+
+# ------------------------------------------------- CLI robustness (v0.3.1)
+def test_cost_json_valid_when_no_audit_log(capsys):
+    """`zyko cost --json` must emit valid JSON even with no audit log.
+
+    Regression: the [INFO] line used to go to stdout before the --json
+    check, breaking every downstream consumer (`zyko cost --json | jq`).
+    """
+    assert main(["cost", "--audit", "/nonexistent/audit.jsonl", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["total_spend_usd"] == 0.0
+    assert payload["events"] == {}
+    assert payload["spend_by_day"] == {}
+
+
+def test_cost_human_message_still_printed(capsys):
+    """The friendly [INFO] path for humans stays on the plain command."""
+    assert main(["cost", "--audit", "/nonexistent/audit.jsonl"]) == 0
+    assert "no audit log" in capsys.readouterr().out
+
+
+def test_serve_port_conflict_friendly_error(monkeypatch, capsys):
+    """A busy port must produce a friendly [FAIL], never a raw OSError traceback."""
+    import zyko.gateway.server as gw
+
+    def boom(*_a, **_kw):
+        raise OSError(98, "Address already in use")
+
+    monkeypatch.setattr(gw, "serve", boom)
+    assert main(["serve", "--demo", "--port", "1"]) == 1
+    err = capsys.readouterr().err
+    assert "cannot start gateway" in err
+    assert "Address already in use" in err
+    assert "Traceback" not in err
+
+
+def test_broken_pipe_clean_exit(monkeypatch, capsys):
+    """`zyko doctor | head` must not print a BrokenPipeError traceback."""
+    import zyko.cli.commands as commands
+
+    def blow_up(_args):
+        raise BrokenPipeError()
+
+    monkeypatch.setattr(commands, "cmd_info", blow_up)
+    assert main(["info"]) == 141
+    assert "Traceback" not in capsys.readouterr().err
+
+
+def test_output_encoding_guard_never_crashes(monkeypatch, capsys):
+    """Characters a legacy console cannot encode must not kill the command."""
+    import zyko.cli.commands as commands
+
+    def wide_output(_args):
+        commands.ui.kv("emoji", "مرحبا — · ✓")  # Arabic + em-dash + symbols
+        return 0
+
+    monkeypatch.setattr(commands, "cmd_info", wide_output)
+    assert main(["info"]) == 0
+    assert "مرحبا" in capsys.readouterr().out

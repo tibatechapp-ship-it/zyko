@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.1 — CLI robustness round: no more raw tracebacks
+
+A targeted audit of the CLI surfaced three defects a user could hit on a
+normal day; all are fixed and regression-tested.
+
+### Fixes
+- **`zyko cost --json` emitted `[INFO]` text instead of JSON** when no audit
+  log existed yet — breaking every downstream consumer (`| jq`, CI steps).
+  The empty-report branch now emits the exact same JSON schema as a real
+  report; the human-friendly `[INFO]` line is kept for the plain command.
+- **`zyko serve` on a busy port crashed with a raw `OSError` traceback.** The
+  bind failure is now reported as a friendly `[FAIL] cannot start gateway on
+  <host>:<port>` with an actionable hint (try another `--port`).
+- **`zyko doctor | head` printed a `BrokenPipeError` traceback.** The CLI now
+  detects the closed pipe and exits quietly with the conventional code 141
+  (128 + SIGPIPE), like every well-behaved POSIX tool.
+- **Hardening (Windows):** the CLI reconfigures stdout/stderr with
+  `errors="replace"` at startup, so a legacy cp1252 console can no longer
+  crash on em-dashes, `·` separators, or Arabic output — the character is
+  replaced instead of killing the command.
+
 ## 0.3.0 — second evaluation round: correctness, visibility, hardening
 
 Another full re-evaluation (tests, lint, coverage, functional smokes). This

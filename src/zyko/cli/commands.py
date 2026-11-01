@@ -231,7 +231,14 @@ def cmd_serve(args: Any) -> int:
     api_key = args.api_key or settings.get("gateway.api_key")
     host = args.host or settings.get("gateway.host", "127.0.0.1")
     port = int(args.port or settings.get("gateway.port", 8787))
-    httpd = serve(router, host=host, port=port, api_key=api_key)
+    try:
+        httpd = serve(router, host=host, port=port, api_key=api_key)
+    except OSError as exc:
+        # A busy/protected port used to escape as a raw OSError traceback.
+        raise ConfigError(
+            f"cannot start gateway on {host}:{port}: {exc.strerror or exc}",
+            hint="port already in use? stop the other process or run `zyko serve --port 8788`",
+        ) from exc
     print(ui.ok(f"gateway on http://{host}:{port}/v1  (OpenAI-compatible) — Ctrl+C to stop"))
     try:
         while True:
@@ -384,7 +391,27 @@ def cmd_cost(args: Any) -> int:
 
     path = Path(args.audit) if getattr(args, "audit", None) else audit_log()
     if not path.is_file():
-        print(ui.info(f"no audit log at {path} — entries appear once a policy processes traffic"))
+        if args.json:
+            # Machine consumers (`zyko cost --json | jq`) must always get valid
+            # JSON — an [INFO] line here used to break every downstream pipe.
+            print(
+                json.dumps(
+                    {
+                        "audit_file": str(path),
+                        "window_days": args.days,
+                        "events": {},
+                        "total_spend_usd": 0.0,
+                        "spend_by_day": {},
+                        "spend_by_candidate": {},
+                        "denied_by_rule": {},
+                        "redaction_events": 0,
+                        "cost_accounting": {"vendor_reported": 0, "kernel_estimated": 0},
+                    },
+                    indent=2,
+                )
+            )
+        else:
+            print(ui.info(f"no audit log at {path} — entries appear once a policy processes traffic"))
         return 0
     cutoff = time.time() - args.days * 86400 if args.days else 0.0
     events: dict[str, int] = {}

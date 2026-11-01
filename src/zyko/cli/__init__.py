@@ -8,6 +8,7 @@ compile.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from typing import Any, Sequence
 
@@ -157,17 +158,41 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _guard_output_encoding() -> None:
+    """Never crash on characters the console cannot encode.
+
+    Windows redirected output defaults to a legacy code page (cp1252 and
+    friends): printing an em-dash or an Arabic answer used to raise
+    UnicodeEncodeError and kill the command. ``errors="replace"`` keeps the
+    command alive on every platform; UTF-8 terminals are unaffected.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError, OSError):  # non-standard streams
+            pass
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args: Any = parser.parse_args(argv)
     quiet = not (getattr(args, "log_level", "WARNING") != "DEBUG")
     setup_logging(args.log_level if hasattr(args, "log_level") else "WARNING", quiet=quiet)
+    _guard_output_encoding()
     try:
         result = args.func(args)
         return int(result or 0)
     except ZykoError as exc:
         ui.error(exc)
         return 1
+    except BrokenPipeError:
+        # Downstream closed the pipe (`zyko doctor | head`) — exit quietly
+        # instead of spewing a traceback (standard POSIX CLI behavior).
+        try:
+            os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        except OSError:
+            pass
+        return 141  # 128 + SIGPIPE — the conventional pipe exit code
     except KeyboardInterrupt:
         print()
         return 130
