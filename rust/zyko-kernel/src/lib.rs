@@ -8,7 +8,7 @@
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyList, PyModule};
+use pyo3::types::PyModule;
 
 /// Same heuristic as the Python implementation: ~4 chars per token, floored
 /// by the whitespace-separated word count.
@@ -38,16 +38,13 @@ fn cosine_similarity(a: Vec<f64>, b: Vec<f64>) -> PyResult<f64> {
 
 /// Indices of the k highest scores, best first (stable).
 #[pyfunction]
-fn top_k(py: Python<'_>, scores: Vec<f64>, k: usize) -> PyResult<Bound<'_, PyList>> {
+fn top_k(scores: Vec<f64>, k: usize) -> Vec<usize> {
     let mut order: Vec<usize> = (0..scores.len()).collect();
     order.sort_by(|&i, &j| scores[j].partial_cmp(&scores[i]).unwrap_or(std::cmp::Ordering::Equal));
     order.truncate(k);
-    // PyList::new does not exist on pyo3 0.22 — build incrementally.
-    let out = PyList::empty(py);
-    for i in order {
-        out.append(i)?;
-    }
-    Ok(out)
+    // Vec<usize> converts to a Python list on every pyo3 release — no
+    // version-sensitive PyList constructor APIs involved.
+    order
 }
 
 #[pyfunction]

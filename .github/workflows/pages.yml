@@ -23,6 +23,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/configure-pages@v5
+        with:
+          # Self-healing: create the Pages site if it is not enabled yet.
+          enablement: true
       - name: Upload the landing site (docs/site)
         uses: actions/upload-pages-artifact@v3
         with:
