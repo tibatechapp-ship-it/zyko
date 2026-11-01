@@ -1,0 +1,24 @@
+# ZYKO default policy — sane guardrails for everyday use.
+version: 1
+name: default
+
+defaults:
+  max_tokens_per_request: 4096
+  # budget_usd_per_day: 5.0        # uncomment to enforce a daily spend cap
+
+models:
+  allow: ["*"]
+  deny: []
+
+tools:
+  allow: ["*"]
+  deny: []                         # add "shell" to block the danger tool
+
+privacy:
+  redact: []                       # e.g. [email, phone, credit_card, iban, ssn]
+
+rate_limit:
+  # requests_per_minute: 60
+
+audit:
+  enabled: true                    # JSONL audit trail in the data dir

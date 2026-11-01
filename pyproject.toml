@@ -5,12 +5,63 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "zyko"
 version = "0.1.0"
-description = "Universal AI Orchestration Platform"
-requires-python = ">=3.11"
+description = "ZYKO — Universal AI Orchestration Platform: multi-provider routing, Policy-as-Code, MCP-native agents. Runs on Linux, Windows, macOS, Android and Termux."
 readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "ZYKO Contributors" }]
+keywords = [
+    "ai", "llm", "orchestration", "router", "agents", "mcp",
+    "policy-as-code", "multi-provider", "termux", "android",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "httpx>=0.25",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+ui = ["rich>=13.0"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.4"]
+android = ["kivy>=2.3"]
+
+[project.scripts]
+zyko = "zyko.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/tibatechapp-ship-it/zyko"
+Repository = "https://github.com/tibatechapp-ship-it/zyko"
+Issues = "https://github.com/tibatechapp-ship-it/zyko/issues"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+zyko = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]

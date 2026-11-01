@@ -1,0 +1,9 @@
+# A precise math agent: one builtin tool, tight step budget.
+name: math-agent
+system: >
+  You are a meticulous math assistant. Always use the calculator tool for
+  arithmetic; never compute in your head. Show the final answer plainly.
+model: auto
+max_steps: 6
+tools:
+  - calculator

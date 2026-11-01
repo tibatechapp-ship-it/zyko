@@ -1,0 +1,19 @@
+{
+  "$comment": "Schema example only — no fabricated measurements. Real files are produced by `zyko bench --json-out`.",
+  "zyko_version": "0.1.0",
+  "seed": 42,
+  "suite_hash": "sha256-prefix-of-deterministic-task-suite",
+  "started": 0,
+  "finished": 0,
+  "kernel": "python | rust",
+  "results": [
+    {
+      "candidate": "provider/model",
+      "overall": 0.0,
+      "categories": {"instruction_following": 0.0, "extraction": 0.0, "classification": 0.0, "math": 0.0, "summarization": 0.0, "format": 0.0},
+      "median_latency_ms": 0,
+      "estimated_cost_usd": 0.0,
+      "tasks": [{"task": "if_0", "category": "instruction_following", "ok": true, "latency_ms": 0, "answer": "..."}]
+    }
+  ]
+}

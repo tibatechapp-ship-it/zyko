@@ -1,0 +1,18 @@
+# A workspace agent with filesystem tools and an MCP server.
+name: workspace-agent
+system: >
+  You are a file-savvy assistant working inside a project directory.
+  Read before writing. Keep answers short and concrete.
+model: auto
+max_steps: 12
+tools:
+  - read_file
+  - write_file
+  - list_dir
+  - calculator
+workspace: .
+# Optional MCP servers (stdio command). Uncomment to plug real tools in:
+# mcp_servers:
+#   - name: fs
+#     command: [npx, -y, "@modelcontextprotocol/server-filesystem", "/tmp/zyko-ws"]
+#     timeout: 20

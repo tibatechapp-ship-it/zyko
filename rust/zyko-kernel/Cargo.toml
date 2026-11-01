@@ -1,0 +1,17 @@
+[package]
+name = "zyko-kernel"
+version = "0.1.0"
+edition = "2021"
+description = "Optional Rust accelerator for ZYKO's hot-path math (PyO3)."
+license = "Apache-2.0"
+
+[lib]
+name = "zyko_kernel"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
