@@ -21,7 +21,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.4.0** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
+**النسخة 0.4.1** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج**
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -49,6 +49,29 @@
 | بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
+
+## ما الجديد في 0.4.1؟ (تتبّع مدمج — ما يبيعه الآخرون خدمة مدفوعة نحن نقدّمه محليًا بلا اعتماديات)
+
+كانت الملاحظة أكبر فجوة ميزات مقابل المنافسين: LangChain يبيعها LangSmith،
+وLangfuse/AgentOps تتطلب SDK خارجيًا وخدمة سحابية. ZYKO الآن **تتتبّع كل نداء**
+بـ spans على نمط OpenTelemetry (معرّفات trace/parent، مدد، حالات، سمات) —
+**صفر اعتماديات جديدة**، ملف JSONL **ملكك على قرصك**، وأمر فحص من نفس الـCLI:
+
+```python
+from zyko import Zyko
+
+zk = Zyko()
+with zk.tracer.span("my-rag", corpus="support-docs"):  # span أبو لك
+    zk.ask("لماذا تأخرت فاتورتي؟")  # span الموجّه يتداخل تلقائيًا
+# لاحقًا: zyko traces --last 20   أو   --json   أو   --trace <id>
+```
+
+- `zyko traces` — جدول زمني، `--json` دائمًا JSON صالح (عقد `cost`/`cache`)،
+  `--trace <id>` لكل spans نداء واحد، `--clear`، و`--file` لمسار مخصص.
+- التتبّع **لا يكسر النداء أبدًا**: فشل الكتابة يتحوّل سطر تحذير واحد؛
+  التدفق المُهمَل (انقطاع العميل) يُغلق الـspan بحالة `cancelled`.
+- سجل دوار بحدّ (حالية + نسختان `.1`/`.2`) فلا يمتلئ القرص مهما طال تشغيل البوابة.
+- عطّله بـ`ZYKO_TRACING=0` أو `tracing.enabled: false` — الواجهة نفسها بلا كتابة.
 
 ## ما الجديد في 0.4.0؟ (المخرجات المنظمة — الميزة الأكثر تنافسية التي كانت لدى LangChain وCrewAI وAutoGen وينقصنا)
 
@@ -267,6 +290,7 @@ print(agent.run_sync("كم 47 × 16 × 7؟").output)
 | `zyko mcp serve` | **اعرض ZYKO نفسه كخادم MCP** عبر stdio |
 | `zyko mcp tools -- CMD` | فحص أدوات أي خادم MCP |
 | `zyko bench` | المقياس المرجعي القابل لإعادة الإنتاج (`--repeats N` لوسائط أثبت، و`--update-ledger` يغذّي الموجّه) |
+| `zyko traces` | **سجل التتبّع المدمج**: آخر spans، `--trace <id>` لكل نداء واحد، `--json` دائمًا صالح |
 | `--demo` (مع أغلب الأوامر) | **وضع عرض بدون مفاتيح ولا شبكة** عبر مزوّد المحاكاة الحتمي — يمرّ بالمسار الحقيقي كله: توجيه، سياسة، إيصالات، بث |
 | `zyko doctor` / `zyko info` / `zyko version` | تشخيص البيئة، المفاتيح، والمسارات |
 
@@ -281,6 +305,7 @@ OpenAI · Anthropic · Google Gemini · Groq · Mistral · DeepSeek · OpenRoute
 | [مرجع API](docs/API.md) | كل التوقيعات من الكود: `Zyko`، `Router`، السياسات، البوابة، MCP، الوكلاء، الاستثناءات، خريطة CLI |
 | [المعمارية](docs/ARCHITECTURE.md) | دورة حياة الطلب، إيصال التوجيه القابل للتحقق، الطبقات ونقاط الامتداد (مخططات mermaid) |
 | [دليل المزوّدين](docs/PROVIDERS.md) | كل المزوّدين، إعداد YAML، أي بائع متوافق مع OpenAI، التسعير والمرونة وسير العمل بلا مفاتيح |
+| [الخطة الاستراتيجية](docs/STRATEGY.md) | قياس حي مقابل LangChain/CrewAI/AutoGen/LangGraph، جاهزية الإنتاج، عيوب المنافسين وخارطة الصدارة |
 
 ## السياسات (Policy-as-Code)
 
@@ -319,7 +344,7 @@ zyko info   # kernel backend: rust
 
 ```bash
 pip install -e .[dev]
-pytest -q            # 347 اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض
+pytest -q            # 463 اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض، مخرجات منظمة، تتبّع
 pytest --cov=src/zyko   # تغطية 98%
 ruff check src tests && ruff format --check src tests
 make security        # bandit + pip-audit (نفس بوابة CI)
@@ -340,7 +365,7 @@ make security        # bandit + pip-audit (نفس بوابة CI)
 
 ## خارطة الطريق
 
-انظر ملف الخطة الاستراتيجية في مستودع المشروع (تقييم + خطة 18–24 شهرًا). التالي: لوحة درجات عامة عبر CI، مزامنة Ledger عبر Git، دعم رؤى الصور، والمصادقة المتعددة المستخدمين للبوابة.
+انظر [الخطة الاستراتيجية](docs/STRATEGY.md) — قياس حي مقابل المنافسين + جاهزية الإنتاج + خطة 18–24 شهرًا. التالي: نشر PyPI، مُصدّر OpenTelemetry اختياري، مصادقة متعددة المستخدمين للبوابة، أساسيات RAG، ووكلاء متعددون بحوكمة.
 
 ## الترخيص
 
@@ -354,7 +379,27 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.4.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.4.1** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.4.1 — built-in tracing: what others sell as a hosted service, ZYKO ships locally with zero dependencies
+
+Observability was the biggest remaining feature gap versus the competition: LangChain sells it as LangSmith; Langfuse/AgentOps require an external SDK and a cloud account. ZYKO now **traces every routed call** with OpenTelemetry-style spans (trace/parent ids, durations, statuses, attributes) — **zero new required dependencies**, a JSONL file **you own on your disk**, and an inspection command in the same CLI:
+
+```python
+from zyko import Zyko
+
+zk = Zyko()
+with zk.tracer.span("my-rag", corpus="support-docs"):  # your parent span
+    zk.ask("why is my invoice late?")  # router span nests automatically
+# later: zyko traces --last 20   |   --json   |   --trace <id>
+```
+
+- `zyko traces` — a time table, `--json` always valid JSON (the `cost`/`cache` contract), `--trace <id>` for every span of one request, plus `--clear` and `--file`.
+- **Tracing can never break a request**: sink write failures degrade to one log line; an abandoned stream (client disconnect) still closes its span as `cancelled`.
+- Bounded rotation (live file + two `.1`/`.2` backups) so a long-lived gateway can never fill the disk.
+- Disable with `ZYKO_TRACING=0` or `tracing.enabled: false` — the same API, just no writes.
+
+25 new tests (`tests/test_observability.py`) — **463 tests passing**.
 
 ## What's new in 0.4.0 — structured output: the most-competitive feature LangChain/CrewAI/AutoGen had and ZYKO didn't
 
@@ -531,10 +576,11 @@ print(outcome.response.text, "←", outcome.receipt["chosen"])
 | [API reference](docs/API.md) | every signature from the code: `Zyko`, `Router`, policies, gateway, MCP, agents, exceptions, CLI map |
 | [Architecture](docs/ARCHITECTURE.md) | request lifecycle, the verifiable receipt, layers and extension points (mermaid diagrams) |
 | [Providers guide](docs/PROVIDERS.md) | all vendors, YAML config, any OpenAI-compatible endpoint, pricing & resilience, keyless workflows |
+| [Strategy](docs/STRATEGY.md) | live benchmark vs LangChain/CrewAI/AutoGen/LangGraph, production-readiness audit, competitor weaknesses, roadmap to the top |
 
 ## Tests
 
-`pytest -q` → 347 tests (98% coverage) covering routing (incl. snapshot/parity and explicit model pinning), policy (incl. schema warnings and malformed-document degradation), MCP over real subprocesses plus in-memory server frames and the full client lifecycle (timeouts, server errors, pagination, closed streams), the gateway over a real HTTP socket (auth + keep-alive integrity + 502 upstream errors), agents, every provider adapter against canned HTTP, session memory, the audit-based cost report, streaming cost accounting, `Retry-After` resilience, CLI robustness (broken pipes, busy ports, JSON-only `--json`), tool-loop failure modes, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12/3.13, plus lint (`ruff check` + `ruff format --check`), a security job (`bandit` + `pip-audit`), and a Rust kernel check.
+`pytest -q` → 463 tests (98% coverage) covering routing (incl. snapshot/parity and explicit model pinning), policy (incl. schema warnings and malformed-document degradation), structured output (validation + repair + native mode), built-in tracing (spans, sinks, rotation, router + CLI integration), MCP over real subprocesses plus in-memory server frames and the full client lifecycle (timeouts, server errors, pagination, closed streams), the gateway over a real HTTP socket (auth + keep-alive integrity + 502 upstream errors), agents, every provider adapter against canned HTTP, session memory, the audit-based cost report, streaming cost accounting, `Retry-After` resilience, CLI robustness (broken pipes, busy ports, JSON-only `--json`), tool-loop failure modes, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12/3.13, plus lint (`ruff check` + `ruff format --check`), a security job (`bandit` + `pip-audit`), and a Rust kernel check.
 
 ## Security
 

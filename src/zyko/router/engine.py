@@ -124,6 +124,7 @@ class Router:
         breaker_threshold: int = 3,
         breaker_cooldown_s: float = 30.0,
         cache: ResponseCache | None = None,
+        tracer: Any = None,
     ) -> None:
         if not providers:
             raise ProviderError(
@@ -143,6 +144,9 @@ class Router:
         self.max_fallbacks = max_fallbacks
         self.health = HealthTracker(breaker_threshold, breaker_cooldown_s)
         self.cache = cache
+        # Tracer is duck-typed (zyko.observability.Tracer) to keep the router
+        # import-free from the observability package in tests and embedders.
+        self.tracer = tracer
 
     # ------------------------------------------------------------- scoring
     def candidates(self) -> list[RouteCandidate]:
@@ -302,6 +306,32 @@ class Router:
 
     # ------------------------------------------------------------ execution
     async def aroute(self, request: ChatRequest) -> RouteResult:
+        """Routed completion — traced when a tracer is attached (v0.4.1)."""
+        if self.tracer is None:
+            return await self._aroute_inner(request)
+        with self.tracer.span("router.route", strategy=self.strategy) as sp:
+            try:
+                result = await self._aroute_inner(request)
+            except Exception as exc:  # noqa: BLE001 - failure is a trace attribute
+                sp.status = "error"
+                first = str(exc).splitlines()
+                if first:
+                    sp.attributes["error"] = first[0][:300]
+                raise
+            receipt = result.receipt or {}
+            usage = receipt.get("usage") or {}
+            sp.attributes.update(
+                {
+                    "provider": result.candidate,
+                    "cached": bool(receipt.get("cached", False)),
+                    "input_tokens": usage.get("input_tokens"),
+                    "output_tokens": usage.get("output_tokens"),
+                    "attempts": [a.as_dict() for a in result.attempts],
+                }
+            )
+            return result
+
+    async def _aroute_inner(self, request: ChatRequest) -> RouteResult:
         est_in = max(kernel.messages_tokens(request.messages), 1)
         est_out = request.max_tokens or DEFAULT_EST_OUT
         pool = self.candidates_for(request)
@@ -374,6 +404,31 @@ class Router:
         raise _all_failed(attempts)
 
     async def astream_route(self, request: ChatRequest) -> AsyncIterator[StreamEvent]:
+        """Streaming route — traced via manual span so abandonment still closes it."""
+        if self.tracer is None:
+            async for event in self._astream_route_inner(request):
+                yield event
+            return
+        sp = self.tracer.start_span("router.stream", strategy=self.strategy)
+        try:
+            async for event in self._astream_route_inner(request):
+                if event.type == "meta" and isinstance(event.data, dict):
+                    candidate = event.data.get("candidate")
+                    if candidate and "provider" not in sp.attributes:
+                        sp.attributes["provider"] = candidate
+                yield event
+        except BaseException as exc:  # noqa: BLE001 - cancelled vs error matters
+            sp.status = (
+                "cancelled" if isinstance(exc, (KeyboardInterrupt, GeneratorExit)) else "error"
+            )
+            first = str(exc).splitlines()
+            if first:
+                sp.attributes.setdefault("error", first[0][:300])
+            raise
+        finally:
+            self.tracer.end_span(sp)
+
+    async def _astream_route_inner(self, request: ChatRequest) -> AsyncIterator[StreamEvent]:
         """Streaming route: falls back only *before* the first token arrives."""
         est_in = max(kernel.messages_tokens(request.messages), 1)
         est_out = request.max_tokens or DEFAULT_EST_OUT

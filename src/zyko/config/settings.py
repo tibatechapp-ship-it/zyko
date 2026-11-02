@@ -42,6 +42,10 @@ DEFAULTS: dict[str, Any] = {
         "port": 8787,
         "api_key": None,
     },
+    "tracing": {
+        "enabled": True,
+        "file": None,
+    },
     "prices_file": None,
 }
 
@@ -52,6 +56,7 @@ _ENV_OVERRIDES: dict[str, str] = {
     "ZYKO_GATEWAY_HOST": "gateway.host",
     "ZYKO_GATEWAY_PORT": "gateway.port",
     "ZYKO_GATEWAY_API_KEY": "gateway.api_key",
+    "ZYKO_TRACING": "tracing.enabled",
 }
 
 

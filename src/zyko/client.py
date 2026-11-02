@@ -52,9 +52,13 @@ class Zyko:
             self.policy = resolved
         else:
             self.policy = None
+        from zyko.observability.tracer import load_tracer
         from zyko.platform.paths import ledger_file
 
         self.ledger = QualityLedger.load(ledger_path or ledger_file())
+        # Public so callers can wrap their own spans around ZYKO calls:
+        #   with zk.tracer.span("my-rag"): zk.ask(...)
+        self.tracer = load_tracer(self.settings)
         self.router = Router(
             self.providers,
             ledger=self.ledger,
@@ -62,6 +66,7 @@ class Zyko:
             strategy=strategy or self.settings.get("router.strategy", "balanced"),
             max_fallbacks=int(self.settings.get("router.max_fallbacks", 3)),
             cache=self.policy.cache if self.policy else None,
+            tracer=self.tracer,
         )
         self.__engine: StructuredEngine | None = None
 

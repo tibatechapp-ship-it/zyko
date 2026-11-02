@@ -13,6 +13,7 @@ from zyko.exceptions import (
     StructuredOutputError,
     ZykoError,
 )
+from zyko.observability import InMemorySink, JsonlSink, Tracer, TraceSpan
 from zyko.structured import extract_json, validate_against_schema
 from zyko.version import PROTOCOL_VERSION, __version__
 
@@ -28,6 +29,10 @@ __all__ = [
     "StructuredOutputError",
     "extract_json",
     "validate_against_schema",
+    "TraceSpan",
+    "Tracer",
+    "JsonlSink",
+    "InMemorySink",
     "__version__",
     "PROTOCOL_VERSION",
 ]

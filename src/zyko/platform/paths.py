@@ -131,6 +131,10 @@ def audit_log() -> Path:
     return data_dir(create=True) / "audit.jsonl"
 
 
+def trace_log() -> Path:
+    return data_dir(create=True) / "traces.jsonl"
+
+
 def ensure_layout() -> dict[str, Path]:
     paths = {
         "config": config_dir(create=True),

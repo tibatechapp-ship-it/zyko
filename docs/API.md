@@ -271,13 +271,14 @@ settings.provider_settings  # per-provider dicts (base_url, key, api…)
 ```
 
 Defaults (`router.strategy/max_fallbacks/request_timeout_s/retries/
-breaker_threshold/breaker_cooldown_s`, `gateway.*`, `default_policy`,
-`prices_file`) — override via YAML or `ZYKO_ROUTER_STRATEGY`,
-`ZYKO_REQUEST_TIMEOUT`, `ZYKO_DEFAULT_POLICY`, `ZYKO_GATEWAY_HOST/PORT/API_KEY`.
+breaker_threshold/breaker_cooldown_s`, `gateway.*`, `tracing.enabled/file`,
+`default_policy`, `prices_file`) — override via YAML or `ZYKO_ROUTER_STRATEGY`,
+`ZYKO_REQUEST_TIMEOUT`, `ZYKO_DEFAULT_POLICY`, `ZYKO_GATEWAY_HOST/PORT/API_KEY`,
+`ZYKO_TRACING`.
 
 Paths (`zyko.platform.paths`): `config_dir() data_dir() cache_dir()
-policies_dir() agents_dir() ledger_file() audit_log() budget_file()
-sessions_db()` — env-first (`ZYKO_CONFIG_DIR` / `ZYKO_DATA_DIR` /
+policies_dir() agents_dir() ledger_file() audit_log() trace_log()
+budget_file() sessions_db()` — env-first (`ZYKO_CONFIG_DIR` / `ZYKO_DATA_DIR` /
 `ZYKO_CACHE_DIR`), then platform conventions (XDG on Linux,
 `~/Library` on macOS, `%APPDATA%` on Windows, Termux-aware).
 
@@ -287,7 +288,35 @@ fallback): `estimate_tokens`, `estimate_messages_tokens`, `cosine_similarity`,
 
 ---
 
-## 10. Exceptions
+## 10. Observability — `zyko.observability`
+
+```python
+from zyko import Zyko, Tracer, JsonlSink, InMemorySink, TraceSpan
+
+zk = Zyko()  # self.tracer built from tracing.* settings
+with zk.tracer.span("my-rag", corpus="docs") as sp:
+    out = zk.ask("...")  # -> child span router.route (provider, tokens, attempts, cached)
+sp.status, sp.duration_ms  # "ok", 12.4
+```
+
+- `Tracer.span(name, **attrs)` — context manager; exceptions mark the span
+  `error` (or `cancelled` for `GeneratorExit`/`KeyboardInterrupt`) and
+  re-raise. Manual `start_span`/`end_span` for streams; `emit()` for
+  one-shot records. Nesting stays LIFO via contextvars tokens.
+- `JsonlSink(path, max_bytes=5_000_000)` — one JSON object per span,
+  thread-safe, creates parent dirs, bounded shift rotation (`traces.jsonl`
+  → `.1` → `.2`; disk ≤ ~3×`max_bytes` forever). I/O failures log once and
+  never propagate.
+- `load_tracer(settings)` — honors `tracing.enabled`/`tracing.file` +
+  `ZYKO_TRACING=0`; disabled keeps the identical no-write API.
+- Router spans: `router.route` (attributes: `strategy`, `provider`,
+  `cached`, `input_tokens`, `output_tokens`, `attempts[]`) and
+  `router.stream` (closed in `finally`, even on client disconnect).
+- Inspect: `zyko traces --last 20` / `--trace <id>` / `--json` / `--clear`.
+
+---
+
+## 11. Exceptions
 
 ```
 ZykoError
@@ -310,7 +339,7 @@ rejections (the audit log records them automatically).
 
 ---
 
-## 11. CLI map
+## 12. CLI map
 
 | Command | Does |
 |---|---|
@@ -325,13 +354,14 @@ rejections (the audit log records them automatically).
 | `zyko sessions list\|show\|rm\|clear` | inspect SQLite session memory |
 | `zyko cost [--days N] [--json]` | spend & governance report from the audit log |
 | `zyko cache [--json] [--clear]` | inspect or clear the policy-gated response cache |
+| `zyko traces [--last N] [--trace ID] [--json] [--clear]` | inspect the built-in span log (observability) |
 | `zyko bench [suite] [--demo]` | reproducible routing benchmark (fixed seeds) |
 
 Environment: `ZYKO_DEMO=1` → keyless offline mock mode (great for CI).
 
 ---
 
-## 12. Minimal end-to-end
+## 13. Minimal end-to-end
 
 ```python
 import asyncio
@@ -364,7 +394,7 @@ print(out.data, out.repaired)
 
 ---
 
-## 13. Structured output
+## 14. Structured output
 
 Schema-constrained answers — ZYKO's answer to LangChain's
 `with_structured_output`, CrewAI's Pydantic task outputs, AutoGen's

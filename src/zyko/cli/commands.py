@@ -603,6 +603,93 @@ def cmd_cache(args: Any) -> int:
     return 0
 
 
+def cmd_traces(args: Any) -> int:
+    """`zyko traces` — inspect the built-in span log (one JSON object per line)."""
+    from zyko.observability.tracer import TraceSpan
+    from zyko.platform.paths import trace_log
+
+    path = Path(args.file) if getattr(args, "file", None) else trace_log()
+    if getattr(args, "clear", False):
+        removed = 0
+        for p in (path, path.with_suffix(path.suffix + ".1")):
+            if p.is_file():
+                p.unlink()
+                removed += 1
+        if not args.json:
+            print(ui.ok(f"cleared {removed} trace file(s)"))
+        return 0
+    if not path.is_file():
+        if args.json:
+            # Same machine contract as `zyko cost --json` / `zyko cache --json`:
+            # pipes and scripts always get valid JSON, never an [INFO] line.
+            print(json.dumps({"trace_file": str(path), "spans": [], "traces": []}, indent=2))
+        else:
+            print(
+                ui.info(
+                    f"no trace log at {path} — spans appear once you route traffic "
+                    "(disable with ZYKO_TRACING=0)"
+                )
+            )
+        return 0
+
+    spans: list[TraceSpan] = []
+    with path.open("r", encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                spans.append(TraceSpan(**json.loads(line)))
+            except (json.JSONDecodeError, TypeError):
+                continue  # skip torn/corrupt lines instead of failing the report
+    if args.trace:
+        spans = [s for s in spans if s.trace_id == args.trace]
+    if args.last and args.last > 0:
+        spans = spans[-args.last :]
+
+    traces: dict[str, list[TraceSpan]] = {}
+    for s in spans:
+        traces.setdefault(s.trace_id, []).append(s)
+
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "trace_file": str(path),
+                    "spans": [s.to_dict() for s in spans],
+                    "traces": sorted(traces, key=lambda t: min(s.started_at for s in traces[t])),
+                },
+                indent=2,
+            )
+        )
+        return 0
+
+    if args.trace and not spans:
+        print(ui.warn(f"no spans found for trace {args.trace}"))
+        return 0
+    rows = []
+    for s in spans:
+        rows.append(
+            [
+                time.strftime("%H:%M:%S", time.localtime(s.started_at)),
+                s.trace_id[:8],
+                s.name,
+                "-" if s.duration_ms is None else f"{s.duration_ms:.0f}ms",
+                s.status,
+                str(s.attributes.get("provider") or s.attributes.get("error") or ""),
+            ]
+        )
+    ui.table(["time", "trace", "span", "duration", "status", "provider/error"], rows)
+    print()
+    print(
+        ui.info(
+            f"{len(spans)} span(s) across {len(traces)} trace(s) — "
+            "drill into one with: zyko traces --trace <id>"
+        )
+    )
+    return 0
+
+
 def cmd_doctor(args: Any) -> int:
     print(bold("ZYKO doctor"))
     p = platform_info()

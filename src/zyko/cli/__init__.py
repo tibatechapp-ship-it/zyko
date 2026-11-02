@@ -33,6 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  zyko mcp serve                            # expose ZYKO as an MCP server\n"
             "  zyko sessions list                        # inspect stored chat memory\n"
             "  zyko cost                                 # spend & governance report\n"
+            "  zyko traces --last 20                     # built-in span log (observability)\n"
             "  zyko doctor                               # diagnose platform + keys\n"
         ),
     )
@@ -165,6 +166,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--clear", action="store_true", help="drop every cached response")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd.cmd_cache)
+
+    # traces (built-in observability)
+    p = sub.add_parser("traces", help="inspect spans from the built-in trace log")
+    p.add_argument("--last", type=int, default=20, help="show the last N spans (default 20)")
+    p.add_argument("--trace", default=None, help="only spans of this trace id")
+    p.add_argument("--file", default=None, help="trace JSONL path (default: data dir)")
+    p.add_argument("--clear", action="store_true", help="delete the trace log")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd.cmd_traces)
 
     # bench
     p = sub.add_parser("bench", help="run the reproducible routing benchmark")

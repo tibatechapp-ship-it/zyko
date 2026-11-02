@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.4.1 — built-in tracing: what competitors sell as a hosted service, ZYKO ships locally with zero dependencies
+
+A strategic benchmark against LangChain (148,848★, sells observability as
+LangSmith), CrewAI, AutoGen, LangGraph, LlamaIndex and PydanticAI (live GitHub
+numbers, 2026-11-02, full report in `docs/STRATEGY.md`) identified
+**observability** as the biggest remaining capability gap. ZYKO now traces
+every routed call with OpenTelemetry-style spans — zero new required
+dependencies, JSON lines you own on your disk, inspected by the same CLI.
+
+### Added
+- **`zyko.observability`** — new public package: `TraceSpan` (trace/parent
+  ids, name, started_at, duration_ms, status `ok|error|cancelled`,
+  attributes), `Tracer` (context-manager `span()` + manual
+  `start_span`/`end_span` + one-shot `emit()`), `JsonlSink` (append-only,
+  thread-safe, parent dirs, **bounded shift rotation**: live + `.1` + `.2`
+  backups so a long-lived gateway can never fill the disk) and
+  `InMemorySink`. Parent/child linking via `contextvars` — wrap any call in
+  `zk.tracer.span("my-rag")` and the router span nests under it
+  automatically, no propagation wiring.
+- **Router spans** — `router.route` (ask/chat/structured/agents) carries
+  `provider`, `cached`, `input_tokens`, `output_tokens`, `attempts[]`,
+  `strategy`; `router.stream` closes even when the client disconnects
+  (status `cancelled`). Failures set status `error` + the failure reason —
+  routing behaviour is untouched.
+- **`zyko traces`** — CLI over the trace log: time table, `--last N`,
+  `--trace <id>` drill-down, `--file`, `--clear`, and `--json` that is
+  always valid JSON (the `cost`/`cache` machine contract). Corrupt/torn
+  lines are skipped, never fatal.
+- **Settings**: `tracing.enabled` (default on) / `tracing.file` (default
+  `<data dir>/traces.jsonl` via the new `paths.trace_log()`), with the
+  `ZYKO_TRACING=0` environment override.
+- **Never-breaks-requests guarantee**: sink I/O failures degrade to one log
+  line; a disabled tracer keeps the identical API with no writes.
+
+### Notes
+- Zero new dependencies (stdlib `json`/`time`/`uuid`/`contextvars` only).
+- 25 new tests (`tests/test_observability.py`) — **463 tests passing**.
+- The full competitive benchmark and the 18–24-month roadmap now live in
+  `docs/STRATEGY.md` (the file the README roadmap always referenced).
+
 ## 0.4.0 — structured output: the most-competitive feature LangChain/CrewAI/AutoGen had and ZYKO didn't
 
 A capability review against LangChain (`with_structured_output`), CrewAI
