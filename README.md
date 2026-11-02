@@ -73,7 +73,11 @@ ZYKO_OTLP_ENDPOINT=http://localhost:4318/v1/traces zyko ask "مرحبًا"
   `authorization: "Basic ${LANGFUSE_BASIC}"` — ملفات الإعدادات تستبدل
   `${ENV_VARS}` فلا يكتب السر على القرص.
 - `zyko doctor` يقول الآن حالة التتبّع وهدف الـOTLP في قسم Observability.
-- 13 اختبارًا جديدًا — **476 اختبارًا ناجحًا**، bandit صفر، CI 14/14.
+- **إكمال حتمية MCP**: آخر زاوية من سباق macOS/py3.11 (0.3.7) — خادم يموت
+  بعد ردّ `initialize` مباشرة كان قد يُفجّر `start()` نفسها. الإشعارات الآن
+  إطلاق-ونسيان بعقد صريح (قارئ stdout يبقى مصدر الحقيقة؛ الطلبات تبقى
+  ترفع `MCPError` المُنمّط) — `start()` حتمي على كل نظام، باختبار انحدار.
+- 14 اختبارًا جديدًا — **477 اختبارًا ناجحًا**، bandit صفر، CI 14/14.
 
 ## ما الجديد في 0.4.1؟ (تتبّع مدمج — ما يبيعه الآخرون خدمة مدفوعة نحن نقدّمه محليًا بلا اعتماديات)
 
@@ -418,7 +422,8 @@ ZYKO_OTLP_ENDPOINT=http://localhost:4318/v1/traces zyko ask "hello"
 - **Spec-exact deterministic ids**: 16-byte trace / 8-byte span ids derived via sha256 from ZYKO's ids, parent links survive, originals ride as `zyko.trace_id`/`zyko.span_id` attributes — `zyko traces --trace <id>` stays lossless.
 - **Langfuse recipe**: endpoint `https://cloud.langfuse.com/api/public/otel/v1/traces` with `authorization: "Basic ${LANGFUSE_BASIC}"` — config files interpolate `${ENV_VARS}` so the secret never lands on disk.
 - `zyko doctor` now shows tracing state and the OTLP target in an Observability section.
-- 13 new tests — **476 tests passing**, bandit zero, CI 14/14.
+- **MCP determinism, finished**: the last corner of the macOS/py3.11 race (0.3.7) — a server dying right after the `initialize` reply could blow up `start()` itself. Notifications are now fire-and-forget by contract (the reader loop stays the single source of truth; requests keep raising the same typed `MCPError`) — `start()` is deterministic on every OS, pinned by a regression test.
+- 14 new tests — **477 tests passing**, bandit zero, CI 14/14.
 
 ## What's new in 0.4.1 — built-in tracing: what others sell as a hosted service, ZYKO ships locally with zero dependencies
 

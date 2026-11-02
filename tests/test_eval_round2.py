@@ -179,6 +179,28 @@ async def test_mcp_closed_stream_fails_pending_request(tmp_path):
     await client.aclose()
 
 
+async def test_mcp_dead_server_notification_is_silent_and_start_deterministic(tmp_path):
+    """The macOS/py3.11 race, pinned: notifications never raise on a dead stream.
+
+    The die-server answers ``initialize`` and exits immediately, so the
+    follow-up ``notifications/initialized`` write races the process death.
+    On macOS py3.11 ``drain()`` can win that race and — before the fix —
+    blew up ``start()`` itself with the typed error, flaking this suite.
+    Contract now: notifications are fire-and-forget (reader loop stays the
+    single source of truth for server death); only *requests* raise.
+    """
+    from zyko.exceptions import MCPError
+    from zyko.mcp.client import MCPClient
+
+    client = MCPClient("die", [sys.executable, str(_exit_after_init_server(tmp_path))])
+    await client.start()  # deterministic: the notify race can no longer fail start()
+    for _ in range(10):
+        await client._notify("notifications/custom")  # dead or dying stream: silent
+    with pytest.raises(MCPError, match="closed the stream"):
+        await client._request("tools/list")  # requests still fail typed
+    await client.aclose()
+
+
 # ------------------------------------------------------------- platform detect
 def test_detect_windows_macos_android(monkeypatch):
     from zyko.platform.detect import OSKind, detect_os, is_android, is_termux

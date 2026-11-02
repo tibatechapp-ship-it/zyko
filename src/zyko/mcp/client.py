@@ -118,12 +118,18 @@ class MCPClient:
         try:
             self._process.stdin.write(protocol.encode(protocol.notification(method, params)))
             await self._process.stdin.drain()
-        except (ConnectionResetError, BrokenPipeError) as exc:
-            # Server died between write() and drain(); raise the same typed error
-            # the reader loop produces on EOF, deterministically on every OS
-            # (macOS py3.11 drain() wins that race and would otherwise leak a
-            # raw ConnectionResetError).
-            raise MCPError(f"mcp server '{self.name}' closed the stream") from exc
+        except (ConnectionResetError, BrokenPipeError):
+            # A notification has no response and no pending future, so a stream
+            # dying mid-notification is not an error worth raising — the reader
+            # loop is the single source of truth for server death (it fails
+            # every pending *request* with the same typed MCPError), and
+            # _request keeps mapping the write/drain race to that same error.
+            # Keeping *this* path silent is what makes start() deterministic on
+            # every OS: macOS py3.11 drain() can win the race right after the
+            # initialize reply and would otherwise surface the EOF from the
+            # wrong call site (flaky start(), even though the request path is
+            # already typed).
+            log.debug("mcp '%s': notification '%s' hit a closed stream", self.name, method)
 
     async def _request(self, method: str, params: dict[str, Any] | None = None) -> Any:
         if not self._process:

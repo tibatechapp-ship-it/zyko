@@ -39,6 +39,13 @@ ZYKO_OTLP_ENDPOINT=http://localhost:4318/v1/traces zyko ask "hello"
   service_name,batch_size,queue_size}` with the `ZYKO_OTLP_ENDPOINT`
   override (env wins, whitespace-trimmed); `zyko doctor` gained an
   **Observability** section showing the tracing state and the OTLP target.
+- **MCP determinism, finished** — the macOS/py3.11 race from 0.3.7 had one
+  last corner: a server dying right after the `initialize` reply could blow
+  up `start()` itself when the `notifications/initialized` write raced the
+  process death. Notifications are now fire-and-forget by contract (the
+  reader loop stays the single source of truth for server death; `_request`
+  keeps raising the same typed `MCPError`) — `start()` is deterministic on
+  every OS, pinned by a new regression test.
 
 ### Recipes (documented in `docs/API.md`)
 - **Langfuse cloud**: endpoint
@@ -50,7 +57,7 @@ ZYKO_OTLP_ENDPOINT=http://localhost:4318/v1/traces zyko ask "hello"
 
 ### Notes
 - Zero new dependencies (OTLP/JSON rides the existing `httpx`).
-- 13 new tests (`tests/test_observability_otlp.py`) — **476 tests passing**,
+- 14 new tests (13 OTLP + 1 MCP regression pin) — **477 tests passing**,
   `ruff` clean, `bandit` 0 findings, CI 14/14 on Linux/Windows/macOS ×
   Python 3.11–3.13.
 
