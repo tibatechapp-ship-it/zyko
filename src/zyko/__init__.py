@@ -5,19 +5,29 @@ MCP-native agents. Pure Python core; runs on Linux, Windows, macOS, Android
 and Termux.
 """
 
-from zyko.client import RouteResult, Zyko
+from zyko.client import RouteResult, StructuredResult, Zyko
 from zyko.core.messages import Message
 from zyko.core.response import ChatRequest, ChatResponse
-from zyko.exceptions import ZykoError
+from zyko.exceptions import (
+    SchemaSpecError,
+    StructuredOutputError,
+    ZykoError,
+)
+from zyko.structured import extract_json, validate_against_schema
 from zyko.version import PROTOCOL_VERSION, __version__
 
 __all__ = [
     "Zyko",
     "RouteResult",
+    "StructuredResult",
     "Message",
     "ChatRequest",
     "ChatResponse",
     "ZykoError",
+    "SchemaSpecError",
+    "StructuredOutputError",
+    "extract_json",
+    "validate_against_schema",
     "__version__",
     "PROTOCOL_VERSION",
 ]

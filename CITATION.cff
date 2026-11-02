@@ -7,7 +7,7 @@ type: software
 authors:
   - name: ZYKO Contributors
     website: "https://github.com/tibatechapp-ship-it/zyko"
-version: 0.3.9
+version: 0.4.0
 date-released: 2026-11-01
 license: Apache-2.0
 repository-code: "https://github.com/tibatechapp-ship-it/zyko"

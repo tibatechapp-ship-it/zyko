@@ -36,6 +36,10 @@ class ChatRequest:
     max_tokens: int | None = None
     tools: list[dict[str, Any]] | None = None  # generic tool schema
     tool_choice: str | None = None
+    # OpenAI response_format passthrough (e.g. {"type": "json_object"} or the
+    # json_schema envelope). Google maps it to generationConfig; providers
+    # without native support ignore it (documented per-adapter).
+    response_format: dict[str, Any] | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def with_model(self, model: str) -> "ChatRequest":
@@ -46,6 +50,7 @@ class ChatRequest:
             max_tokens=self.max_tokens,
             tools=self.tools,
             tool_choice=self.tool_choice,
+            response_format=self.response_format,
             metadata=self.metadata,
         )
 

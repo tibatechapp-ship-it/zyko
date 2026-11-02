@@ -101,3 +101,35 @@ class MCPError(ZykoError):
 
 class ZykoTimeoutError(ZykoError):
     """Operation exceeded its deadline."""
+
+
+class SchemaSpecError(ZykoError):
+    """Invalid structured-output schema (a caller bug, not a model failure).
+
+    Raised when the schema itself is malformed — a non-mapping root, an
+    unknown ``type``, a broken ``$ref`` — as opposed to
+    :class:`StructuredOutputError`, which fires when a *model's* output fails
+    validation against a well-formed schema.
+    """
+
+
+class StructuredOutputError(ZykoError):
+    """A model's output failed structured-output validation after all repairs.
+
+    Carries ``errors`` (the failing round's validation problems) and ``text``
+    (the last raw model output) so callers can log or retry with their own
+    strategy. This is the typed failure ZYKO raises instead of leaking a raw
+    ``ValueError`` from the validator.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        errors: list[str] | None = None,
+        text: str | None = None,
+        hint: str | None = None,
+    ) -> None:
+        super().__init__(message, hint=hint)
+        self.errors = errors or []
+        self.text = text

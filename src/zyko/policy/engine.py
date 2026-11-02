@@ -359,6 +359,7 @@ class PolicyEngine:
                 max_tokens=cap,
                 tools=request.tools,
                 tool_choice=request.tool_choice,
+                response_format=request.response_format,
                 metadata=request.metadata,
             )
 
@@ -381,6 +382,7 @@ class PolicyEngine:
                 max_tokens=effective.max_tokens,
                 tools=effective.tools,
                 tool_choice=effective.tool_choice,
+                response_format=effective.response_format,
                 metadata=effective.metadata,
             )
         if applied:

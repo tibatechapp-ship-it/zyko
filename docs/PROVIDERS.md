@@ -29,6 +29,16 @@ No key at all? ZYKO still boots in demo mode and tells you so — nothing crashe
 | Ollama | — | `http://127.0.0.1:11434` | keyless, local, offline |
 | Mock | — | `mock://local` | deterministic, `ZYKO_DEMO=1` |
 
+## Structured output per provider
+
+`ChatRequest.response_format` handling as of 0.4.0 (see API.md §13):
+
+| Provider | `response_format` handling |
+|---|---|
+| OpenAI · Groq · Mistral · DeepSeek · OpenRouter · Together · xAI | passed through verbatim (`json_object` and `json_schema` envelopes) |
+| Google Gemini | mapped to `generationConfig.responseMimeType: "application/json"` (+ `responseSchema` for `json_schema`) |
+| Anthropic · Ollama · Mock | ignored on the wire — use guided mode (`Zyko.structured`, default), which enforces the schema via prompt + validation + repair on *any* provider |
+
 ```bash
 # mix vendors freely — the router balances across all of them
 export OPENAI_API_KEY=sk-...

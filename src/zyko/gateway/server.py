@@ -150,6 +150,9 @@ class _Handler(BaseHTTPRequestHandler):
         except json.JSONDecodeError:
             return self._error(400, "request body is not valid JSON")
         try:
+            response_format = payload.get("response_format")
+            if response_format is not None and not isinstance(response_format, dict):
+                return self._error(400, "response_format must be an object")
             request = ChatRequest(
                 messages=_openai_messages(payload),
                 model=payload.get("model") or "auto",
@@ -157,6 +160,7 @@ class _Handler(BaseHTTPRequestHandler):
                 max_tokens=payload.get("max_tokens"),
                 tools=toolconv.generic_from_openai(payload.get("tools")),
                 tool_choice=payload.get("tool_choice"),
+                response_format=response_format,
             )
         except Exception as exc:
             return self._error(400, f"bad request: {exc}")

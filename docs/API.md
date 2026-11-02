@@ -124,12 +124,16 @@ ChatRequest(
     max_tokens=None,
     tools=None,
     tool_choice=None,
+    response_format=None,
     metadata={},
 )
 ```
 
 `model=None` or `"auto"` → the router picks. Pin a model with
 `"provider/model"` (e.g. `"ollama/llama3.2"`) to skip ranking entirely.
+`response_format` is an OpenAI-shaped dict (see section 13) passed through
+verbatim by OpenAI-compatible adapters and mapped to Gemini's
+`generationConfig` by the Google adapter.
 
 ---
 
@@ -345,4 +349,96 @@ for entry in zk.explain()["ranking"]:
 # 3. agent with tools
 agent = zk.agent("examples/agents/math-agent.yaml")
 print(agent.run_sync("what is 17 * 23?").output)
+
+# 4. structured answer (validated, auto-repaired)
+out = zk.structured(
+    "order 42 details?",
+    schema={
+        "type": "object",
+        "properties": {"id": {"type": "integer"}},
+        "required": ["id"],
+    },
+)
+print(out.data, out.repaired)
 ```
+
+---
+
+## 13. Structured output
+
+Schema-constrained answers — ZYKO's answer to LangChain's
+`with_structured_output`, CrewAI's Pydantic task outputs, AutoGen's
+`response_format` and LiteLLM's passthrough. Validated data or a typed
+error, never a raw string to `json.loads` by hand.
+
+```python
+from zyko import Zyko, StructuredOutputError, SchemaSpecError
+
+zk = Zyko()
+
+# 1. guided mode (default): schema rides the prompt, output is extracted,
+#    validated, and repaired once with the exact validation errors.
+out = zk.structured(
+    "extract the order as JSON",
+    schema={
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer"},
+            "status": {"type": "string", "enum": ["open", "shipped", "cancelled"]},
+        },
+        "required": ["id", "status"],
+        "additionalProperties": False,
+    },
+    system="you are a precise data extractor",
+)
+out.data  # validated value (dict)
+out.rounds  # validation errors per round — [[]] means clean first shot
+out.repaired  # True if a repair round ran
+out.route.receipt  # full routing receipt, same as ask()
+
+# 2. Pydantic interop (pip install 'zyko[structured]'):
+from pydantic import BaseModel
+
+
+class Order(BaseModel):
+    id: int
+    status: str
+
+
+out = zk.structured("order 42 details?", schema=Order)
+
+# 3. native vendor mode: response_format goes on the wire; vendors that
+#    reject it fall through routing automatically.
+out = zk.structured("order 42 details?", schema=Order, native=True)
+
+# 4. typed failures after the repair budget:
+try:
+    zk.structured(
+        "…", schema={"type": "object", "properties": {"x": {"type": "integer"}}}, max_repairs=0
+    )
+except StructuredOutputError as exc:
+    print(exc.errors)  # e.g. ["$.x: expected type integer, got str"]
+    print(exc.text)  # last raw model output
+```
+
+Conversation form: `zk.structured_messages(messages, schema, **kw)` (and
+`astructured*` async variants).
+
+Building blocks (public, tested independently):
+
+- `zyko.structured.validate_against_schema(value, schema)` → list of error
+  strings (empty = valid). JSON-Schema subset: types, `enum`, `const`,
+  numeric bounds, `multipleOf`, string bounds/`pattern`/formats (`email`,
+  `date`, `date-time`, `uri`, `uuid`, `ipv4`, `hostname`), array
+  bounds/`items`/`uniqueItems`, object `properties`/`required`/
+  `additionalProperties`, `allOf`/`anyOf`/`oneOf`, local `$ref`/`$defs` with
+  cycle guards. Unknown keywords ignored. Malformed schema →
+  `SchemaSpecError` (fail fast — a schema bug is a caller bug). Note the
+  Python trap handled: `True` is not an `integer` and not a `number` here.
+- `zyko.structured.extract_json(text)` → first JSON value found (whole
+  text, fenced blocks, then first balanced `{…}`/`[…]` span, string-aware;
+  `<think>` blocks stripped) or `None`.
+- `zyko.structured.json_schema_of(spec)` → plain schema dict from a dict or
+  a Pydantic model class/instance.
+- `StructuredEngine(router)` — the loop `Zyko.structured` uses; reuse it
+  for custom pipelines.

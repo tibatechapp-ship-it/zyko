@@ -5,7 +5,7 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — Universal AI Orchestration Platform" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-355%20passing-22c55e)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-438%20passing-22c55e)](.github/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-98%25-84cc16)](.github/workflows/ci.yml)
 [![Security](https://img.shields.io/badge/bandit-0%20findings-22c55e?logo=shield&logoColor=white)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776ab?logo=python&logoColor=white)](pyproject.toml)
@@ -21,7 +21,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.3.9** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
+**النسخة 0.4.0** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP**
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -49,6 +49,38 @@
 | بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
+
+## ما الجديد في 0.4.0؟ (المخرجات المنظمة — الميزة الأكثر تنافسية التي كانت لدى LangChain وCrewAI وAutoGen وينقصنا)
+
+مراجعة قدرات مقابل LangChain (`with_structured_output`) وCrewAI (مخرجات Pydantic) وAutoGen (`response_format`) وLiteLLM (تمرير `response_format`) بيّنت أكبر فجوة متبقية: **إجابات مقيّدة بمخطط (JSON Schema)**. تُرجع ZYKO الآن *بيانات متحققًا منها أو خطأ مُنمّطًا* — لا نصًا خامًا عليك أن تفكّه بنفسك — مع حلقة إصلاح تلقائية تُعيد أخطاء التحقق إلى النموذج. **صفر اعتماديات إلزامية جديدة**؛ Pydantic اختياري (`zyko[structured]`) لا شرط:
+
+```python
+from zyko import Zyko
+
+zk = Zyko()
+out = zk.structured(
+    "ما تفاصيل الطلب 42؟",
+    schema={
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer"},
+            "status": {"type": "string", "enum": ["open", "shipped"]},
+        },
+        "required": ["id", "status"],
+    },
+)
+out.data  # {"id": 42, "status": "shipped"} — متحقق منه، أو خطأ مُنمّط StructuredOutputError
+out.repaired  # هل لجأ الإصدار إلى جولة إصلاح؟
+```
+
+- **مُصادِق JSON Schema خالص من Python**: أنواع، `enum`/`const`، حدود رقمية ونصية، `pattern`، تنسيقات أساسية، قوائم وكائنات متداخلة، `allOf`/`anyOf`/`oneOf`، وحلّ `$ref`/`$defs` المحلي بحماية من الدوران — ما تحتاجه مخططات Pydantic دائمًا. ولغة Python تلتقط الفخّ الكلاسيكي: `True` **ليس** عددًا صحيحًا هنا.
+- **حلقة إصلاح تلقائية**: عند فشل التحقق تُرسَل الأخطاء الفعلية (بمساراتها `$.id`…) إلى النموذج في جولة تصحيح واحدة قابلة للزيادة (`max_repairs`)، وبعدها خطأ مُنمّط يحمل `errors` و`text`.
+- **مستخرِج JSON مقاوم للفوضى**: ينجو من النثر المحيط وأسيجة Markdown وكتل `<think>` (نمط DeepSeek).
+- **وضع أصلي اختياري**: `native=True` يرسل `response_format: {"type": "json_schema", …}` للمزوّدين الداعمين (OpenAI، Groq، Mistral، DeepSeek، OpenRouter، Together، xAI)، والبائع الذي يرفضها يسقط في التوجيه البديل تلقائيًا.
+- **دعم عبر المزوّدين**: Google يُرسَم إلى `generationConfig.responseMimeType` (+ `responseSchema`)؛ والبوابة المتوافقة مع OpenAI تقبل `response_format` في جسم الطلب وترفض غير الكائنات بـ 400.
+- **سلامة الطبقات**: مخطط مُعطّب = `SchemaSpecError` فوري (خطأ مُبرمِج)، بينما فشل النموذج = `StructuredOutputError`؛ ومفاتيح الذاكرة المؤقتة (basis v2) تشمل `response_format` فلا تُقدَّم إجابة نصية مخزّنة لطلب منظم.
+
+63 اختبارًا جديدًا (`tests/test_structured.py`) — **438 اختبارًا ناجحًا**.
 
 ## ما الجديد في 0.3.9؟ (ذاكرة تخزين مؤقت للاستجابات — أكبر فجوة كانت أمام المنافسين)
 
@@ -322,7 +354,39 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.3.9** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.4.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.4.0 — structured output: the most-competitive feature LangChain/CrewAI/AutoGen had and ZYKO didn't
+
+A capability review against LangChain (`with_structured_output`), CrewAI (Pydantic task outputs), AutoGen (`response_format`) and LiteLLM (`response_format` passthrough) found the biggest remaining gap: **schema-constrained answers**. ZYKO now returns *validated data or a typed error* — never a raw string you must `json.loads` by hand — with an automatic repair round that feeds the exact validation errors back to the model. **Zero new required dependencies**; Pydantic is optional (`zyko[structured]`), not a requirement:
+
+```python
+from zyko import Zyko
+
+zk = Zyko()
+out = zk.structured(
+    "order 42 details?",
+    schema={
+        "type": "object",
+        "properties": {
+            "id": {"type": "integer"},
+            "status": {"type": "string", "enum": ["open", "shipped"]},
+        },
+        "required": ["id", "status"],
+    },
+)
+out.data  # {"id": 42, "status": "shipped"} — validated, or a typed StructuredOutputError
+out.repaired  # did a repair round kick in?
+```
+
+- **Pure-Python JSON Schema validator**: types, `enum`/`const`, numeric/string bounds, `pattern`, basic formats, nested arrays/objects, `allOf`/`anyOf`/`oneOf`, and local `$ref`/`$defs` resolution with cycle guards — what Pydantic schemas always need. Python's classic trap is caught: `True` is **not** an integer here.
+- **Automatic repair**: on failure the real errors (with paths like `$.id`) go back to the model for one configurable repair round (`max_repairs`), then a typed error carries `errors` + `text`.
+- **Mess-proof extractor**: survives surrounding prose, markdown fences and `<think>` blocks (DeepSeek style).
+- **Optional native mode**: `native=True` sends `response_format: {"type": "json_schema", …}` to vendors that support it (OpenAI, Groq, Mistral, DeepSeek, OpenRouter, Together, xAI); a vendor that rejects it just falls through routing.
+- **Cross-provider support**: Google maps it to `generationConfig.responseMimeType` (+ `responseSchema`); the OpenAI-compatible gateway accepts `response_format` and 400s non-objects.
+- **Layer-safe**: malformed schema → immediate `SchemaSpecError` (caller bug); model failure → `StructuredOutputError`; cache keys (basis v2) include `response_format` so a cached free-text answer is never served for a structured call.
+
+63 new tests (`tests/test_structured.py`) — **438 tests passing**.
 
 ## What's new in 0.3.9 — response cache: the #1 gap versus the competition
 

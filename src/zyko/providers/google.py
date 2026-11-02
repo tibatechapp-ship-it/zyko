@@ -63,6 +63,13 @@ class GoogleProvider(BaseProvider):
             gen["temperature"] = request.temperature
         if request.max_tokens:
             gen["maxOutputTokens"] = request.max_tokens
+        rf = request.response_format or {}
+        if rf.get("type") in ("json_object", "json_schema"):
+            gen["responseMimeType"] = "application/json"
+            if rf.get("type") == "json_schema":
+                inner = (rf.get("json_schema") or {}).get("schema")
+                if inner:
+                    gen["responseSchema"] = inner
         if gen:
             payload["generationConfig"] = gen
         if request.tools:

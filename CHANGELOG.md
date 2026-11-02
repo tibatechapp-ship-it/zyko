@@ -1,5 +1,55 @@
 # Changelog
 
+## 0.4.0 — structured output: the most-competitive feature LangChain/CrewAI/AutoGen had and ZYKO didn't
+
+A capability review against LangChain (`with_structured_output`), CrewAI
+(Pydantic task outputs), AutoGen (`response_format`) and LiteLLM
+(`response_format` passthrough) found the single biggest remaining gap:
+**schema-constrained answers**. ZYKO now returns *validated data or a typed
+error* — never a raw string the caller must `json.loads` by hand — with a
+repair loop that feeds validation problems back to the model. Zero new
+required dependencies (the validator is pure Python); Pydantic is an
+optional interop, not a requirement.
+
+### Added
+- **`zyko.structured`** — new public package:
+  `validate_against_schema` (JSON-Schema subset validator: types, enum,
+  const, numeric/string/array/object keywords, `allOf`/`anyOf`/`oneOf`,
+  local `$ref`/`$defs` resolution with cycle guards — the part Pydantic
+  schemas always need), `extract_json` (survives prose, markdown fences and
+  `<think>` blocks), `json_schema_of` (dict or Pydantic v2/v1 model),
+  `StructuredEngine` and `StructuredResult`.
+- **`Zyko().structured(prompt, schema)`** (+ `astructured`,
+  `structured_messages`, `astructured_messages`) — guided mode rides the
+  prompt, validates, and on failure runs **one automatic repair round** that
+  quotes the exact validation errors back to the model
+  (`max_repairs` configurable, `0` disables). `native=True` sends OpenAI
+  `response_format: {"type": "json_schema", …}` for vendors that support it
+  and lets the router fall back for vendors that don't.
+- **Typed failures** — `SchemaSpecError` for malformed schemas (caller bug,
+  fail fast) vs `StructuredOutputError` carrying `errors` + `text` after the
+  repair budget is exhausted. Both exported from the `zyko` root.
+- **`ChatRequest.response_format`** — OpenAI passthrough on every
+  OpenAI-compatible adapter (openai, groq, mistral, deepseek, openrouter,
+  together, xai); **Google maps it** to `generationConfig.responseMimeType`
+  (+ `responseSchema` for `json_schema`); providers without native support
+  ignore it (documented). The gateway parses `response_format` from
+  OpenAI-shaped bodies and 400s on non-object values.
+- **Cache keys are schema-aware (basis v2)** — `response_format` is part of
+  the cache key, so a cached free-text answer is never served for a
+  structured call.
+- **`zyko[structured]` extra** — optional Pydantic v2 support; also added to
+  `dev` so CI exercises the interop path. The core stays httpx+PyYAML only.
+
+### Fixed
+- **Policy rewrites now carry `response_format`** — both the
+  `max_tokens_per_request` cap and the PII-redaction rebuilds of
+  `ChatRequest` preserve the field; before this release the field could not
+  exist, and a naive addition would have been silently dropped at the policy
+  layer (covered by dedicated regression tests).
+
+63 new tests (`tests/test_structured.py`) — **438 tests passing**.
+
 ## 0.3.9 — response cache: the #1 capability ZYKO lacked vs LiteLLM/Portkey
 
 A competitive-matrix review against LiteLLM and Portkey Gateway showed ZYKO

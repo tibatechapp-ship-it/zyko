@@ -23,6 +23,7 @@ from zyko.providers import configured_providers
 from zyko.providers.base import BaseProvider
 from zyko.router.engine import Router, RouteResult
 from zyko.router.quality import QualityLedger
+from zyko.structured.engine import StructuredEngine, StructuredResult
 from zyko.utils.loop import run_sync
 
 
@@ -62,6 +63,7 @@ class Zyko:
             max_fallbacks=int(self.settings.get("router.max_fallbacks", 3)),
             cache=self.policy.cache if self.policy else None,
         )
+        self.__engine: StructuredEngine | None = None
 
     # ------------------------------------------------------------- completion
     async def aask(
@@ -101,6 +103,61 @@ class Zyko:
         doc = load_agent_document(source)
         return build_agent(doc, self.router, policy=self.policy, workspace=workspace)
 
+    # ------------------------------------------------------------- structured
+    async def astructured(
+        self,
+        prompt: str,
+        schema: Any,
+        *,
+        system: str | None = None,
+        model: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        max_repairs: int = 1,
+        native: bool = False,
+    ) -> StructuredResult:
+        """Structured answer: validated against a JSON Schema (or Pydantic model).
+
+        Guided mode (default) rides the prompt and repairs invalid output once
+        by feeding the validation errors back; ``native=True`` sends OpenAI
+        ``response_format`` for vendors that support it. Raises
+        :class:`~zyko.exceptions.StructuredOutputError` after the repair budget
+        is exhausted — ``out.data`` is always a validated value.
+        """
+        messages: list[Message] = []
+        if system:
+            messages.append(Message.system(system))
+        messages.append(Message.user(prompt))
+        return await self._structured_engine.astructured(
+            messages,
+            schema,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            max_repairs=max_repairs,
+            native=native,
+        )
+
+    async def astructured_messages(
+        self, messages: list[Message], schema: Any, **kwargs: Any
+    ) -> StructuredResult:
+        """Structured answer over an explicit conversation (see astructured)."""
+        return await self._structured_engine.astructured(messages, schema, **kwargs)
+
+    def structured(self, prompt: str, schema: Any, **kwargs: Any) -> StructuredResult:
+        return run_sync(self.astructured(prompt, schema, **kwargs))
+
+    def structured_messages(
+        self, messages: list[Message], schema: Any, **kwargs: Any
+    ) -> StructuredResult:
+        return run_sync(self.astructured_messages(messages, schema, **kwargs))
+
+    @property
+    def _structured_engine(self) -> StructuredEngine:
+        if self.__engine is None:
+            self.__engine = StructuredEngine(self.router)
+        return self.__engine
+
     # ------------------------------------------------------------------- misc
     def explain(self) -> dict[str, Any]:
         """Current routing outlook (no API call): ranked candidates + reasons."""
@@ -111,4 +168,4 @@ class Zyko:
         return "Every RouteResult carries a receipt; verify decisions offline via `zyko route --explain`."
 
 
-__all__ = ["Zyko", "RouteResult"]
+__all__ = ["Zyko", "RouteResult", "StructuredResult"]

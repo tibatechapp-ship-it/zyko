@@ -19,6 +19,8 @@ Design notes:
 - **Agent-safe**: responses carrying ``tool_calls`` are not stored by
   default — replaying tool calls from a cache can desynchronise agent
   loops.
+- **Schema-aware keys** (v2 basis): ``response_format`` is part of the key,
+  so a cached free-text answer is never served for a structured call.
 - **Streaming bypasses the cache** (v1): only ``aroute()`` reads/writes.
 - Requests opt out per call via ``metadata={"cache": "bypass"}`` and can
   force a re-validation with ``metadata={"cache": "refresh"}`` (skip the
@@ -82,7 +84,7 @@ class ResponseCache:
         adapter sends, so the key reflects exactly what would hit the wire.
         """
         basis = {
-            "v": 1,
+            "v": 2,
             "provider": provider,
             "model": model,
             "messages": messages_to_openai(request.messages),
@@ -90,6 +92,7 @@ class ResponseCache:
             "max_tokens": request.max_tokens,
             "tools": request.tools or None,
             "tool_choice": request.tool_choice,
+            "response_format": request.response_format,
         }
         raw = json.dumps(basis, sort_keys=True, ensure_ascii=False, default=str)
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()

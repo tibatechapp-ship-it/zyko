@@ -62,6 +62,8 @@ class OpenAICompatProvider(BaseProvider):
             payload["tools"] = toolconv.to_openai_tools(request.tools)
             if request.tool_choice:
                 payload["tool_choice"] = request.tool_choice
+        if request.response_format:
+            payload["response_format"] = request.response_format
         headers: dict[str, str] = {}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
