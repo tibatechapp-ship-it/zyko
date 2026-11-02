@@ -7,7 +7,7 @@ answers once by feeding the validation errors back to the model.
     ZYKO_DEMO=1 python examples/06_structured.py
 """
 
-from zyko import Zyko, StructuredOutputError
+from zyko import StructuredOutputError, Zyko
 
 ORDER_SCHEMA = {
     "type": "object",
