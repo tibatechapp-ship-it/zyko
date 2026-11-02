@@ -21,7 +21,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.4.2** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** يُصدَّر إلى أي خلفية OTLP
+**النسخة 0.5.0** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** يُصدَّر إلى أي خلفية OTLP · **RAG** محلي بلا اعتماديات
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -49,6 +49,40 @@
 | بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
+
+## ما الجديد في 0.5.0؟ (أساسيات RAG — اقتطاع ثم تمثيل ثم بحث ثم `context=` — أقل ما يرضي مستخدم LlamaIndex)
+
+الخطوة 3 من خارطة الصدارة: ZYKO الآن **ترسيخ الإجابات في مستنداتك**. مقتطع
+نصوص، ثلاثة مُدمجات خلف عقد واحد، مخزن متجهات محلي تُخزّن ملفه JSON **ملكك**
+(فلسفة سجل التتبّع نفسها)، ووسيط `context=` على `ask`. المُدمج الافتراضي
+تجزئة سمات بلغة بايثون الخالصة — حتمي، بلا شبكة، يعمل على هاتفك — فتشتغل
+القصة كاملة بصفر مفاتيح وصفر اعتماديات جديدة؛ وبدّل إلى Ollama (محلي، دلالات
+حقيقية، بلا مفاتيح) أو OpenAI متى أردت:
+
+```python
+from zyko import Zyko
+from zyko.rag import HashingEmbedder, VectorStore
+
+store = VectorStore(HashingEmbedder(), path="kb.json")
+store.add(open("handbook.md").read(), meta={"source": "handbook"})
+hits = store.search("سياسة الاسترداد", k=4)
+answer = Zyko().ask("ما سياسة الاسترداد؟", context=[h.text for h in hits])
+```
+
+- **ثلاثة مُدمجات بعقد واحد**: `HashingEmbedder` (تجزئة blake2b — حتمي عبر
+  الأجهزة، مثالي للاختبارات والعروض وTermux)، `OllamaEmbedder`
+  (‏`nomic-embed-text` محليًا — دلالات حقيقية بلا مفاتيح)، `OpenAIEmbedder`
+  (‏`text-embedding-3-small` أو أي نقطة نهاية متوافقة).
+- **`VectorStore`**: فهرس جيب التمام في الذاكرة مع حفظ ذري (tmp + replace)
+  بعد كل إضافة وتحميل تلقائي عند البناء؛ `min_score=0.0` الافتراضي يُبقي
+  المقاطع الموجبة الارتباط فقط؛ `aadd`/`asearch` نسختان غير متزامنتين.
+- **أخطاء مُنمّطة**: كل فشل embeddings يرفع `EmbedderError` الجديدة (مصدّرة
+  من جذر `zyko`) — لا استثناء httpx خام أبدًا؛ عدم تطابق الأبعاد يُرفض بدل
+  إفساد الفهرس؛ ملف مخزن تالف يبدأ فارغًا بدل الانهيار.
+- **`ask(prompt, context=[...])`**: السياق غير الفارغ يصبح رسالة نظام
+  راسخة ("أجب من السياق، وقل صراحةً إن لم يكفِ") بعد أي `system` صريح وقبل
+  سؤال المستخدم — ويعمل مع نصوص عادية بلا مخزن.
+- 26 اختبارًا جديدًا — **503 اختبارات ناجحة**، bandit صفر، CI 14/14.
 
 ## ما الجديد في 0.4.2؟ (جسر الملاحظة — spans تتدفق إلى Langfuse/Tempo/Jaeger دون اعتمادية جديدة)
 
@@ -408,7 +442,27 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.4.2** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.5.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** · **local RAG with zero dependencies** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.5.0 — RAG essentials: chunk → embed → search → `ask(context=…)` — the LlamaIndex-minimum
+
+Roadmap step 3: ZYKO now **grounds answers in your own documents**. A chunker, three embedders behind one contract, a local vector store whose **persistence is a JSON file you own**, and a `context=` parameter on `ask`. The default embedder is pure-stdlib feature hashing — deterministic, offline, phone-capable — so the whole story runs with zero keys, zero network, zero new dependencies; swap in Ollama (local, real semantics, no keys) or OpenAI embeddings when you want them:
+
+```python
+from zyko import Zyko
+from zyko.rag import HashingEmbedder, VectorStore
+
+store = VectorStore(HashingEmbedder(), path="kb.json")
+store.add(open("handbook.md").read(), meta={"source": "handbook"})
+hits = store.search("refund policy", k=4)
+answer = Zyko().ask("what is the refund policy?", context=[h.text for h in hits])
+```
+
+- **Three embedders, one contract**: `HashingEmbedder` (blake2b feature hashing — deterministic across machines), `OllamaEmbedder` (`nomic-embed-text` locally, no keys), `OpenAIEmbedder` (`text-embedding-3-small` or any compatible endpoint).
+- **`VectorStore`**: in-memory cosine index, atomic save (tmp + replace) after every add, auto-load on construction; `min_score=0.0` default keeps only positively-correlated chunks; `aadd`/`asearch` async mirrors.
+- **Typed errors**: every embeddings failure raises the new `EmbedderError` (exported from the `zyko` root) — never a raw `httpx` exception; dim mismatches are rejected instead of corrupting the index; an unreadable store file starts empty instead of crashing.
+- **`ask(prompt, context=[...])`**: non-empty context becomes its own grounding system message ("answer from the context; say so if insufficient") after any explicit `system`, before the user prompt — plain strings work too, the store is optional.
+- 26 new tests — **503 tests passing**, bandit zero, CI 14/14.
 
 ## What's new in 0.4.2 — the observability bridge: spans flow to Langfuse, Tempo, Jaeger or any OTLP backend — still zero new dependencies
 

@@ -507,3 +507,56 @@ Building blocks (public, tested independently):
   a Pydantic model class/instance.
 - `StructuredEngine(router)` — the loop `Zyko.structured` uses; reuse it
   for custom pipelines.
+
+---
+
+## 15. RAG — `zyko.rag` (embeddings + local vector store, 0.5.0)
+
+The LlamaIndex-minimum: chunk → embed → cosine search over **files you own**
+(JSON persistence, no server, no daemon), with a deterministic zero-dependency
+default embedder. Feed the hits into `zk.ask(..., context=[...])`.
+
+```python
+from zyko import Zyko
+from zyko.rag import HashingEmbedder, OpenAIEmbedder, OllamaEmbedder, VectorStore
+
+# pick one embedder — same contract for all three:
+emb = HashingEmbedder(dim=256)  # zero deps, offline, deterministic
+# emb = OllamaEmbedder(model="nomic-embed-text")   # real semantics, local, no keys
+# emb = OpenAIEmbedder(model="text-embedding-3-small")  # needs OPENAI_API_KEY
+
+store = VectorStore(emb, path="kb.json")  # auto-loads / atomic auto-save
+store.add(open("handbook.md").read(), meta={"source": "handbook"})
+hits = store.search("refund policy", k=4)  # -> [Hit(text, score, index, meta)]
+
+zk = Zyko()
+answer = zk.ask("what is the refund policy?", context=[h.text for h in hits])
+```
+
+- `chunk_text(text, max_chars=800, overlap=120)` — paragraph-first chunking,
+  hard-split with overlap so nothing straddling two chunks is lost; empty
+  input → `[]`; never returns empty chunks.
+- **Embedders** (one contract: `embed(texts)` / `await aembed(texts)` →
+  `list[list[float]]`, plus `name` and `dim`):
+  - `HashingEmbedder(dim=256)` — blake2b feature hashing, sign-weighted,
+    L2-normalized. Deterministic across machines; not semantic — shared
+    vocabulary ranks together. Perfect for tests, demos and Termux.
+  - `OllamaEmbedder(model="nomic-embed-text", base_url=...)` — local real
+    semantics, no keys (`/api/embed`).
+  - `OpenAIEmbedder(model="text-embedding-3-small", api_key=..., base_url=...)`
+    — OpenAI `/v1/embeddings` or any vendor speaking it.
+  - All failures raise the typed `EmbedderError` (exported from `zyko`
+    root alongside the other errors) — never a raw `httpx` exception.
+- `VectorStore(embedder, path=None)` — in-memory cosine index;
+  `path="kb.json"` auto-loads and atomic-saves (tmp + replace) after each
+  `add`. `add(text, meta=...)` returns the chunk count; `search(query, k=4,
+  min_score=0.0)` returns `Hit`s sorted by score (default gate keeps only
+  positively-correlated chunks — pass `min_score=-1.0` to see everything);
+  `len(store)`, `clear()`, `aadd`/`asearch` async mirrors. A store built
+  with a different embedder than it was saved with loads with a loud
+  warning (scores would be meaningless). Dimension mismatches raise
+  `EmbedderError` instead of corrupting the index.
+- `zk.ask(prompt, context=[...])` (0.5.0) — non-empty context becomes its
+  own system message ("answer from the context; say so if insufficient")
+  placed after any explicit `system` and before the user prompt. Works with
+  plain strings too — the store is optional.

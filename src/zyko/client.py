@@ -79,10 +79,32 @@ class Zyko:
         system: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
+        context: list[str] | None = None,
     ) -> RouteResult:
+        """Ask with optional RAG ``context`` (0.5.0): a list of source snippets.
+
+        Non-empty context is injected as its own system message ("answer from
+        the context, say so if it is insufficient") placed after any explicit
+        ``system`` and before the user prompt — the LlamaIndex-minimum
+        grounding story with zero framework ceremony. Pair it with
+        :class:`zyko.rag.VectorStore`::
+
+            hits = store.search("refund policy", k=4)
+            zk.ask("what is the refund policy?", context=[h.text for h in hits])
+        """
         messages: list[Message] = []
         if system:
             messages.append(Message.system(system))
+        snippets = [c for c in (context or []) if c and c.strip()]
+        if snippets:
+            block = "\n\n".join(f"[{i}] {c.strip()}" for i, c in enumerate(snippets, 1))
+            messages.append(
+                Message.system(
+                    "Answer the user's question using ONLY the context below. "
+                    "If the context is insufficient, say so explicitly.\n\n"
+                    f"Context:\n\n{block}"
+                )
+            )
         messages.append(Message.user(prompt))
         request = ChatRequest(
             messages=messages,

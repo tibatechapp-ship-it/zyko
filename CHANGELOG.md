@@ -1,5 +1,58 @@
 # Changelog
 
+## 0.5.0 — RAG essentials: chunk → embed → search → `ask(context=…)` — the LlamaIndex-minimum, zero-dependency by default
+
+Roadmap step 3 from `docs/STRATEGY.md` ("أقل ما يرضي مستخدم LlamaIndex"):
+ZYKO can now ground answers in your own documents. A chunker, three
+embedders behind one contract, a local vector store whose **persistence is
+a JSON file you own** (same philosophy as the trace log), and a `context=`
+parameter on `ask`. The default embedder is pure-stdlib feature hashing —
+deterministic, offline, phone-capable — so the whole story works with zero
+keys, zero network and zero new dependencies; swap in Ollama (local, real
+semantics, no keys) or OpenAI embeddings when you want them.
+
+```python
+from zyko import Zyko
+from zyko.rag import HashingEmbedder, VectorStore
+
+store = VectorStore(HashingEmbedder(), path="kb.json")
+store.add(open("handbook.md").read(), meta={"source": "handbook"})
+hits = store.search("refund policy", k=4)
+answer = Zyko().ask("what is the refund policy?", context=[h.text for h in hits])
+```
+
+### Added
+- **`zyko.rag`** — new public package: `chunk_text` (paragraph-first,
+  hard-split with overlap, never empty chunks), `cosine` (zero-vector
+  safe), `Hit` and `VectorStore`.
+- **Three embedders, one contract** (`embed`/`aembed` → vectors, `name`,
+  `dim`): `HashingEmbedder` (blake2b feature hashing — deterministic across
+  machines, ideal for tests/demos/Termux), `OllamaEmbedder`
+  (`nomic-embed-text` locally — real semantics, no keys), `OpenAIEmbedder`
+  (`text-embedding-3-small` or any OpenAI-compatible endpoint). All
+  failures raise the new typed **`EmbedderError`** (exported from the
+  `zyko` root) — never a raw `httpx` exception.
+- **`VectorStore(embedder, path=None)`** — in-memory cosine index;
+  `path` auto-loads on construction and atomic-saves (tmp + replace) after
+  every `add`. `add(text, meta=…) → chunk count`, `search(query, k=4,
+  min_score=0.0)` (default gate keeps only positively-correlated chunks;
+  `min_score=-1.0` shows everything), `aadd`/`asearch` async mirrors,
+  thread-safe. A saved store searched with a different embedder loads with
+  a loud warning; a dimension mismatch raises `EmbedderError` instead of
+  corrupting the index; an unreadable store file starts empty instead of
+  crashing.
+- **`Zyko.ask(prompt, context=[...])`** (and `aask`) — non-empty context
+  becomes its own grounding system message ("answer from the context; say
+  so if insufficient") after any explicit `system`, before the user
+  prompt. Works with plain strings — the store is optional.
+- **`docs/API.md` §15** documents the whole flow.
+
+### Notes
+- Zero new dependencies (the default embedder is stdlib; vendor embedders
+  ride the existing `httpx`).
+- 26 new tests (`tests/test_rag.py`) — **503 tests passing**, `ruff` clean,
+  `bandit` 0 findings, CI 14/14 on Linux/Windows/macOS × Python 3.11–3.13.
+
 ## 0.4.2 — observability bridge: spans now flow to Langfuse, Tempo, Jaeger or any OTLP backend — still zero new dependencies
 
 Roadmap step 2 from `docs/STRATEGY.md` (the competitive benchmark): LangChain

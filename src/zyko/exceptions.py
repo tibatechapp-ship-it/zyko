@@ -103,6 +103,10 @@ class ZykoTimeoutError(ZykoError):
     """Operation exceeded its deadline."""
 
 
+class EmbedderError(ZykoError):
+    """Embeddings failure (RAG): bad request, unreachable embedder, dim mismatch."""
+
+
 class SchemaSpecError(ZykoError):
     """Invalid structured-output schema (a caller bug, not a model failure).
 

@@ -97,6 +97,7 @@ vendor marketing. Re-measure before quoting.*
    *(نُفّذ في 0.4.2 — وأفضل من الوعد: OTLP/HTTP-JSON عبر httpx الموجودة أصلًا، صفر اعتماديات وحتى الـextra غير مطلوب)*
 3. **v0.5 — RAG الأساسيات**: مزوّد embeddings + مخزن متجهات محلي بسيط +
    `zk.ask(..., context=docs)` — أقل ما يرضي مستخدم LlamaIndex.
+   *(نُفّذ في 0.5.0 — chunker + ثلاثة مُدمجات بعقد واحد + VectorStore بملف JSON ملكك + `ask(context=…)`، والمُدمج الافتراضي بصفر اعتماديات)*
 4. **v0.6 — الوكلاء المتعددون**: خط أنابيب crew تسلسلي بسياق مشترك (توازي
    CrewAI في البساطة، أقوى في الحوكمة).
 5. **v1.0 — عقد الاستقرار**: تجميد واجهات، سياسة إصدارات دعم، دليل ترقية.
@@ -145,5 +146,6 @@ in one package.
 
 Distribution (PyPI + 60-second stories) → observability bridges (OTel,
 Langfuse — shipped in 0.4.2 as a zero-dependency OTLP/JSON sink) → RAG
-essentials (embeddings, local vector store, `context=docs`) → multi-agent
-crews with governance → the 1.0 stability contract.
+essentials (embeddings, local vector store, `context=docs` — shipped in
+0.5.0 with a deterministic zero-dep default embedder) → multi-agent crews
+with governance → the 1.0 stability contract.

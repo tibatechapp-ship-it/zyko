@@ -9,11 +9,21 @@ from zyko.client import RouteResult, StructuredResult, Zyko
 from zyko.core.messages import Message
 from zyko.core.response import ChatRequest, ChatResponse
 from zyko.exceptions import (
+    EmbedderError,
     SchemaSpecError,
     StructuredOutputError,
     ZykoError,
 )
 from zyko.observability import InMemorySink, JsonlSink, Tracer, TraceSpan
+from zyko.rag import (
+    HashingEmbedder,
+    Hit,
+    OllamaEmbedder,
+    OpenAIEmbedder,
+    VectorStore,
+    chunk_text,
+    cosine,
+)
 from zyko.structured import extract_json, validate_against_schema
 from zyko.version import PROTOCOL_VERSION, __version__
 
@@ -25,6 +35,7 @@ __all__ = [
     "ChatRequest",
     "ChatResponse",
     "ZykoError",
+    "EmbedderError",
     "SchemaSpecError",
     "StructuredOutputError",
     "extract_json",
@@ -33,6 +44,13 @@ __all__ = [
     "Tracer",
     "JsonlSink",
     "InMemorySink",
+    "VectorStore",
+    "Hit",
+    "HashingEmbedder",
+    "OpenAIEmbedder",
+    "OllamaEmbedder",
+    "chunk_text",
+    "cosine",
     "__version__",
     "PROTOCOL_VERSION",
 ]
