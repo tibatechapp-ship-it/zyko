@@ -45,6 +45,14 @@ DEFAULTS: dict[str, Any] = {
     "tracing": {
         "enabled": True,
         "file": None,
+        "otlp": {
+            "endpoint": None,
+            "headers": {},
+            "timeout_s": 5.0,
+            "service_name": "zyko",
+            "batch_size": 64,
+            "queue_size": 4096,
+        },
     },
     "prices_file": None,
 }
@@ -57,6 +65,7 @@ _ENV_OVERRIDES: dict[str, str] = {
     "ZYKO_GATEWAY_PORT": "gateway.port",
     "ZYKO_GATEWAY_API_KEY": "gateway.api_key",
     "ZYKO_TRACING": "tracing.enabled",
+    "ZYKO_OTLP_ENDPOINT": "tracing.otlp.endpoint",
 }
 
 

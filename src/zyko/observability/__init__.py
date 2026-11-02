@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from zyko.observability.otlp import OtlpSink
 from zyko.observability.tracer import (
     InMemorySink,
     JsonlSink,
@@ -13,6 +14,7 @@ from zyko.observability.tracer import (
 __all__ = [
     "InMemorySink",
     "JsonlSink",
+    "OtlpSink",
     "TraceSpan",
     "Tracer",
     "load_tracer",

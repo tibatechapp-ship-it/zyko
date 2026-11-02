@@ -211,9 +211,19 @@ def load_tracer(settings: Any) -> Tracer:
         tracing:
           enabled: true          # ZYKO_TRACING=0 to force off
           file: null             # default: <data dir>/traces.jsonl
+          otlp:
+            endpoint: null       # ZYKO_OTLP_ENDPOINT — any OTLP/HTTP-JSON backend
+            headers: {}          # e.g. authorization for Langfuse cloud
+            timeout_s: 5.0
+            service_name: zyko
+            batch_size: 64
+            queue_size: 4096
 
     ``enabled=False`` yields a no-op tracer sharing the same API — callers
-    never branch on it.
+    never branch on it. When an OTLP endpoint is configured (settings key
+    ``tracing.otlp.endpoint`` or the ``ZYKO_OTLP_ENDPOINT`` env var, which
+    wins), an :class:`~zyko.observability.OtlpSink` fans the same spans out
+    to the configured backend in addition to the local JSONL log.
     """
     enabled = bool(settings.get("tracing.enabled", True))
     env = os.environ.get("ZYKO_TRACING")
@@ -222,7 +232,23 @@ def load_tracer(settings: Any) -> Tracer:
     if not enabled:
         return Tracer(enabled=False)
     path = settings.get("tracing.file") or str(_default_trace_path())
-    return Tracer(sinks=[JsonlSink(path), InMemorySink()])
+    sinks: list[Any] = [JsonlSink(path), InMemorySink()]
+    endpoint = os.environ.get("ZYKO_OTLP_ENDPOINT") or settings.get("tracing.otlp.endpoint")
+    if endpoint and str(endpoint).strip():
+        from zyko.observability.otlp import OtlpSink
+
+        raw_headers = settings.get("tracing.otlp.headers") or {}
+        sinks.append(
+            OtlpSink(
+                str(endpoint).strip(),
+                headers={str(k): str(v) for k, v in dict(raw_headers).items()},
+                timeout_s=float(settings.get("tracing.otlp.timeout_s") or 5.0),
+                service_name=str(settings.get("tracing.otlp.service_name") or "zyko"),
+                batch_size=int(settings.get("tracing.otlp.batch_size") or 64),
+                queue_size=int(settings.get("tracing.otlp.queue_size") or 4096),
+            )
+        )
+    return Tracer(sinks=sinks)
 
 
 def _default_trace_path() -> Path:

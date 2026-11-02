@@ -21,7 +21,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.4.1** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج**
+**النسخة 0.4.2** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** يُصدَّر إلى أي خلفية OTLP
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -49,6 +49,31 @@
 | بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
+
+## ما الجديد في 0.4.2؟ (جسر الملاحظة — spans تتدفق إلى Langfuse/Tempo/Jaeger دون اعتمادية جديدة)
+
+خطوة 2 من خارطة الصدارة في `docs/STRATEGY.md`: spans كانت على قرصك (0.4.1)،
+والآن **تتدفق إلى أي خلفية OTLP** يتحدث بها فريقك. `OtlpSink` ينطق
+OTLP/HTTP-JSON — بروتوكول OpenTelemetry Collector القياسي — عبر `httpx`
+الموجود أصلًا، فيعمل مع Collector وLangfuse وGrafana Tempo وJaeger وHoneycomb
+وNew Relic وDatadog **بصفر اعتماديات جديدة وصفر احتكار بائع**. متغير بيئة
+واحد يشغّله:
+
+```console
+ZYKO_OTLP_ENDPOINT=http://localhost:4318/v1/traces zyko ask "مرحبًا"
+```
+
+- **لا يُبطئ النداء أبدًا**: الكتابة تضع في طابور وتعود فورًا؛ خيط خلفي واحد
+  يجمع حتى 64 span لكل POST؛ امتلاء الطابور **يهمل (ويعدّ)** ولا يوقف.
+- **معرّفات مطابقة للمواصفة حتميًا**: 16 بايت trace / 8 بايت span مشتقة
+  بـsha256 من معرّفات ZYKO، وروابط الأب باقية، والأصل كسمات
+  `zyko.trace_id`/`zyko.span_id` — فحص `zyko traces --trace <id>` بلا فقدان.
+- **وصفة Langfuse**: نقطة النهاية
+  `https://cloud.langfuse.com/api/public/otel/v1/traces` مع
+  `authorization: "Basic ${LANGFUSE_BASIC}"` — ملفات الإعدادات تستبدل
+  `${ENV_VARS}` فلا يكتب السر على القرص.
+- `zyko doctor` يقول الآن حالة التتبّع وهدف الـOTLP في قسم Observability.
+- 13 اختبارًا جديدًا — **476 اختبارًا ناجحًا**، bandit صفر، CI 14/14.
 
 ## ما الجديد في 0.4.1؟ (تتبّع مدمج — ما يبيعه الآخرون خدمة مدفوعة نحن نقدّمه محليًا بلا اعتماديات)
 
@@ -379,7 +404,21 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.4.1** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.4.2** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.4.2 — the observability bridge: spans flow to Langfuse, Tempo, Jaeger or any OTLP backend — still zero new dependencies
+
+Roadmap step 2 from `docs/STRATEGY.md`: your spans already lived on your disk (0.4.1); now they **flow into the stack your team already runs**. `OtlpSink` speaks OTLP/HTTP with JSON encoding — the OpenTelemetry Collector's standard wire protocol — over the `httpx` ZYKO already ships, so OTel Collector, Langfuse, Grafana Tempo, Jaeger, Honeycomb, New Relic and Datadog all work with **zero new dependencies and zero vendor lock-in**. One environment variable turns it on:
+
+```console
+ZYKO_OTLP_ENDPOINT=http://localhost:4318/v1/traces zyko ask "hello"
+```
+
+- **Never slows the request path**: `write()` enqueues and returns; one daemon worker batches up to 64 spans per POST; a full queue **drops (and counts)** rather than blocks.
+- **Spec-exact deterministic ids**: 16-byte trace / 8-byte span ids derived via sha256 from ZYKO's ids, parent links survive, originals ride as `zyko.trace_id`/`zyko.span_id` attributes — `zyko traces --trace <id>` stays lossless.
+- **Langfuse recipe**: endpoint `https://cloud.langfuse.com/api/public/otel/v1/traces` with `authorization: "Basic ${LANGFUSE_BASIC}"` — config files interpolate `${ENV_VARS}` so the secret never lands on disk.
+- `zyko doctor` now shows tracing state and the OTLP target in an Observability section.
+- 13 new tests — **476 tests passing**, bandit zero, CI 14/14.
 
 ## What's new in 0.4.1 — built-in tracing: what others sell as a hosted service, ZYKO ships locally with zero dependencies
 

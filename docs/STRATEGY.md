@@ -94,6 +94,7 @@ vendor marketing. Re-measure before quoting.*
 1. **v0.4.x — التوزيع**: نشر PyPI (Trusted Publisher)، أمثلة تشغيل في 60 ثانية
    في كل مقال، بطاقات اجتماعية لكل إصدار.
 2. **v0.4.x — جسور الملاحظة**: مُصدّر OTel اختياري (zyko[otel]) + Langfuse.
+   *(نُفّذ في 0.4.2 — وأفضل من الوعد: OTLP/HTTP-JSON عبر httpx الموجودة أصلًا، صفر اعتماديات وحتى الـextra غير مطلوب)*
 3. **v0.5 — RAG الأساسيات**: مزوّد embeddings + مخزن متجهات محلي بسيط +
    `zk.ask(..., context=docs)` — أقل ما يرضي مستخدم LlamaIndex.
 4. **v0.6 — الوكلاء المتعددون**: خط أنابيب crew تسلسلي بسياق مشترك (توازي
@@ -143,5 +144,6 @@ in one package.
 ### Roadmap to the top
 
 Distribution (PyPI + 60-second stories) → observability bridges (OTel,
-Langfuse) → RAG essentials (embeddings, local vector store, `context=docs`)
-→ multi-agent crews with governance → the 1.0 stability contract.
+Langfuse — shipped in 0.4.2 as a zero-dependency OTLP/JSON sink) → RAG
+essentials (embeddings, local vector store, `context=docs`) → multi-agent
+crews with governance → the 1.0 stability contract.

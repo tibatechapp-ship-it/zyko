@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.4.2 — observability bridge: spans now flow to Langfuse, Tempo, Jaeger or any OTLP backend — still zero new dependencies
+
+Roadmap step 2 from `docs/STRATEGY.md` (the competitive benchmark): LangChain
+sells observability as LangSmith; CrewAI needs AgentOps; ZYKO's spans already
+lived on your disk (0.4.1) and now they **flow into the stack your team
+already runs**. `OtlpSink` speaks OTLP/HTTP with JSON encoding — the
+OpenTelemetry Collector's standard wire protocol — over the `httpx` ZYKO
+already ships, so OTel Collector, Langfuse, Grafana Tempo, Jaeger, Honeycomb,
+New Relic and Datadog all work with **zero new dependencies and zero vendor
+lock-in**. One environment variable turns it on:
+
+```console
+ZYKO_OTLP_ENDPOINT=http://localhost:4318/v1/traces zyko ask "hello"
+```
+
+### Added
+- **`zyko.observability.OtlpSink`** — OTLP/HTTP-JSON exporter: one daemon
+  worker batches up to `batch_size` spans per POST (default 64), so a busy
+  gateway pays one request per batch, not one per span. The same spans keep
+  flowing to the local JSONL log in parallel — export is additive, never a
+  replacement.
+- **Never-breaks/slow contract, enforced**: `write()` only enqueues — network
+  latency never touches the caller's request path; a full queue **drops**
+  (counted in `.dropped`) instead of blocking; endpoint outages degrade to
+  one warning line per outage (debug afterwards, re-warns on recovery);
+  `close()` drains pending spans and is safe to call twice.
+- **Spec-exact OTLP mapping** — 16-byte trace ids / 8-byte span ids derived
+  **deterministically** (`sha256` of a tagged id) from ZYKO's shorter ids, so
+  the same id always maps to the same OTLP id and parent links survive the
+  trip; originals ride along as `zyko.trace_id`/`zyko.span_id`/
+  `zyko.parent_id` attributes so `zyko traces --trace <id>` drill-down stays
+  lossless. Full AnyValue typing: strings, ints (as decimal strings per the
+  OTLP/JSON spec), floats, bools, arrays, nested key-values, null. Status
+  mapping: `ok` → `STATUS_CODE_OK`, `error`/`cancelled` →
+  `STATUS_CODE_ERROR` + reason as the status message.
+- **Settings + env** — `tracing.otlp.{endpoint,headers,timeout_s,
+  service_name,batch_size,queue_size}` with the `ZYKO_OTLP_ENDPOINT`
+  override (env wins, whitespace-trimmed); `zyko doctor` gained an
+  **Observability** section showing the tracing state and the OTLP target.
+
+### Recipes (documented in `docs/API.md`)
+- **Langfuse cloud**: endpoint
+  `https://cloud.langfuse.com/api/public/otel/v1/traces` with
+  `authorization: "Basic ${LANGFUSE_BASIC}"` (base64 of `pk:sk`) — config
+  files interpolate `${ENV_VARS}`, so the secret never lands on disk.
+- **Self-hosted stack**: OTel Collector `http://localhost:4318/v1/traces`,
+  Grafana Tempo `:4318`, Jaeger `:4318` — same variable, no code.
+
+### Notes
+- Zero new dependencies (OTLP/JSON rides the existing `httpx`).
+- 13 new tests (`tests/test_observability_otlp.py`) — **476 tests passing**,
+  `ruff` clean, `bandit` 0 findings, CI 14/14 on Linux/Windows/macOS ×
+  Python 3.11–3.13.
+
 ## 0.4.1 — built-in tracing: what competitors sell as a hosted service, ZYKO ships locally with zero dependencies
 
 A strategic benchmark against LangChain (148,848★, sells observability as

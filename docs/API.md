@@ -307,12 +307,47 @@ sp.status, sp.duration_ms  # "ok", 12.4
   thread-safe, creates parent dirs, bounded shift rotation (`traces.jsonl`
   → `.1` → `.2`; disk ≤ ~3×`max_bytes` forever). I/O failures log once and
   never propagate.
+- `OtlpSink(endpoint, *, headers=None, timeout_s=5.0, service_name="zyko",
+  batch_size=64, queue_size=4096)` (0.4.2) — export the same spans to any
+  OTLP/HTTP-JSON backend (OTel Collector, Langfuse, Grafana Tempo, Jaeger,
+  Honeycomb, New Relic, Datadog) over the already-required `httpx` — zero
+  new dependencies. One daemon worker batches up to `batch_size` spans per
+  POST; `write()` only enqueues (network latency never touches the request
+  path); queue overflow drops and counts (`.dropped`); outages log one
+  warning (debug afterwards, re-warn on recovery); `close()` drains then
+  stops and is safe to call twice. Spec-exact mapping: 16-byte trace /
+  8-byte span ids derived deterministically (sha256) from ZYKO's shorter
+  ids, originals preserved as `zyko.trace_id`/`zyko.span_id`/
+  `zyko.parent_id` attributes; `ok` → `STATUS_CODE_OK`,
+  `error`/`cancelled` → `STATUS_CODE_ERROR` + reason.
 - `load_tracer(settings)` — honors `tracing.enabled`/`tracing.file` +
-  `ZYKO_TRACING=0`; disabled keeps the identical no-write API.
+  `ZYKO_TRACING=0`; when `tracing.otlp.endpoint` (or `ZYKO_OTLP_ENDPOINT`,
+  which wins) is set, an `OtlpSink` fans the same spans to that backend in
+  addition to the local JSONL log. `tracing.otlp.headers` carries backend
+  auth (config files interpolate `${ENV_VARS}` — secrets stay off disk).
+  Disabled keeps the identical no-write API.
+
+OTLP recipes:
+
+```yaml
+# config.yaml — Langfuse cloud (v3 speaks OTLP natively)
+tracing:
+  otlp:
+    endpoint: https://cloud.langfuse.com/api/public/otel/v1/traces
+    headers:
+      authorization: "Basic ${LANGFUSE_BASIC}"   # base64(pk:secret)
+```
+
+```console
+# self-hosted: OTel Collector / Grafana Tempo / Jaeger — all listen on :4318
+ZYKO_OTLP_ENDPOINT=http://localhost:4318/v1/traces zyko ask "hello"
+```
+
 - Router spans: `router.route` (attributes: `strategy`, `provider`,
   `cached`, `input_tokens`, `output_tokens`, `attempts[]`) and
   `router.stream` (closed in `finally`, even on client disconnect).
-- Inspect: `zyko traces --last 20` / `--trace <id>` / `--json` / `--clear`.
+- Inspect: `zyko traces --last 20` / `--trace <id>` / `--json` / `--clear`;
+  `zyko doctor` shows the tracing state and the OTLP target.
 
 ---
 

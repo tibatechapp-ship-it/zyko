@@ -735,6 +735,21 @@ def cmd_doctor(args: Any) -> int:
             ui.warn("ollama not reachable at 127.0.0.1:11434 (optional, but great on Termux/phone)")
         )
     print()
+    print(bold("Observability"))
+    tracing_on = bool(settings.get("tracing.enabled", True))
+    env_tracing = os.environ.get("ZYKO_TRACING")
+    if env_tracing is not None:
+        tracing_on = env_tracing.strip().lower() not in {"0", "false", "off", "no"}
+    print(f"  {'OK ' if tracing_on else '-- '} tracing   (spans: JSONL log + in-memory)")
+    otlp_endpoint = os.environ.get("ZYKO_OTLP_ENDPOINT") or settings.get("tracing.otlp.endpoint")
+    if otlp_endpoint:
+        print(ui.ok(f"otlp export → {otlp_endpoint}"))
+    else:
+        print(
+            "  --  otlp     (set ZYKO_OTLP_ENDPOINT or tracing.otlp.endpoint to "
+            "bridge spans to Langfuse/Tempo/Jaeger/Collector)"
+        )
+    print()
     print(ui.ok("doctor finished"))
     return 0
 
