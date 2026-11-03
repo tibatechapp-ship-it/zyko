@@ -821,3 +821,6 @@ Report a vulnerability privately via [SECURITY.md](SECURITY.md) — please do no
 Apache-2.0 — see [LICENSE](LICENSE).
 
 </div>
+
+---
+> 🚀 **ملاحظة:** تم إضافة هذا السطر مباشرة من Termux عبر GitHub API بدون تحميل المشروع.
