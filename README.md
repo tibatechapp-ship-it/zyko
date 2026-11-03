@@ -50,6 +50,43 @@
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
 
+## ما الجديد في 0.6.0؟ (طواقم متعددة الوكلاء — خط أنابيب تسلسلي بسياق مشترك — توازي CrewAI في البساطة، أقوى في الحوكمة)
+
+الخطوة 4 من خارطة الصدارة: ZYKO الآن **تنسّق طاقمًا من الوكلاء**. قائمة خطوات
+مرتبة، كل خطوة وكيل مُهيّأ + قالب مهمة يحيل إلى مدخل الطاقم (`{task}`) أو
+مخرج الخطوة السابقة (`{output}`) أو أي `output_key` سابق. التنسيق آمن
+بنيويًا: المفاتيح المجهولة تبقى نصًا حرفيًا (`{json}` في نثر عادي نص لا
+انهيار)، القيم المُستبدلة لا تُعاد صياغتها أبدًا (JSON والأقواس تنجو من
+الرحلة ذهابًا وإيابًا)، والقوالب تُدقَّق عند البناء — فشل مبكر لا في منتصف
+التشغيل. الحوكمة أقوى: بلا مطالبات خفية — كل وكيل يحتفظ بنصه النظامي
+وأدواته وسياساته، وكل خطوة داخل span `crew.step` تحت `crew.run`، والنتيجة
+إيصال كامل قابل للتدقيق.
+
+```python
+from zyko import Zyko
+
+zk = Zyko()
+crew = zk.crew("triage.yaml")  # YAML تصريحي: وكلاء مضمّنون أو ملفات
+res = crew.run("فاتورتي متأخرة")
+print(res.output)  # إجابة الوكيل الأخير
+print(res.outputs["class"])  # مخرج أي خطوة مُعلنة
+```
+
+- **ثلاثة مراجع فقط في القوالب**: `{task}` (مدخل الطاقم)، `{output}` (مخرج
+  الخطوة السابقة)، `{output_key}` لأي خطوة سابقة. المجهول يبقى حرفيًا؛
+  المشوّه (`{}`، `{0}`) يرفع `CrewError` عند `add()` — فشل مبكر.
+- **YAML تصريحي**: خطوات تُحيل لملفات وكلاء أو تعريفات مضمّنة؛ ومن الطرفية
+  `zyko crew crew.yaml --input "..." [--json|--trace]` — ووضع `--json`
+  يطبع إيصال `CrewResult` وحده على stdout (عقد آلي نظيف).
+- **إيصال قابل للتدقيق**: `CrewResult` — `output` + `outputs` (بترتيب
+  الإعلان) + سجل لكل خطوة (الوكيل/المفتاح/المهمة المملوءة/الخطوات/المقتطع/
+  الزمن) + مجموع التوكنات + `trace_id`، وكلها مرئية في `zyko traces` وأي
+  خلفية OTLP.
+- **أخطاء مكتوبة النوع**: `CrewError` (طاقم فارغ، مفتاح مكرر، قالب مشوّه)
+  من جذر `zyko`؛ وإخفاقات المزوّد تعبر خط الأنابيب بنوعها الحقيقي
+  (`ProviderError` بعد استنفاد إعادة المحاولة) لا كسلاسل نصية.
+- 34 اختبارًا جديدًا — **537 اختبارًا ناجحًا**، bandit صفر، CI 14/14.
+
 ## ما الجديد في 0.5.0؟ (أساسيات RAG — اقتطاع ثم تمثيل ثم بحث ثم `context=` — أقل ما يرضي مستخدم LlamaIndex)
 
 الخطوة 3 من خارطة الصدارة: ZYKO الآن **ترسيخ الإجابات في مستنداتك**. مقتطع
@@ -442,7 +479,27 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.5.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** · **local RAG with zero dependencies** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.6.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** · **local RAG with zero dependencies** · **sequential multi-agent crews** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.6.0 — multi-agent crews: a sequential pipeline with shared context — CrewAI-parity in simplicity, stronger in governance
+
+Roadmap step 4: ZYKO now **coordinates a crew of agents**. An ordered list of steps, each step one configured agent plus a task template that may reference the crew input (`{task}`), the previous step's output (`{output}`) or any earlier `output_key`. Formatting is safe by construction — unknown placeholders stay literal, substituted values are never re-formatted (JSON and braces survive round-trips), and templates are validated when a step is added, so malformed tasks fail fast instead of mid-run. Governance is stronger: no hidden prompts — every agent keeps its own system prompt, tools and policy; every step is a `crew.step` span under `crew.run`; the result is a full auditable receipt:
+
+```python
+from zyko import Zyko
+
+zk = Zyko()
+crew = zk.crew("triage.yaml")  # declarative YAML: inline or file agents
+res = crew.run("my invoice is late")
+print(res.output)  # final agent's answer
+print(res.outputs["class"])  # any declared step output
+```
+
+- **Safe shared-context templates**: only three references — `{task}`, `{output}`, `{output_key}`; unknown keys stay literal; positional or malformed placeholders (`{}`, `{0}`) raise the new typed **`CrewError`** (exported from the `zyko` root) at `add()` time.
+- **Declarative YAML**: steps reference agent files or inline agent mappings; CLI: `zyko crew crew.yaml --input "..." [--json|--trace]` — `--json` prints ONLY the `CrewResult` JSON on stdout (clean machine contract).
+- **Auditable receipt**: `CrewResult` — `output`, `outputs` (insertion ordered), per-step records (agent, key, filled task, output, agent steps, truncated, elapsed), aggregated token usage, `trace_id` — visible in `zyko traces` and any OTLP backend.
+- **Typed failures end-to-end**: crew bugs raise `CrewError`; provider outages propagate as their real typed error (`ProviderError`) after the router's retry budget — never a bare string.
+- 34 new tests — **537 tests passing**, bandit zero, CI 14/14.
 
 ## What's new in 0.5.0 — RAG essentials: chunk → embed → search → `ask(context=…)` — the LlamaIndex-minimum
 

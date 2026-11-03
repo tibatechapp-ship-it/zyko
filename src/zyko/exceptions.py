@@ -95,6 +95,10 @@ class AgentLimitError(ZykoError):
     """Agent loop stopped because it reached its step/token limit."""
 
 
+class CrewError(ZykoError):
+    """Multi-agent crew failure: empty pipeline, duplicate output key, bad template."""
+
+
 class MCPError(ZykoError):
     """Model Context Protocol client/server failure."""
 

@@ -137,6 +137,20 @@ def build_parser() -> argparse.ArgumentParser:
     with_router(p)
     p.set_defaults(func=cmd.cmd_run)
 
+    # crew (sequential multi-agent pipeline)
+    p = sub.add_parser("crew", help="run a sequential multi-agent crew from a YAML file")
+    p.add_argument("file", help="crew YAML: steps of agents + task templates")
+    p.add_argument(
+        "--input",
+        "-i",
+        required=True,
+        help="the crew-level task text every template sees as {task}",
+    )
+    p.add_argument("--trace", action="store_true", help="print the per-step table")
+    p.add_argument("--json", action="store_true", help="print the full CrewResult as JSON")
+    with_router(p)
+    p.set_defaults(func=cmd.cmd_crew)
+
     # sessions (memory visibility)
     p = sub.add_parser("sessions", help="inspect stored chat sessions (SQLite memory)")
     ses = p.add_subparsers(dest="sessions_cmd", required=True)

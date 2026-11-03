@@ -11,13 +11,14 @@ print(answer.receipt["chosen"])  # verifiable routing decision
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from zyko.agents.agent import Agent
 from zyko.agents.loader import build_agent, load_agent_document
 from zyko.config.settings import Settings
 from zyko.core.messages import Message
 from zyko.core.response import ChatRequest
+from zyko.crew.loader import load_crew
 from zyko.policy.engine import PolicyEngine, load_policy
 from zyko.providers import configured_providers
 from zyko.providers.base import BaseProvider
@@ -25,6 +26,9 @@ from zyko.router.engine import Router, RouteResult
 from zyko.router.quality import QualityLedger
 from zyko.structured.engine import StructuredEngine, StructuredResult
 from zyko.utils.loop import run_sync
+
+if TYPE_CHECKING:
+    from zyko.crew.engine import Crew
 
 
 class Zyko:
@@ -129,6 +133,27 @@ class Zyko:
     def agent(self, source: str, *, workspace: str = ".") -> Agent:
         doc = load_agent_document(source)
         return build_agent(doc, self.router, policy=self.policy, workspace=workspace)
+
+    # ------------------------------------------------------------------- crew
+    def crew(self, source: str | Path, *, workspace: str = ".") -> "Crew":
+        """Load a sequential multi-agent crew from a YAML definition (0.6.0).
+
+        Steps reference agent files or inline agent mappings; task templates
+        can use ``{task}`` (crew input), ``{output}`` (previous step) and
+        any earlier ``{output_key}``::
+
+            res = zk.crew("triage.yaml").run("my invoice is late")
+            print(res.output)            # final agent's answer
+            print(res.outputs["class"])  # any step's declared output
+        """
+        loaded: Crew = load_crew(
+            source,
+            self.router,
+            policy=self.policy,
+            workspace=workspace,
+            tracer=self.tracer,
+        )
+        return loaded
 
     # ------------------------------------------------------------- structured
     async def astructured(

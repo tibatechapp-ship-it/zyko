@@ -365,8 +365,12 @@ ZykoError
 │   └── LocalRateLimitError
 ├── ToolError
 ├── AgentLimitError            # agent step/tool budget exhausted
+├── CrewError                  # crew: empty pipeline, duplicate key, bad template
 ├── MCPError                   # MCP transport / protocol failures
-└── ZykoTimeoutError
+├── ZykoTimeoutError
+├── EmbedderError              # RAG embeddings: bad request, dim mismatch, …
+├── SchemaSpecError            # structured output: malformed schema (caller bug)
+└── StructuredOutputError      # structured output: model answer failed validation
 ```
 
 Catch `ZykoError` for anything ZYKO-related; `PolicyViolation` for governance
@@ -386,6 +390,7 @@ rejections (the audit log records them automatically).
 | `zyko policy check\|show\|redact` | validate/display policies · redaction demo |
 | `zyko mcp serve\|tools -- <cmd>` | ZYKO as MCP server · inspect another MCP server |
 | `zyko run agent.yaml "task"` | run a YAML-defined agent |
+| `zyko crew crew.yaml --input "…"` | run a sequential multi-agent crew (`--json` = receipt only, `--trace` = step table) |
 | `zyko sessions list\|show\|rm\|clear` | inspect SQLite session memory |
 | `zyko cost [--days N] [--json]` | spend & governance report from the audit log |
 | `zyko cache [--json] [--clear]` | inspect or clear the policy-gated response cache |
@@ -560,3 +565,63 @@ answer = zk.ask("what is the refund policy?", context=[h.text for h in hits])
   own system message ("answer from the context; say so if insufficient")
   placed after any explicit `system` and before the user prompt. Works with
   plain strings too — the store is optional.
+
+---
+
+## 16. Crews — `zyko.crew` (sequential multi-agent pipeline, 0.6.0)
+
+Roadmap step 4: an ordered list of steps; each step is one configured
+`Agent` plus a task template. Templates may reference `{task}` (the crew
+input), `{output}` (previous step's output) or any earlier step's
+`{output_key}`. Safe by construction: unknown placeholders stay literal,
+substituted values are never re-formatted (JSON/braces survive), and
+malformed templates (`{}`, `{0}`, `{a!}`) raise the typed `CrewError`
+when the step is added — fail fast, never mid-run. No hidden prompts:
+every agent keeps its own system prompt, tools and policy.
+
+```python
+from zyko import Zyko
+from zyko.crew import Crew
+
+zk = Zyko()
+crew = Crew(router=zk.router, tracer=zk.tracer, name="triage")
+crew.add(classifier, "Classify: {task}", output_key="class")
+crew.add(replier, "Reply. Ticket: {task}\nClass: {class}")
+res = crew.run("my invoice is late")  # or await crew.arun(...)
+res.output  # final agent's answer
+res.outputs  # {"class": …, "replier": …}
+res.steps[1]["task"]  # the filled template (auditable)
+res.usage_input_tokens  # aggregated across every step
+res.trace_id  # crew.run span — zyko traces / OTLP
+```
+
+- `Crew.add(agent, task, *, output_key=None)` — chainable, validated
+  immediately: task must be a non-empty template; `output_key` defaults to
+  the agent's name (deduped `name_2`, `name_3`, …); duplicate explicit
+  keys raise `CrewError`. `Crew.steps` is a read-only copy.
+- `CrewResult` — `output`, `outputs` (insertion ordered), `steps` records
+  (agent, key, filled task, output, agent_steps, truncated, elapsed_s),
+  `usage_input_tokens`/`usage_output_tokens`, `truncated` (any step hit
+  its `max_steps`), `elapsed_s`, `trace_id`.
+- Declarative YAML (`zk.crew("file.yaml")` or `load_crew(path, router,
+  policy=…, tracer=…)`):
+
+```yaml
+name: triage
+steps:
+  - agent: classifier.yaml     # an agent file (searched like zyko run)
+    task: "Classify: {task}"
+    output_key: class
+  - agent:                     # or an inline agent mapping
+      name: replier
+      system: You draft replies.
+      model: auto
+    task: "Reply. Ticket: {task}\nClass: {class}"
+```
+
+- CLI: `zyko crew crew.yaml --input "…" [--json] [--trace]` — `--json`
+  prints ONLY the `CrewResult` JSON on stdout (machine contract);
+  `--trace` adds the per-step table.
+- Errors: crew bugs raise `CrewError`; provider outages propagate as their
+  real typed error (`ProviderError`, …) once the router's retry budget is
+  exhausted; a failing run marks the `crew.run` span `error`.

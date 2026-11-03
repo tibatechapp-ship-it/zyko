@@ -1,5 +1,63 @@
 # Changelog
 
+## 0.6.0 — multi-agent crews: a sequential pipeline with shared context — CrewAI-parity in simplicity, stronger in governance
+
+Roadmap step 4 from `docs/STRATEGY.md` ("الوكلاء المتعددون"): ZYKO now
+**coordinates a crew of agents**. An ordered list of steps, each step one
+configured agent plus a task template that may reference the crew input
+(`{task}`), the previous step's output (`{output}`) or any earlier
+`output_key`. Formatting is safe by construction — unknown placeholders
+stay literal, substituted values are never re-formatted (JSON and braces
+survive round-trips), and templates are validated when a step is added, so
+malformed tasks fail fast instead of mid-run. Governance is stronger than
+CrewAI's: no hidden prompts — every agent keeps its own system prompt,
+tools and policy; every step runs inside a `crew.step` span nested under a
+`crew.run` span; the result is a full auditable receipt.
+
+```python
+from zyko import Zyko
+
+zk = Zyko()
+crew = zk.crew("triage.yaml")  # declarative YAML: inline or file agents
+res = crew.run("my invoice is late")
+print(res.output)  # final agent's answer
+print(res.outputs["class"])  # any declared step output
+```
+
+### Added
+- **`zyko.crew`** — new public package: `Crew` (chainable `add(agent, task,
+  output_key=…)`), `CrewStep`, `CrewResult` and `fill_template`.
+- **Safe shared-context templates** — three references only: `{task}` (the
+  crew input), `{output}` (previous step's output, empty for step 1) and
+  any earlier `{output_key}`. Unknown keys stay literal (`{json}` in prose
+  is text, never a crash); positional or malformed placeholders (`{}`,
+  `{0}`, `{a!}`) raise the new typed **`CrewError`** (exported from the
+  `zyko` root) at `add()` time — fail fast, not mid-run. Default
+  `output_key` is the agent name, deduped as `name_2`, `name_3`, …;
+  duplicate explicit keys raise immediately instead of silently corrupting
+  the shared context later steps depend on.
+- **Declarative YAML** (`load_crew` / `zk.crew("file.yaml")`) — steps
+  reference agent files (searched like `zyko run` does) or inline agent
+  mappings (`name`, `system`, `model`, `max_steps`, `tools`, `mcp_servers`);
+  config problems raise `ConfigError` before anything runs.
+- **CLI**: `zyko crew crew.yaml --input "…" [--json] [--trace]` — `--json`
+  prints ONLY the full `CrewResult` JSON on stdout (machine contract);
+  `--trace` adds the per-step table.
+- **Auditable receipt** — `CrewResult`: `output`, `outputs` (insertion
+  ordered), per-step records (agent, key, filled task, output, agent
+  steps, truncated flag, elapsed), aggregated token usage, `trace_id`.
+  Every step is a `crew.step` span under `crew.run` — visible in
+  `zyko traces` and any OTLP backend.
+- **Typed failures end-to-end** — crew bugs raise `CrewError`; provider
+  outages propagate as their real typed error (`ProviderError`, …) after
+  the router's retry budget, never as a bare string; the `crew.run` span
+  is marked `error` automatically.
+
+### Notes
+- Zero new dependencies; the crew layer is stdlib + the existing stack.
+- 34 new tests (`tests/test_crew.py`) — **537 tests passing**, `ruff` clean,
+  `bandit` 0 findings, CI 14/14 on Linux/Windows/macOS × Python 3.11–3.13.
+
 ## 0.5.0 — RAG essentials: chunk → embed → search → `ask(context=…)` — the LlamaIndex-minimum, zero-dependency by default
 
 Roadmap step 3 from `docs/STRATEGY.md` ("أقل ما يرضي مستخدم LlamaIndex"):

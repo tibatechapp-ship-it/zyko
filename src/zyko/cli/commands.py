@@ -375,6 +375,51 @@ def cmd_run(args: Any) -> int:
     return 0
 
 
+def cmd_crew(args: Any) -> int:
+    from dataclasses import asdict
+
+    from zyko.crew.loader import load_crew
+
+    router = _build_router(args)
+    crew = load_crew(args.file, router, policy=router.policy)
+    result = crew.run(args.input)
+    if args.json:
+        # Machine contract: stdout carries ONLY the CrewResult JSON.
+        print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+        return 0
+    tools = [t for step in crew.steps for t in step.agent.builtin_tools]
+    print(
+        ui.info(
+            f"crew '{crew.name}' · {len(crew.steps)} step(s) · agents: "
+            + ", ".join(step.agent.name for step in crew.steps)
+            + (f" · tools: {len(tools)}" if tools else "")
+        )
+    )
+    print(result.output)
+    if args.trace:
+        print()
+        ui.table(
+            ["step", "agent", "key", "agent-steps", "truncated"],
+            [
+                [
+                    s["step"],
+                    s["agent"],
+                    s["key"],
+                    s["agent_steps"],
+                    "yes" if s["truncated"] else "-",
+                ]
+                for s in result.steps
+            ],
+        )
+    print(
+        ui.info(
+            f"{len(result.steps)} step(s) · {result.elapsed_s:.1f}s · tokens in={result.usage_input_tokens} out={result.usage_output_tokens}"
+        ),
+        file=sys.stderr,
+    )
+    return 0
+
+
 def cmd_bench(args: Any) -> int:
     from zyko.benchmarks.routing_bench import run_bench
 

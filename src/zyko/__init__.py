@@ -9,6 +9,7 @@ from zyko.client import RouteResult, StructuredResult, Zyko
 from zyko.core.messages import Message
 from zyko.core.response import ChatRequest, ChatResponse
 from zyko.exceptions import (
+    CrewError,
     EmbedderError,
     SchemaSpecError,
     StructuredOutputError,
@@ -35,6 +36,7 @@ __all__ = [
     "ChatRequest",
     "ChatResponse",
     "ZykoError",
+    "CrewError",
     "EmbedderError",
     "SchemaSpecError",
     "StructuredOutputError",
