@@ -15,6 +15,7 @@ produced the answer.
 
 from __future__ import annotations
 
+import hmac
 import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -24,6 +25,7 @@ from zyko.core import tools as toolconv
 from zyko.core.messages import Message
 from zyko.core.response import ChatRequest
 from zyko.exceptions import ZykoError
+from zyko.gateway.auth import GatewayUser, UserStore
 from zyko.log import get_logger
 from zyko.utils.loop import SHARED_LOOP
 
@@ -87,17 +89,56 @@ def _response_to_openai(response: Any, receipt: dict[str, Any] | None = None) ->
 class _Handler(BaseHTTPRequestHandler):
     router: Any = None
     api_key: str | None = None
+    users: UserStore | None = None  # 0.7.0: multi-user identity + governance
     protocol_version = "HTTP/1.1"
 
     # ------------------------------------------------------------- plumbing
     def log_message(self, fmt: str, *args: Any) -> None:  # silence default noise
         log.debug("gateway: " + fmt, *args)
 
-    def _authed(self) -> bool:
-        if not self.api_key:
-            return True
-        header = self.headers.get("Authorization", "")
-        return header == f"Bearer {self.api_key}"
+    def _authenticate(self) -> tuple[str | GatewayUser | None, bool]:
+        """Resolve the caller identity; returns ``(identity, ok)``.
+
+        ``identity`` is a :class:`GatewayUser` (users store), ``"api-key"``
+        (legacy single token) or ``"anonymous"`` (open gateway). On failure
+        the response is already written and ``ok`` is False. Comparisons are
+        constant-time in every mode.
+        """
+        if self.users is not None:
+            header = self.headers.get("Authorization", "")
+            token = header[7:].strip() if header.startswith("Bearer ") else ""
+            user = self.users.authenticate(token) if token else None
+            if user is None:
+                self._error(401, "invalid or missing bearer token")
+                return None, False
+            if not user.enabled:
+                self._error(403, f"user '{user.name}' is disabled")
+                return None, False
+            if not ("chat" in user.roles or "admin" in user.roles):
+                self._error(403, f"user '{user.name}' lacks a usable role")
+                return None, False
+            if not self.users.check_rate(user):
+                self._error(
+                    429,
+                    f"user '{user.name}' exceeded rpm={user.rpm}",
+                    err_type="zyko_rate_limit",
+                )
+                return None, False
+            if not self.users.within_budget(user):
+                self._error(
+                    429,
+                    f"user '{user.name}' exceeded daily_budget_usd={user.daily_budget_usd}",
+                    err_type="zyko_budget_exceeded",
+                )
+                return None, False
+            return user, True
+        if self.api_key:
+            header = self.headers.get("Authorization", "")
+            if not hmac.compare_digest(header.encode(), f"Bearer {self.api_key}".encode()):
+                self._error(401, "invalid or missing bearer token")
+                return None, False
+            return "api-key", True
+        return "anonymous", True
 
     def _json(self, status: int, payload: dict[str, Any]) -> None:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -112,11 +153,30 @@ class _Handler(BaseHTTPRequestHandler):
 
     # -------------------------------------------------------------- routes
     def do_GET(self) -> None:  # noqa: N802 (stdlib naming)
-        if not self._authed():
-            return self._error(401, "invalid or missing bearer token")
+        identity, ok = self._authenticate()
+        if not ok:
+            return
         path = self.path.split("?")[0]
         if path == "/healthz":
             return self._json(200, {"status": "ok", "server": "zyko-gateway"})
+        if path == "/v1/users/me":
+            if not isinstance(identity, GatewayUser):
+                return self._error(404, "/v1/users/me requires a users store")
+            usage = self.users.ledger.today(identity.name)
+            return self._json(
+                200,
+                {
+                    "object": "user",
+                    "user": identity.public(),
+                    "usage_today": {
+                        "requests": usage.get("requests", 0),
+                        "input_tokens": usage.get("input_tokens", 0),
+                        "output_tokens": usage.get("output_tokens", 0),
+                        "spend_usd": usage.get("spend_usd", 0.0),
+                    },
+                    "budget_remaining_usd": self.users.budget_left(identity),
+                },
+            )
         if path == "/v1/models":
             models = []
             for cand, breakdown in self.router.rank():
@@ -140,8 +200,9 @@ class _Handler(BaseHTTPRequestHandler):
             body = self.rfile.read(length) if length > 0 else b""
         except (ValueError, OSError):
             body = b""
-        if not self._authed():
-            return self._error(401, "invalid or missing bearer token")
+        identity, ok = self._authenticate()
+        if not ok:
+            return
         path = self.path.split("?")[0]
         if path != "/v1/chat/completions":
             return self._error(404, f"no route: {path}")
@@ -168,9 +229,12 @@ class _Handler(BaseHTTPRequestHandler):
         stream = bool(payload.get("stream"))
         try:
             if stream:
-                return self._stream_response(request)
+                return self._stream_response(request, identity)
             outcome = SHARED_LOOP.run(self.router.aroute(request))
             assert outcome.response is not None
+            if isinstance(identity, GatewayUser):
+                outcome.receipt["user"] = identity.name
+                self._record_usage(identity, outcome.receipt, outcome.response)
             return self._json(200, _response_to_openai(outcome.response, outcome.receipt))
         except ZykoError as exc:
             return self._error(502, str(exc), err_type="zyko_upstream_error")
@@ -178,7 +242,18 @@ class _Handler(BaseHTTPRequestHandler):
             log.exception("gateway failure")
             return self._error(500, f"internal error: {exc}")
 
-    def _stream_response(self, request: ChatRequest) -> None:
+    def _record_usage(self, user: GatewayUser, receipt: dict[str, Any], response: Any) -> None:
+        """Persist per-user usage; estimated cost from the chosen candidate."""
+        assert self.users is not None
+        est = (receipt.get("score_components") or {}).get("estimated_cost_usd")
+        self.users.record_usage(
+            user,
+            cost_usd=float(est) if est else 0.0,
+            input_tokens=response.usage.input_tokens,
+            output_tokens=response.usage.output_tokens,
+        )
+
+    def _stream_response(self, request: ChatRequest, identity: str | GatewayUser) -> None:
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-cache")
@@ -190,8 +265,15 @@ class _Handler(BaseHTTPRequestHandler):
             self.wfile.flush()
 
         try:
+            stream_est_cost = 0.0
+            final_usage_raw: dict[str, Any] | None = None
             for event in self.router.stream_route(request):
                 if event.type == "meta":
+                    if isinstance(identity, GatewayUser):
+                        receipt = event.data["receipt"] or {}
+                        receipt["user"] = identity.name
+                        est = (receipt.get("score_components") or {}).get("estimated_cost_usd")
+                        stream_est_cost = float(est) if est else 0.0
                     payload = {
                         "id": "stream",
                         "object": "chat.completion.chunk",
@@ -214,6 +296,9 @@ class _Handler(BaseHTTPRequestHandler):
                             }
                         ],
                     }
+                elif event.type == "usage":
+                    final_usage_raw = event.data.get("usage")
+                    continue
                 elif event.type == "done":
                     payload = {
                         "id": "stream",
@@ -225,6 +310,21 @@ class _Handler(BaseHTTPRequestHandler):
                     continue
                 send_chunk(
                     b"data: " + json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n\n"
+                )
+            if isinstance(identity, GatewayUser):
+                usage = None
+                try:
+                    from zyko.providers.base import usage_from_raw
+
+                    usage = usage_from_raw(final_usage_raw) if final_usage_raw else None
+                except Exception:  # noqa: BLE001 - usage accounting never breaks the stream
+                    usage = None
+                assert self.users is not None
+                self.users.record_usage(
+                    identity,
+                    cost_usd=stream_est_cost,
+                    input_tokens=usage.input_tokens if usage else 0,
+                    output_tokens=usage.output_tokens if usage else 0,
                 )
             send_chunk(b"data: [DONE]\n\n")
             self.wfile.write(b"0\r\n\r\n")
@@ -239,14 +339,21 @@ def serve(
     host: str = "127.0.0.1",
     port: int = 8787,
     api_key: str | None = None,
+    users: UserStore | None = None,
 ) -> ThreadingHTTPServer:
-    """Create, start and return a running gateway server."""
+    """Create, start and return a running gateway server.
+
+    Auth modes, most to least governed: ``users`` (multi-user identities,
+    per-user RPM + daily budgets, receipts carry the user name), ``api_key``
+    (single legacy bearer token), or open (development only).
+    """
 
     class BoundHandler(_Handler):
         pass
 
     BoundHandler.router = router
     BoundHandler.api_key = api_key
+    BoundHandler.users = users
     httpd = ThreadingHTTPServer((host, port), BoundHandler)
     httpd.daemon_threads = True
     thread = threading.Thread(target=httpd.serve_forever, name="zyko-gateway", daemon=True)

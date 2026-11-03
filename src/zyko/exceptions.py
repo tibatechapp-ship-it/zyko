@@ -103,6 +103,14 @@ class MCPError(ZykoError):
     """Model Context Protocol client/server failure."""
 
 
+class GatewayAuthError(ConfigError):
+    """Gateway users-file failure: bad YAML, duplicate names, unknown roles.
+
+    A subclass of :class:`ConfigError` — a broken users file is a deployment
+    bug and must surface before the gateway binds, never at request time.
+    """
+
+
 class ZykoTimeoutError(ZykoError):
     """Operation exceeded its deadline."""
 

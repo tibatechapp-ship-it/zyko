@@ -102,8 +102,22 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--host", default=None)
     p.add_argument("--port", type=int, default=None)
     p.add_argument("--api-key", default=None, help="require this bearer token on /v1/*")
+    p.add_argument(
+        "--users",
+        default=None,
+        help="multi-user YAML (0.7.0): per-user keys, roles, rpm and daily budgets",
+    )
     with_router(p)
     p.set_defaults(func=cmd.cmd_serve)
+
+    # hash-key (gateway users files)
+    p = sub.add_parser("hash-key", help="scrypt-hash an API key for a users file")
+    p.add_argument(
+        "--key",
+        default=None,
+        help="the key to hash (omit to be prompted without echo)",
+    )
+    p.set_defaults(func=cmd.cmd_hash_key)
 
     # policy
     p = sub.add_parser("policy", help="Policy-as-Code: check, show, redact")

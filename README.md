@@ -50,6 +50,48 @@
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
 
+## ما الجديد في 0.7.0؟ (بوابة متعددة المستخدمين محكومة — هويات لا مجرد رمز)
+
+بند قائمة ما قبل الإنتاج الواسع: حتى 0.6 كانت البوابة تعرف رمزًا حاملًا
+واحدًا فقط. الآن كل منشئ طلب **هوية مُسمّاة** بمفتاحها وأدوارها وحدّ معدلها
+وميزانيتها اليومية، من ملف مستخدمين تصريحي. التحقق بزمن ثابت
+(`hmac.compare_digest` على كل مدخل بلا خروج مبكر)؛ والمفاتيح يمكن تخزينها
+كسجلات scrypt قياسية (`zyko hash-key`) فلا يحمل الملف سرًا صالحًا؛
+والحوكمة تُفرض لكل مستخدم لا عالميًا فقط، وكل إيصال استجابة يحل هوية
+منشئ الطلب.
+
+```yaml
+# users.yaml
+users:
+  - name: alice
+    key: zk-dev-only              # تطوير فقط
+    roles: [chat]
+    rpm: 60
+  - name: ops
+    key_hash: scrypt$16384$8$1$…$…   # من `zyko hash-key`
+    roles: [chat, admin]
+    daily_budget_usd: 5.0
+```
+
+```bash
+zyko hash-key                          # يطبع سجل scrypt (الإدخال مخفي)
+zyko serve --users users.yaml          # بوابة متعددة المستخدمين
+curl -H 'Authorization: Bearer op-secret' localhost:8787/v1/users/me
+```
+
+- **حوكمة لكل مستخدم**: ‏401 رمز غير صالح، ‏403 مستخدم معطّل، ‏429 تجاوز
+  حد المعدل (`zyko_rate_limit`)، ‏429 تجاوز الميزانية اليومية
+  (`zyko_budget_exceeded`)؛ وكل إيصال يحمل `"user"` والاستخدام اليومي
+  (طلبات/توكنات/دولار مقدّر) يُخزَّن لكل مستخدم وينجو من إعادة التشغيل.
+- **`GET /v1/users/me`**: يفحص المستخدم هويته واستخدامه ومتبقّي ميزانيته —
+  لا مادة سرية تترك المخزن أبدًا.
+- **فشل مبكر مكتوب النوع**: أسماء مكررة، أدوار مجهولة، rpm/ميزانية غير
+  صالحة أو مفتاح ناقص ترفع `GatewayAuthError` (فرع من `ConfigError`) قبل
+  ربط الخادم — ملف معطوب لا يُشغّل بوابة نصف جاهزة.
+- **الأنماط القديمة كما هي**: `--api-key` الرمز الواحد (أصبح بزمن ثابت
+  أيضًا) والبوابة المفتوحة؛ إيصالاتها بلا مفتاح `"user"`.
+- 28 اختبارًا جديدًا — **565 اختبارًا ناجحًا**، bandit صفر، CI 14/14.
+
 ## ما الجديد في 0.6.0؟ (طواقم متعددة الوكلاء — خط أنابيب تسلسلي بسياق مشترك — توازي CrewAI في البساطة، أقوى في الحوكمة)
 
 الخطوة 4 من خارطة الصدارة: ZYKO الآن **تنسّق طاقمًا من الوكلاء**. قائمة خطوات
@@ -386,7 +428,8 @@ print(agent.run_sync("كم 47 × 16 × 7؟").output)
 | `zyko models` | كل النماذج المتاحة مع درجاتها وأسعارها |
 | `zyko policy check/show/redact` | التحقق من السياسات وعرضها وتجربة الحجب |
 | `zyko run AGENT.yaml TASK` | تشغيل وكيل من تعريف YAML (مع `--trace`) |
-| `zyko serve` | بوابة `/v1/chat/completions` متوافقة مع OpenAI (بما فيها البث SSE) |
+| `zyko serve` | بوابة `/v1/chat/completions` متوافقة مع OpenAI (بما فيها البث SSE) — وأصبحت **متعددة المستخدمين** (`--users users.yaml`: مفاتيح وأدوار وحدود وميزانيات لكل مستخدم) |
+| `zyko hash-key` | يسجّل مفتاح API بـscrypt ليوضع في `key_hash:` بملف المستخدمين (الإدخال مخفي بلا `--key`) |
 | `zyko mcp serve` | **اعرض ZYKO نفسه كخادم MCP** عبر stdio |
 | `zyko mcp tools -- CMD` | فحص أدوات أي خادم MCP |
 | `zyko bench` | المقياس المرجعي القابل لإعادة الإنتاج (`--repeats N` لوسائط أثبت، و`--update-ledger` يغذّي الموجّه) |
@@ -479,7 +522,36 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.6.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** · **local RAG with zero dependencies** · **sequential multi-agent crews** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.7.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** · **local RAG with zero dependencies** · **sequential multi-agent crews** · **governed multi-user gateway** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.7.0 — governed multi-user gateway: identities, not just a token
+
+A pre-broad-production roadmap item: until 0.6 the gateway knew exactly one bearer token. Now every caller is a **named identity** with its own key, roles, rate limit and daily budget, from a declarative users file. Verification is constant-time (`hmac.compare_digest` over *every* entry, no early exit — request timing never reveals which key matched); keys can be stored as stdlib scrypt records (`zyko hash-key`) so the file never holds a usable secret; governance is enforced per user, not just globally; and every response receipt carries the caller's identity:
+
+```yaml
+# users.yaml
+users:
+  - name: alice
+    key: zk-dev-only              # dev only
+    roles: [chat]
+    rpm: 60
+  - name: ops
+    key_hash: scrypt$16384$8$1$…$…   # from `zyko hash-key`
+    roles: [chat, admin]
+    daily_budget_usd: 5.0
+```
+
+```bash
+zyko hash-key                          # prints a scrypt record (input hidden)
+zyko serve --users users.yaml          # multi-user gateway
+curl -H 'Authorization: Bearer op-secret' localhost:8787/v1/users/me
+```
+
+- **Per-user governance**: 401 invalid token, 403 disabled user, 429 `zyko_rate_limit` when the user's RPM bucket is empty, 429 `zyko_budget_exceeded` when the daily budget is spent; every receipt carries `"user"`, and daily usage (requests, tokens, estimated USD) is persisted per user and survives restarts.
+- **`GET /v1/users/me`**: a user inspects their own identity, today's usage and remaining budget — no key material ever leaves the store.
+- **Typed fail-fast**: duplicate names, unknown roles, bad rpm/budget or a missing key raise the new `GatewayAuthError` (a `ConfigError`) **before** the server binds — a broken users file never half-starts a gateway.
+- **Legacy modes unchanged**: single `--api-key` (now constant-time too) and the open gateway behave exactly as before; legacy receipts carry no `"user"` key.
+- 28 new tests — **565 tests passing**, bandit zero, CI 14/14.
 
 ## What's new in 0.6.0 — multi-agent crews: a sequential pipeline with shared context — CrewAI-parity in simplicity, stronger in governance
 

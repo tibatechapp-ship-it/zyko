@@ -57,6 +57,7 @@ vendor marketing. Re-measure before quoting.*
 5. **تكاملات الملاحظة الخارجية** — OTel exporter / Langfuse / Prometheus:
    طبقتنا مدمجة، لكن الاستيراد إلى منصات الفرق غير موجود بعد.
 6. **مصادقة متعددة المستخدمين للبوابة** — رمز حامل واحد فقط حتى الآن.
+   *(نُفّذ في 0.7.0 — `zyko.gateway.auth`: ملف مستخدمين تصريحي بمفاتيح scrypt وتحقق بزمن ثابت، حدود معدل وميزانيات يومية لكل مستخدم، أدوار، `/v1/users/me`، و`GatewayAuthError` مكتوبة النوع)*
 
 ### 2) هل المشروع جاهز للتشغيل؟ (جاهزية الإنتاج)
 
@@ -67,7 +68,7 @@ vendor marketing. Re-measure before quoting.*
 | التثبيت والتشغيل | ✅ يعمل | سكربتات تشغيل فوري، `zyko doctor`، وضع عرض بلا مفاتيح، Docker |
 | الوظائف الأساسية | ✅ مكتملة | ask/chat/route/structured/agents/MCP/gateway(‏SSE)/cache/traces |
 | المرونة | ✅ جيدة | قواطع دائرة، صحة، سقوط تلقائي، مهلات، إعادة محاولات |
-| الأمان | ✅ جيد فردي | bandit 0، قفل أدوات خطرة، تدقيق، رمز بوابة؛ ⚠️ بلا تعدد مستخدمين |
+| الأمان | ✅ جيد فردي | bandit 0، قفل أدوات خطرة، تدقيق، رمز بوابة؛ تعدد مستخدمين من 0.7.0 (مفاتيح scrypt، أدوار، حدود وميزانيات لكل مستخدم) |
 | المراقبة | ✅ مدمجة الآن | تدقيق + تكلفة + تتبّع JSONL؛ ⚠️ بلا مُصدّر OTel/Prometheus |
 | التوثيق | ✅ عميق | API/ARCHITECTURE/PROVIDERS/STRATEGY + موقع ثنائي اللغة |
 | التوزيع | ⚠️ ناقص | GitHub فقط — **PyPI لم يُفعل بعد** (يتملك حساب pypi.org + Trusted Publisher) |
@@ -75,6 +76,7 @@ vendor marketing. Re-measure before quoting.*
 
 **قائمة ما قبل الإنتاج الواسع (بالترتيب)**: نشر PyPI ← مُصدّر OTel ← مصادقة
 متعددة مستخدمين للبوابة ← ضمان واجهة 1.0.
+*(‏OTel نُفّذ في 0.4.2، ومصادقة تعدد المستخدمين نُفّذت في 0.7.0؛ يتبقى نشر PyPI وضمان 1.0)*
 
 ### 3) عيوب المنافسين — وكيف نصدّر عن كل عيب
 
@@ -128,7 +130,9 @@ demo mode, doctor, gateway with bearer auth + SSE, cache, structured,
 tracing, cross-platform CI). Three reservations: PyPI distribution is the
 critical missing gate; auth is single-token; the API is still 0.x-beta.
 Pre-broad-production order: **PyPI → OTel exporter → multi-user auth → 1.0
-stability contract**.
+stability contract**. *(OTel shipped in 0.4.2, multi-user auth in 0.7.0 as
+`zyko.gateway.auth` — scrypt-hashed keys, constant-time verification,
+per-user rpm + daily budgets, `/v1/users/me`; remaining: PyPI, 1.0)*
 
 ### 3) Competitor weaknesses → the ZYKO answer
 

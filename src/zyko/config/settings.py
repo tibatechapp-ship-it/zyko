@@ -64,6 +64,7 @@ _ENV_OVERRIDES: dict[str, str] = {
     "ZYKO_GATEWAY_HOST": "gateway.host",
     "ZYKO_GATEWAY_PORT": "gateway.port",
     "ZYKO_GATEWAY_API_KEY": "gateway.api_key",
+    "ZYKO_GATEWAY_USERS": "gateway.users",
     "ZYKO_TRACING": "tracing.enabled",
     "ZYKO_OTLP_ENDPOINT": "tracing.otlp.endpoint",
 }
@@ -194,6 +195,7 @@ gateway:
   host: 127.0.0.1
   port: 8787
   api_key: null             # set to require a bearer token on /v1/*
+  users: null               # 0.7.0: path to a multi-user users.yaml (overrides api_key)
 
 # default_policy: default   # name resolved from ~/.config/zyko/policies/
 """

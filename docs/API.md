@@ -356,6 +356,7 @@ ZYKO_OTLP_ENDPOINT=http://localhost:4318/v1/traces zyko ask "hello"
 ```
 ZykoError
 ├── ConfigError                # bad config, busy port, missing files
+│   └── GatewayAuthError       # gateway users file: duplicates, bad roles/keys
 ├── ProviderError              # all upstream failures (all candidates failed …)
 │   ├── RateLimitError         # 429 from a vendor (honours Retry-After)
 │   └── AuthError              # 401/403 — bad key
@@ -386,7 +387,8 @@ rejections (the audit log records them automatically).
 | `zyko models` | models the router can use, with scores |
 | `zyko route "prompt"` | routing plan — **no API call** (`--explain` for full receipt) |
 | `zyko ask "prompt"` `chat` | one-shot completion · interactive chat with session memory |
-| `zyko serve [--port N] [--demo]` | OpenAI-compatible gateway |
+| `zyko serve [--port N] [--demo]` | OpenAI-compatible gateway — `--users users.yaml` for governed multi-user mode (per-user keys, roles, rpm, daily budgets) |
+| `zyko hash-key [--key …]` | scrypt-hash an API key for a users file `key_hash:` entry (hidden prompt without `--key`) |
 | `zyko policy check\|show\|redact` | validate/display policies · redaction demo |
 | `zyko mcp serve\|tools -- <cmd>` | ZYKO as MCP server · inspect another MCP server |
 | `zyko run agent.yaml "task"` | run a YAML-defined agent |
@@ -625,3 +627,61 @@ steps:
 - Errors: crew bugs raise `CrewError`; provider outages propagate as their
   real typed error (`ProviderError`, …) once the router's retry budget is
   exhausted; a failing run marks the `crew.run` span `error`.
+
+---
+
+## 17. Gateway multi-user auth — `zyko.gateway.auth` (0.7.0)
+
+The gateway stops being a one-token door and becomes a governed multi-user
+surface. A declarative users file (same search rules as agents/crews: exact
+path, or name resolved with `.yaml`/`.yml`) defines every caller:
+
+```yaml
+users:
+  - name: alice
+    key: zk-dev-only              # plaintext — development only
+    roles: [chat]
+    rpm: 60
+  - name: ops
+    key_hash: scrypt$16384$8$1$9f2c…$51ab…   # from `zyko hash-key`
+    roles: [chat, admin]
+    daily_budget_usd: 5.0
+  - name: intern
+    key: intern-key
+    enabled: false
+```
+
+- `UserStore.load(source, *, state_dir=None)` → `UserStore`; every field is
+  validated up front (unique names, exactly one of `key`/`key_hash`, roles
+  ⊆ {`chat`, `admin`}, positive `rpm`/`daily_budget_usd`) and problems raise
+  `GatewayAuthError` **before the server binds**.
+- `hash_key(key)` → `scrypt$n$r$p$salt$hash` (stdlib scrypt, fresh salt per
+  call); `verify_key(key, stored)` is constant-time and malformed records
+  verify as `False`, never raise.
+- `store.authenticate(token)` compares against *every* entry (no early
+  exit — timing does not leak which key matched) and returns the
+  `GatewayUser` or `None`. Disabled users authenticate but the server
+  answers 403.
+- HTTP behaviour: 401 invalid/missing token · 403 disabled user · 429
+  `zyko_rate_limit` (per-user RPM bucket) · 429 `zyko_budget_exceeded`
+  (per-user daily USD budget, persisted to
+  `~/.local/share/zyko/gateway_users_state.json`, day-reset, survives
+  restarts). Every response receipt carries `"user"`; streams carry it in
+  the meta receipt.
+- `GET /v1/users/me` → `{user: <public projection>, usage_today: …,
+  budget_remaining_usd}` — the projection (`GatewayUser.public()`) never
+  contains key material; `UserStore.snapshot()` is equally secret-free.
+- CLI: `zyko serve --users users.yaml` (or `gateway.users` in settings /
+  `ZYKO_GATEWAY_USERS`) and `zyko hash-key [--key …]`.
+- Legacy modes are unchanged: single `--api-key` (now verified in constant
+  time too) and the open gateway; their receipts carry no `"user"` key.
+
+```python
+from zyko import Zyko
+from zyko.gateway.auth import UserStore
+from zyko.gateway.server import serve
+
+zk = Zyko()
+store = UserStore.load("users.yaml")
+serve(zk.router, host="127.0.0.1", port=8787, users=store)
+```

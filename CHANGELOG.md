@@ -1,5 +1,105 @@
 # Changelog
 
+## 0.7.0 — governed multi-user gateway: identities, not just a token
+
+Roadmap item from the pre-broad-production order in `docs/STRATEGY.md`
+("مصادقة متعددة المستخدمين للبوابة"): until 0.6 the gateway knew exactly one
+bearer token. ZYKO now ships a **governed multi-user gateway** — a
+declarative users file where every caller is a named identity with its own
+key, roles, rate limit and daily budget. Verification is constant-time
+(`hmac.compare_digest` over *every* entry, no early exit, so request timing
+never reveals which key matched); keys can be stored as stdlib scrypt records
+(`zyko hash-key`) so the users file never has to hold a usable secret; and
+governance is enforced per user, not just globally: per-user RPM (token
+bucket), per-user daily USD budget persisted across restarts (same pattern
+as the policy engine's budget), role scopes (`chat` for `/v1/*`, `admin`),
+and every response receipt carries `"user"`. Configuration problems raise
+the new typed `GatewayAuthError` (a `ConfigError`) **before** the server
+binds — a broken users file never half-starts a gateway.
+
+```python
+from zyko import Zyko
+from zyko.gateway.auth import UserStore
+from zyko.gateway.server import serve
+
+store = UserStore.load("users.yaml")  # named users: key or scrypt key_hash
+zk = Zyko()
+serve(zk.router, host="127.0.0.1", port=8787, users=store)
+# GET /v1/users/me → identity + usage today + remaining budget
+```
+
+### Added
+- **`zyko.gateway.auth`** — new public module: `UserStore` (YAML loading
+  with the same search rules as agents/crews), `GatewayUser`, `hash_key`
+  (stdlib scrypt: `scrypt$n$r$p$salt$hash`, fresh salt per call) and
+  `verify_key` (constant-time; malformed records verify as False, never
+  raise).
+- **Users file** — each user: `name` (unique), exactly one of `key`
+  (plaintext, dev) or `key_hash` (production), `roles` (subset of
+  `chat`/`admin`), `enabled` (default true), optional `rpm` and optional
+  `daily_budget_usd`. Everything is validated up front; duplicate names,
+  unknown roles, bad rpm/budget or a missing key raise `GatewayAuthError`
+  before the gateway binds.
+- **HTTP governance** — 401 invalid/missing token, 403 disabled user,
+  429 `zyko_rate_limit` when the user's RPM bucket is empty, 429
+  `zyko_budget_exceeded` when the user's daily budget is spent. Every
+  response's `zyko.receipt` carries `"user"`; usage (requests, tokens,
+  estimated USD) is persisted per user per day to
+  `~/.local/share/zyko/gateway_users_state.json` and survives restarts.
+- **`GET /v1/users/me`** — a user inspects their own identity, today's
+  usage and remaining budget (no key material ever leaves the store).
+- **CLI** — `zyko serve --users users.yaml` (or `gateway.users` in
+  settings / `ZYKO_GATEWAY_USERS`), and `zyko hash-key [--key …]` to emit
+  scrypt records for `key_hash:` entries (hidden prompt without `--key`).
+- **Legacy modes unchanged** — single `--api-key` (now also constant-time)
+  and the open gateway behave exactly as before; legacy receipts carry no
+  `"user"` key. `serve` announces its mode: `multi-user (N users)` vs
+  `single-token/open`.
+
+### العربية
+بند خارطة الطريق من قائمة ما قبل الإنتاج الواسع في `docs/STRATEGY.md`
+("مصادقة متعددة المستخدمين للبوابة"): حتى 0.6 كانت البوابة تعرف رمزًا حاملًا
+واحدًا فقط. الآن تأتي **بوابة متعددة المستخدمين محكومة** — ملف مستخدمين
+تصريحي، كل منشئ طلب هوية مُسمّاة بمفتاحها وأدوارها وحدّ معدلها وميزانيتها
+اليومية. التحقق بزمن ثابت (`hmac.compare_digest` على كل مدخل بلا خروج
+مبكر، فالتوقيت لا يكشف أي مفتاح وَافق)؛ ويمكن تخزين المفاتيح كسجلات scrypt
+قياسية (`zyko hash-key`) فلا يحمل الملف سرًا صالحًا للاستخدام؛ والحوكمة
+تُفرض لكل مستخدم: حد معدل لكل مستخدم (دلو توكن)، وميزانية يومية بالدولار
+تُخزَّن وتنجو من إعادة التشغيل، ونطاقات أدوار (`chat` لـ`/v1/*` و`admin`)،
+وكل إيصال استجابة يحمل `"user"`. أخطاء الإعداد ترفع `GatewayAuthError`
+المكتوبة النوع (فرع من `ConfigError`) **قبل** ربط الخادم — ملف مستخدمين
+معطوب لا يُشغّل بوابة نصف جاهزة أبدًا.
+
+```yaml
+name: team-gateway
+users:
+  - name: alice
+    key: zk-dev-only              # تطوير فقط
+    roles: [chat]
+    rpm: 60
+  - name: ops
+    key_hash: scrypt$16384$8$1$…$…   # من `zyko hash-key`
+    roles: [chat, admin]
+    daily_budget_usd: 5.0
+```
+
+- **`zyko.gateway.auth`** — `UserStore` + `GatewayUser` + `hash_key` +
+  `verify_key`؛ التحقق بزمن ثابت والسجلات المشوّهة ترفض بصمت ولا ترفع 500.
+- **حوكمة HTTP**: ‏401 رمز غير صالح، ‏403 مستخدم معطّل، ‏429 تجاوز حد
+  المعدل (`zyko_rate_limit`)، ‏429 تجاوز الميزانية اليومية
+  (`zyko_budget_exceeded`)؛ وكل إيصال يحمل هوية المستخدم والاستخدام اليومي
+  (طلبات/توكنات/دولار مقدّر) يُخزَّن لكل مستخدم وينجو من إعادة التشغيل.
+- **`GET /v1/users/me`** — يفحص المستخدم هويته واستخدامه ومتبقّي ميزانيته
+  (لا مادة سرية تترك المخزن أبدًا).
+- **الطرفية**: ‏`zyko serve --users users.yaml` (أو `gateway.users` في
+  الإعدادات) و`zyko hash-key` لتوليد سجلات scrypt.
+- **الأنماط القديمة كما هي**: رمز واحد (`--api-key`، أصبح بزمن ثابت أيضًا)
+  والبوابة المفتوحة؛ إيصالاتها بلا مفتاح `"user"`.
+
+28 اختبارًا جديدًا (`tests/test_gateway_auth.py`) — **565 اختبارًا ناجحًا**،
+‏ruff نظيف، ‏bandit صفر نتائج، ‏CI ‏14/14 على Linux/Windows/macOS × Python
+‏3.11–3.13.
+
 ## 0.6.0 — multi-agent crews: a sequential pipeline with shared context — CrewAI-parity in simplicity, stronger in governance
 
 Roadmap step 4 from `docs/STRATEGY.md` ("الوكلاء المتعددون"): ZYKO now

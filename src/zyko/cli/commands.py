@@ -256,22 +256,45 @@ def cmd_serve(args: Any) -> int:
     settings = Settings.load()
     router = _build_router(args)
     api_key = args.api_key or settings.get("gateway.api_key")
+    users_source = args.users or settings.get("gateway.users")
+    users = None
+    if users_source:
+        from zyko.gateway.auth import UserStore
+
+        users = UserStore.load(users_source)
     host = args.host or settings.get("gateway.host", "127.0.0.1")
     port = int(args.port or settings.get("gateway.port", 8787))
     try:
-        httpd = serve(router, host=host, port=port, api_key=api_key)
+        httpd = serve(router, host=host, port=port, api_key=api_key, users=users)
     except OSError as exc:
         # A busy/protected port used to escape as a raw OSError traceback.
         raise ConfigError(
             f"cannot start gateway on {host}:{port}: {exc.strerror or exc}",
             hint="port already in use? stop the other process or run `zyko serve --port 8788`",
         ) from exc
-    print(ui.ok(f"gateway on http://{host}:{port}/v1  (OpenAI-compatible) — Ctrl+C to stop"))
+    mode = f"multi-user ({len(users.snapshot())} users)" if users else "single-token/open"
+    print(
+        ui.ok(f"gateway on http://{host}:{port}/v1  (OpenAI-compatible, {mode}) — Ctrl+C to stop")
+    )
     try:
         while True:
             time.sleep(3600)
     except KeyboardInterrupt:
         httpd.shutdown()
+    return 0
+
+
+def cmd_hash_key(args: Any) -> int:
+    from getpass import getpass
+
+    from zyko.gateway.auth import hash_key
+
+    key = args.key or getpass("API key to hash (input hidden): ")
+    if not key or not key.strip():
+        print(ui.fail("empty key — nothing hashed"), file=sys.stderr)
+        return 1
+    print(hash_key(key))
+    print(ui.info("paste this into key_hash: in your users file — never ship the plaintext key"))
     return 0
 
 
