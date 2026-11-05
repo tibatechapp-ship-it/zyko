@@ -10,6 +10,12 @@ from zyko.router.engine import (
 )
 from zyko.router.health import HealthTracker
 from zyko.router.quality import ModelScore, QualityLedger
+from zyko.router.verify import (
+    VerifyIssue,
+    VerifyReport,
+    load_receipt,
+    verify_receipt,
+)
 
 __all__ = [
     "Router",
@@ -21,4 +27,8 @@ __all__ = [
     "QualityLedger",
     "ModelScore",
     "HealthTracker",
+    "load_receipt",
+    "verify_receipt",
+    "VerifyReport",
+    "VerifyIssue",
 ]
