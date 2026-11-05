@@ -409,10 +409,10 @@ from zyko.router.verify import load_receipt, verify_receipt
 from zyko.router.quality import QualityLedger
 
 report = verify_receipt(load_receipt("r.json"), ledger=QualityLedger.load(Path("ledger.json")))
-report.ok        # bool — False on any drift
-report.checks    # how many independent checks ran
-report.issues    # [VerifyIssue(code, message), …]  e.g. total-mismatch, weights-mismatch
-report.as_dict() # JSON-ready: {"ok": …, "issues": [{"code": …, "message": …}], …}
+report.ok  # bool — False on any drift
+report.checks  # how many independent checks ran
+report.issues  # [VerifyIssue(code, message), …]  e.g. total-mismatch, weights-mismatch
+report.as_dict()  # JSON-ready: {"ok": …, "issues": [{"code": …, "message": …}], …}
 ```
 
 Checks: supported `receipt_version`, known strategy, weights equal to the
