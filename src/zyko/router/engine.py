@@ -5,7 +5,7 @@ Four pillars live here:
 1. **Verifiable routing** — every decision is scored from explicit components
    (quality, cost, latency) with published weights, and every route produces
    a *receipt*: a self-contained JSON document ranking all candidates with
-   their score breakdowns. ``zyko route --explain`` shows it; tests replay it.
+   their score breakdowns. ``zyko verify receipt.json`` replays it offline.
 2. **Policy-aware** — candidates and requests pass through the Policy-as-Code
    engine before any vendor call is made.
 3. **Resilient** — automatic fallback down the ranked list with circuit
@@ -186,18 +186,27 @@ class Router:
             raise ProviderError(f"requested model '{wanted}' is not available", hint=hint)
         return pool
 
-    def _board_snapshot(self) -> tuple[list[float], list[float]]:
+    def _board_snapshot(
+        self,
+        est_input_tokens: int = DEFAULT_EST_IN,
+        est_output_tokens: int = DEFAULT_EST_OUT,
+    ) -> tuple[list[float], list[float]]:
         """Candidate price/latency ranges, computed once per scoring pass.
 
         Normalisation ranges depend on the whole candidate board, so they are
         collected a single time instead of once per candidate — this keeps
         ``rank()`` O(n) instead of O(n²), which matters on phones (Termux)
         where routing overhead is part of the latency budget.
+
+        The estimates must be the *same* ones used to score each candidate:
+        normalising a 2-token prompt against an 800-token board range pushed
+        ``cost_score`` above 1.0 and broke the "scores live in [0, 1]"
+        invariant that receipts advertise.
         """
         cands = self.candidates()
         prices = [
             c
-            for c in (self._cost_of(other, DEFAULT_EST_IN, DEFAULT_EST_OUT) for other in cands)
+            for c in (self._cost_of(other, est_input_tokens, est_output_tokens) for other in cands)
             if c is not None
         ]
         latencies = [
@@ -222,7 +231,11 @@ class Router:
         est_cost: float | None = None
         if info is not None:
             est_cost = info.cost_usd(est_input_tokens, est_output_tokens)
-        prices, latencies = snapshot if snapshot is not None else self._board_snapshot()
+        prices, latencies = (
+            snapshot
+            if snapshot is not None
+            else self._board_snapshot(est_input_tokens, est_output_tokens)
+        )
         cost_score = self._normalize_cost(est_cost, prices)
 
         measured = self.health.latency(candidate.key)
@@ -251,7 +264,7 @@ class Router:
         lo, hi = min(prices), max(prices)
         if hi <= lo:
             return 1.0
-        return max(0.0, (hi - est_cost) / (hi - lo))
+        return max(0.0, min(1.0, (hi - est_cost) / (hi - lo)))
 
     def _normalize_latency(self, measured: float | None, latencies: list[float]) -> float:
         if measured is None or not latencies:
@@ -259,7 +272,7 @@ class Router:
         lo, hi = min(latencies), max(latencies)
         if hi <= lo:
             return 1.0
-        return max(0.0, (hi - measured) / (hi - lo))
+        return max(0.0, min(1.0, (hi - measured) / (hi - lo)))
 
     def rank(
         self,
@@ -268,7 +281,7 @@ class Router:
         est_output_tokens: int = DEFAULT_EST_OUT,
         pool: list[RouteCandidate] | None = None,
     ) -> list[tuple[RouteCandidate, ScoreBreakdown]]:
-        snapshot = self._board_snapshot()
+        snapshot = self._board_snapshot(est_input_tokens, est_output_tokens)
         ranked = [
             (
                 cand,

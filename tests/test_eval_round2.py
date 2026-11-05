@@ -205,6 +205,12 @@ async def test_mcp_dead_server_notification_is_silent_and_start_deterministic(tm
 def test_detect_windows_macos_android(monkeypatch):
     from zyko.platform.detect import OSKind, detect_os, is_android, is_termux
 
+    # A real Termux run exports PREFIX; drop it so this test exercises the
+    # simulated hosts instead of the one it happens to run on.
+    monkeypatch.delenv("PREFIX", raising=False)
+    monkeypatch.setattr(sys, "prefix", "/usr")  # not a Termux install
+    # CPython on Android (Termux) exposes this; a desktop host does not.
+    monkeypatch.delattr(sys, "getandroidapilevel", raising=False)
     monkeypatch.setattr(sys, "platform", "win32")
     assert detect_os() is OSKind.WINDOWS
     monkeypatch.setattr(sys, "platform", "darwin")

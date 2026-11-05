@@ -88,7 +88,12 @@ Every `RouteResult.receipt` carries:
 
 Because the board snapshot (prices, latencies, ledger EWMA) and the weights
 are in the receipt, any decision can be **re-verified offline** — no vendor
-call, no trust in a marketing table. `zyko route --explain` replays it.
+call, no trust in a marketing table. `zyko verify receipt.json` replays it:
+the weights must be the published strategy weights, every component must sit
+in `[0, 1]`, every total is recomputed from its own components, the ranking
+must be sorted, and — when a ledger is supplied — the quality scores and the
+`ledger_updated` stamp must match it. Any drift exits non-zero, so receipts
+are auditable in CI, not just readable.
 
 ## Quality is measured, not claimed
 

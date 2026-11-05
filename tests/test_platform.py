@@ -14,9 +14,16 @@ from zyko.platform import (
 )
 
 
-def test_sandbox_is_linux():
-    # The CI/sandbox is Linux; on other OSes this test adapts itself.
-    expected = {OSKind.LINUX, OSKind.MACOS, OSKind.WINDOWS}
+def test_host_os_is_recognised():
+    # CI runs Linux/Windows/macOS; developers also run Termux and Android.
+    # Every supported host must be identified as itself, never UNKNOWN.
+    expected = {
+        OSKind.LINUX,
+        OSKind.MACOS,
+        OSKind.WINDOWS,
+        OSKind.TERMUX,
+        OSKind.ANDROID,
+    }
     assert detect_os() in expected
 
 

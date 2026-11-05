@@ -4,7 +4,8 @@ Every score in the ledger originates from a committed, seeded benchmark run
 (``zyko bench``) — never from vendor marketing tables. No data yet means the
 neutral score 0.5 for everyone, and the router leans on cost/latency until
 real measurements exist. This honesty is what makes ZYKO's routing
-*verifiable*: any receipt can be replayed against the ledger that produced it.
+*verifiable*: any receipt can be replayed against the ledger that produced it
+(``zyko verify receipt.json --ledger ledger.json``).
 """
 
 from __future__ import annotations

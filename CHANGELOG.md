@@ -1,5 +1,57 @@
 # Changelog
 
+## 0.8.0 — the receipt becomes verifiable: `zyko verify`
+
+The "verifiable routing" pillar had a receipt but no verifier: a third party
+could read the ranking, components and weights, and nothing more. This release
+makes the strongest claim in the README runnable.
+
+### Added
+- **`zyko verify RECEIPT`** — recomputes a receipt offline and exits non-zero
+  on any drift. Checks: supported `receipt_version`, known strategy, weights
+  exactly equal to the published `STRATEGY_WEIGHTS[strategy]`, every component
+  inside `[0, 1]`, every `total` recomputed from its own components, ranking
+  sorted descending, `chosen` present when the ranking is complete, and — with
+  `--ledger` — quality scores plus the `ledger_updated` stamp matching the
+  supplied quality ledger. `--json` emits a machine-readable report
+  (`{"ok": …, "checks": …, "issues": [{"code", "message"}]}`), `--tolerance`
+  tightens the float comparison.
+- **`zyko.router.verify`** — the reusable core (`load_receipt`,
+  `verify_receipt`, `VerifyReport`, `VerifyIssue`) so embedders can gate their
+  own pipelines without shelling out.
+- **14 tests** — 13 in `tests/test_verify.py` (happy path, ledger cross-check,
+  tampered total, invented weights, quality drift, ledger stamp mismatch,
+  out-of-range component, unsorted ranking, unknown version/strategy,
+  malformed input, CLI exit codes and JSON) plus a router regression test.
+
+### Fixed
+- **`cost_score` could exceed 1.0** (observed 1.0441) for short prompts. The
+  board snapshot used to be normalised at the 800/400-token default while the
+  request was scored with its own estimate, so a cheap candidate could land
+  below the board minimum. The estimate now flows into `_board_snapshot()`,
+  and both normalisers clamp to `[0, 1]` as defence in depth. Found by the new
+  verifier — the invariant it enforces was silently broken.
+- **Platform tests assumed Linux/Windows/macOS.** `test_sandbox_is_linux` and
+  `test_detect_windows_macos_android` now account for `OSKind.TERMUX` and the
+  Android `sys.getandroidapilevel` marker, so a Termux run is 579/579 instead
+  of 577/579 — the platform the README advertises first-class no longer has
+  second-class tests.
+- **`pip install -e ".[dev]"` on Python 3.14 / Termux.** `pydantic>=2.0` has
+  no `pydantic-core` wheel there, so the documented dev install failed on the
+  platform ZYKO advertises. The extra now carries
+  `python_version < '3.14'`; the pydantic-specific tests already use
+  `pytest.importorskip`.
+
+### Changed
+- **Docs version-synced** — README header `0.5.0` → `0.8.0`, tests badge
+  `438` → `579`, Python badge gains 3.14, `zyko route --explain` (a flag that
+  never existed) → `zyko ask --explain` in `docs/API.md`,
+  `docs/ARCHITECTURE.md`, `client.py` and the router docstring, and
+  `docs/READY.md` is explicitly marked as the archived v0.3.3 snapshot.
+- Python 3.14 classifier added (the suite runs green there, including on
+  Termux/Android).
+
+
 ## 0.7.0 — governed multi-user gateway: identities, not just a token
 
 Roadmap item from the pre-broad-production order in `docs/STRATEGY.md`

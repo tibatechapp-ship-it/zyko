@@ -105,7 +105,7 @@ class RouteResult:
 The receipt is the contract: candidate ordering, score components
 (quality / cost / latency + weights), token accounting and the
 `estimated: true|false` flag for cost rows. Re-verify offline with
-`zyko route --explain`.
+`zyko verify receipt.json` (or inspect the plan with `zyko ask --explain`).
 
 ---
 
@@ -385,7 +385,8 @@ rejections (the audit log records them automatically).
 |---|---|
 | `zyko version` `info` `doctor` | version/protocol · platform+config summary · environment diagnosis |
 | `zyko models` | models the router can use, with scores |
-| `zyko route "prompt"` | routing plan — **no API call** (`--explain` for full receipt) |
+| `zyko route "prompt"` | routing plan — **no API call** (write a receipt with `zyko ask … --receipt FILE`) |
+| `zyko verify receipt.json [--ledger L] [--json]` | recompute a receipt offline — weights, components, ordering, ledger scores; exit 1 on drift |
 | `zyko ask "prompt"` `chat` | one-shot completion · interactive chat with session memory |
 | `zyko serve [--port N] [--demo]` | OpenAI-compatible gateway — `--users users.yaml` for governed multi-user mode (per-user keys, roles, rpm, daily budgets) |
 | `zyko hash-key [--key …]` | scrypt-hash an API key for a users file `key_hash:` entry (hidden prompt without `--key`) |
@@ -400,6 +401,27 @@ rejections (the audit log records them automatically).
 | `zyko bench [suite] [--demo]` | reproducible routing benchmark (fixed seeds) |
 
 Environment: `ZYKO_DEMO=1` → keyless offline mock mode (great for CI).
+
+### Receipt verification — `zyko.router.verify` (0.8.0)
+
+```python
+from zyko.router.verify import load_receipt, verify_receipt
+from zyko.router.quality import QualityLedger
+
+report = verify_receipt(load_receipt("r.json"), ledger=QualityLedger.load(Path("ledger.json")))
+report.ok        # bool — False on any drift
+report.checks    # how many independent checks ran
+report.issues    # [VerifyIssue(code, message), …]  e.g. total-mismatch, weights-mismatch
+report.as_dict() # JSON-ready: {"ok": …, "issues": [{"code": …, "message": …}], …}
+```
+
+Checks: supported `receipt_version`, known strategy, weights equal to the
+published `STRATEGY_WEIGHTS[strategy]`, every component in `[0, 1]`, every
+`total` recomputed from its own components, ranking sorted descending,
+`chosen` present in a complete ranking, and (with `--ledger`) quality scores
+plus the `ledger_updated` stamp matching the supplied ledger. Components are
+rounded to 4 decimals in the receipt, so the default tolerance is `5e-4`;
+tighten it with `--tolerance` when you control the writer.
 
 ---
 

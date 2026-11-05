@@ -217,7 +217,7 @@ class Zyko:
 
     @property
     def receipt_schema_note(self) -> str:
-        return "Every RouteResult carries a receipt; verify decisions offline via `zyko route --explain`."
+        return "Every RouteResult carries a receipt; verify decisions offline via `zyko verify receipt.json`."
 
 
 __all__ = ["Zyko", "RouteResult", "StructuredResult"]
