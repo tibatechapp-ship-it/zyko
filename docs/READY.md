@@ -1,4 +1,11 @@
-# ZYKO v0.3.3 — Readiness Report (release QA)
+# ZYKO v0.3.3 — Readiness Report (release QA) — HISTORICAL
+
+> **Archived snapshot (2026-11).** This document records the gates as they
+> stood at **v0.3.3** and is kept for history only — the numbers below
+> (337 tests, version 0.3.2/0.3.3) are *not* current. The live gate is CI
+> (`.github/workflows/ci.yml`), and the current test count, version and
+> platform matrix live in `README.md` and `pyproject.toml`. Do not quote
+> this file as the state of `main`.
 
 Status: **READY** — all gates green on the reference environment (Linux, Python 3.12),
 after a **full evaluation round**: coverage analysis, lint, and a security audit,

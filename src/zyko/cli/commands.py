@@ -449,6 +449,40 @@ def cmd_bench(args: Any) -> int:
     return run_bench(args)
 
 
+def cmd_verify(args: Any) -> int:
+    """`zyko verify` — recompute a receipt offline; exit 1 on any drift.
+
+    This is the runnable half of the "verifiable routing" claim: the receipt
+    is checked against its own arithmetic, the published strategy weights and
+    (optionally) the quality ledger that produced it. No network, no trust in
+    the process that wrote the file.
+    """
+    from zyko.router.verify import load_receipt, verify_receipt
+
+    receipt = load_receipt(args.receipt)
+    ledger = None
+    if getattr(args, "ledger", None):
+        ledger = QualityLedger.load(Path(args.ledger))
+    report = verify_receipt(receipt, ledger=ledger, tolerance=float(args.tolerance))
+
+    if getattr(args, "json", False):
+        print(json.dumps(report.as_dict(), indent=2, ensure_ascii=False))
+        return 0 if report.ok else 1
+
+    if report.ok:
+        print(ui.ok(f"receipt verified — {report.checks} checks passed"))
+    else:
+        print(ui.fail(f"receipt INVALID — {len(report.issues)} issue(s) in {report.checks} checks"))
+        ui.bullets(f"{issue.code}: {issue.message}" for issue in report.issues)
+    ui.kv("strategy", report.strategy or "-")
+    ui.kv("chosen", report.chosen or "-")
+    if report.total is not None:
+        ui.kv("total", f"{report.total:.4f}")
+    if report.created is not None:
+        ui.kv("created", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(report.created)))
+    return 0 if report.ok else 1
+
+
 def cmd_sessions(args: Any) -> int:
     """`zyko sessions list|show|rm|clear` — make stored memory visible."""
     store = MemoryStore()

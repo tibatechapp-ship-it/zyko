@@ -5,10 +5,10 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — Universal AI Orchestration Platform" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-438%20passing-22c55e)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-579%20passing-22c55e)](.github/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-98%25-84cc16)](.github/workflows/ci.yml)
 [![Security](https://img.shields.io/badge/bandit-0%20findings-22c55e?logo=shield&logoColor=white)](.github/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-3776ab?logo=python&logoColor=white)](pyproject.toml)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Android%20%7C%20Termux-10b981)](android/README.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-native-8b5cf6)](https://modelcontextprotocol.io)
@@ -21,7 +21,7 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.5.0** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** يُصدَّر إلى أي خلفية OTLP · **RAG** محلي بلا اعتماديات
+**النسخة 0.8.0** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** يُصدَّر إلى أي خلفية OTLP · **RAG** محلي بلا اعتماديات
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
@@ -49,6 +49,32 @@
 | بروتوكول مفتوح يوحّد أدوات الوكلاء (عميل + خادم) | [Model Context Protocol](https://modelcontextprotocol.io) |
 
 تميّز ZYKO ليس الاختراع من الصفر بل **التحقق**: إيصالات توجيه تُعاد من دون اتصال، دفتر جودة قابل لإعادة الإنتاج، وسياسة مُطبَّقة على كل نداء — على كل منصة.
+
+## ما الجديد في 0.8.0؟ (الإيصال أصبح قابلًا للتحقق فعلًا — أمر `zyko verify`)
+
+كان الإيصال حتى 0.7 **مُعلمًا** لا **قابلًا للتحقق**: مستند JSON فيه الترتيب
+والمكوّنات والأوزان، لكن لا شيء يعيد حسابه. الآن:
+
+```bash
+zyko ask "hello" --demo --receipt r.json   # كل نداء يمكنه كتابة إيصاله
+zyko verify r.json                         # إعادة حساب كاملة دون اتصال
+zyko verify r.json --ledger ledger.json    # + مطابقة درجات الجودة بالدفتر
+zyko verify r.json --json                  # تقرير للأنابيب والبرامج
+```
+
+`zyko verify` يعيد حساب كل `total` من الأوزان والمكوّنات المسجّلة، ويتحقق من
+أن الأوزان هي أوزان الاستراتيجية المنشورة بالضبط، وأن كل مكوّن داخل `[0, 1]`،
+وأن الترتيب تنازلي، وأن درجات الجودة تطابق دفتر الجودة المقدَّم (مع طابع
+`ledger_updated`) — ويخرج بالرمز **1** عند أي انحراف، فتصلح للمراقبة في CI.
+
+**خلل حقيقي اكتُشف بهذا المتحقق وأُصلح:** كان نطاق تطبيع التكلفة يُحسب دائمًا
+على تقدير 800/400 رمز بينما تُقيَّم الطلبات القصيرة بتقديرها الفعلي، فخرج
+`cost_score` أحيانًا أكبر من 1.0 (مثال: 1.0441) وكسر ثابت «كل الدرجات في
+`[0, 1]`» الذي يعلنه الإيصال. الآن يُمرَّر التقدير نفسه إلى لقطة اللوحة،
+والنتيجة محصورة في `[0, 1]` دفاعيًا.
+
+- 14 اختبارًا جديدًا (`tests/test_verify.py` + اختبار انحدار للنطاق) — **579 اختبارًا ناجحًا**.
+- اختبارات المنصة صارت واعية بـTermux (كانت تفترض Linux/Windows فقط).
 
 ## ما الجديد في 0.7.0؟ (بوابة متعددة المستخدمين محكومة — هويات لا مجرد رمز)
 
@@ -375,6 +401,8 @@ git clone https://github.com/tibatechapp-ship-it/zyko.git && cd zyko
 pip install -e .[dev]
 ```
 
+> على Python 3.14 / Termux لا تتوفر عجلة `pydantic-core`، لذا يتخطّى `.[dev]` تثبيت pydantic تلقائيًا (وبنفس المنطق تُتخطّى اختبارات pydantic عبر `pytest.importorskip`) — بقية الحزمة والاختبارات تعمل كاملة.
+
 للمطوّرين: `make test` · `make coverage` · `make lint` · `make security` · `make bench-demo` (راجع [Makefile](Makefile)).
 
 التبعيات الأساسية: `httpx` و`PyYAML` فقط — كلتاهما Python خالص، لذا **لا شيء يُترجم** على أي منصة، بما فيها Termux.
@@ -394,6 +422,7 @@ cd zyko/android && bash install-termux.sh
 # أسرع تجربة — بلا مفاتيح، بلا شبكة، وضع عرض حتمي:
 zyko ask "مرحبًا يا زيكو" --demo --explain
 zyko route "ملخص هذا الملف" --demo
+zyko ask "مرحبًا" --demo --receipt r.json && zyko verify r.json   # إيصال يُتحقَّق منه دون اتصال
 
 # ثم بمزوّد حقيقي:
 export OPENAI_API_KEY=sk-...        # أو أنشئ ollama محليًا ليعمل بلا مفاتيح
@@ -425,6 +454,7 @@ print(agent.run_sync("كم 47 × 16 × 7؟").output)
 | `zyko ask PROMPT` | إكمال لمرة واحدة عبر الموجّه (مع `--receipt` و`--explain`) |
 | `zyko chat` | محادثة تفاعلية بذاكرة جلسات (SQLite) |
 | `zyko route PROMPT` | **خطة التوجيه فقط** — بلا أي نداء API |
+| `zyko verify RECEIPT` | **إعادة حساب إيصال توجيه دون اتصال**: الأوزان، الدرجات، الترتيب، ودفتر الجودة — يعيد رمز خروج 1 عند أي انحراف |
 | `zyko models` | كل النماذج المتاحة مع درجاتها وأسعارها |
 | `zyko policy check/show/redact` | التحقق من السياسات وعرضها وتجربة الحجب |
 | `zyko run AGENT.yaml TASK` | تشغيل وكيل من تعريف YAML (مع `--trace`) |
@@ -487,7 +517,7 @@ zyko info   # kernel backend: rust
 
 ```bash
 pip install -e .[dev]
-pytest -q            # 463 اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض، مخرجات منظمة، تتبّع
+pytest -q            # 579 اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض، مخرجات منظمة، تتبّع
 pytest --cov=src/zyko   # تغطية 98%
 ruff check src tests && ruff format --check src tests
 make security        # bandit + pip-audit (نفس بوابة CI)
@@ -522,7 +552,37 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.7.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** · **local RAG with zero dependencies** · **sequential multi-agent crews** · **governed multi-user gateway** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.8.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** · **local RAG with zero dependencies** · **sequential multi-agent crews** · **governed multi-user gateway** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.8.0 — the receipt becomes verifiable: `zyko verify`
+
+Until 0.7 the receipt was **informative**, not **verifiable**: a JSON document
+with the ranking, score components and weights, but nothing recomputed it.
+Now:
+
+```bash
+zyko ask "hello" --demo --receipt r.json   # every call can write its receipt
+zyko verify r.json                         # full offline recomputation
+zyko verify r.json --ledger ledger.json    # + cross-check quality vs the ledger
+zyko verify r.json --json                  # machine-readable report
+```
+
+`zyko verify` recomputes every `total` from the recorded weights and
+components, checks the weights are exactly the published strategy weights,
+that every component lives in `[0, 1]`, that the ranking is sorted, and that
+quality scores match the supplied quality ledger (including its
+`ledger_updated` stamp) — exiting **1** on any drift, so it drops straight into
+CI and monitoring.
+
+**A real bug the verifier found and this release fixes:** cost normalisation
+always built its board range from the 800/400-token default while short
+requests were scored with their own estimate, so `cost_score` could exceed 1.0
+(observed: 1.0441) and break the "all components live in `[0, 1]`" invariant the
+receipt advertises. The estimate now flows into the board snapshot, and the
+normalisers clamp to `[0, 1]` as defence in depth.
+
+- 14 new tests (`tests/test_verify.py` + a range-invariant regression test) — **579 tests passing**.
+- Platform tests are now Termux-aware (they assumed Linux/Windows only).
 
 ## What's new in 0.7.0 — governed multi-user gateway: identities, not just a token
 
@@ -773,6 +833,7 @@ pip install git+https://github.com/tibatechapp-ship-it/zyko.git
 # Fastest first run — no keys, no network (deterministic demo mode):
 zyko ask "hello zyko" --demo --explain
 zyko bench --demo
+zyko ask "hello" --demo --receipt r.json && zyko verify r.json   # verify a receipt offline
 
 # Then with a real provider:
 export OPENAI_API_KEY=sk-...        # or run Ollama locally for a keyless setup
@@ -789,7 +850,7 @@ print(outcome.response.text, "←", outcome.receipt["chosen"])
 
 ## Highlights
 
-- **CLI**: `ask` · `chat` · `route` (planning-only) · `models` · `policy` · `run` (agents) · `sessions` (inspect SQLite memory) · `cost` (spend & governance report) · `serve` · `mcp` · `bench` · `doctor` — argparse-only, zero CLI dependencies. `--demo` runs the whole stack offline through a deterministic mock provider (no keys, no network). Explicit `--model provider/name` pins are enforced by the router, not ignored.
+- **CLI**: `ask` · `chat` · `route` (planning-only) · `verify` (offline receipt replay) · `models` · `policy` · `run` (agents) · `sessions` (inspect SQLite memory) · `cost` (spend & governance report) · `serve` · `mcp` · `bench` · `doctor` — argparse-only, zero CLI dependencies. `--demo` runs the whole stack offline through a deterministic mock provider (no keys, no network). Explicit `--model provider/name` pins are enforced by the router, not ignored.
 - **Gateway**: stdlib HTTP server, streaming SSE included, `zyko.receipt` embedded in responses and chunks.
 - **Agents**: ReAct loop, builtin tools (calculator/file/http/shell-guarded), MCP tools namespaced as `server__tool`, SQLite session memory, step/timeout/policy guards.
 - **Providers**: OpenAI · Anthropic · Google · Groq · Mistral · DeepSeek · OpenRouter · Together AI · xAI (Grok) · Ollama(local). Retries with backoff, circuit breakers, latency EWMA.
@@ -807,7 +868,7 @@ print(outcome.response.text, "←", outcome.receipt["chosen"])
 
 ## Tests
 
-`pytest -q` → 463 tests (98% coverage) covering routing (incl. snapshot/parity and explicit model pinning), policy (incl. schema warnings and malformed-document degradation), structured output (validation + repair + native mode), built-in tracing (spans, sinks, rotation, router + CLI integration), MCP over real subprocesses plus in-memory server frames and the full client lifecycle (timeouts, server errors, pagination, closed streams), the gateway over a real HTTP socket (auth + keep-alive integrity + 502 upstream errors), agents, every provider adapter against canned HTTP, session memory, the audit-based cost report, streaming cost accounting, `Retry-After` resilience, CLI robustness (broken pipes, busy ports, JSON-only `--json`), tool-loop failure modes, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12/3.13, plus lint (`ruff check` + `ruff format --check`), a security job (`bandit` + `pip-audit`), and a Rust kernel check.
+`pytest -q` → 579 tests (98% coverage) covering routing (incl. snapshot/parity and explicit model pinning), policy (incl. schema warnings and malformed-document degradation), structured output (validation + repair + native mode), built-in tracing (spans, sinks, rotation, router + CLI integration), MCP over real subprocesses plus in-memory server frames and the full client lifecycle (timeouts, server errors, pagination, closed streams), the gateway over a real HTTP socket (auth + keep-alive integrity + 502 upstream errors), agents, every provider adapter against canned HTTP, session memory, the audit-based cost report, streaming cost accounting, `Retry-After` resilience, CLI robustness (broken pipes, busy ports, JSON-only `--json`), tool-loop failure modes, and the keyless demo mode. CI runs the matrix on Linux/Windows/macOS + Python 3.11/3.12/3.13, plus lint (`ruff check` + `ruff format --check`), a security job (`bandit` + `pip-audit`), and a Rust kernel check.
 
 ## Security
 

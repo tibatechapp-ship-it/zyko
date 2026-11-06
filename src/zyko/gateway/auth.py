@@ -49,7 +49,7 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from zyko.exceptions import GatewayAuthError
 from zyko.log import get_logger
@@ -126,18 +126,25 @@ class GatewayUser:
 
 
 class _Bucket:
-    """Per-user token bucket (thread-safe; same maths as the policy engine)."""
+    """Per-user token bucket (thread-safe; same maths as the policy engine).
 
-    def __init__(self, rpm: int) -> None:
+    ``clock`` is injectable so rate-limit behaviour can be tested exactly
+    instead of racing the wall clock (a 6000 rpm bucket refills 100 tokens a
+    second, i.e. one token per 10 ms of test run time — enough to turn a
+    "bucket is empty" assertion into a coin flip on a slow runner).
+    """
+
+    def __init__(self, rpm: int, clock: Callable[[], float] | None = None) -> None:
         self.capacity = max(1, rpm)
         self.tokens = float(self.capacity)
         self.refill_per_s = self.capacity / 60.0
-        self.updated = time.monotonic()
+        self._clock = clock or time.monotonic
+        self.updated = self._clock()
         self._lock = threading.Lock()
 
     def take(self) -> bool:
         with self._lock:
-            now = time.monotonic()
+            now = self._clock()
             self.tokens = min(self.capacity, self.tokens + (now - self.updated) * self.refill_per_s)
             self.updated = now
             if self.tokens >= 1.0:
@@ -220,7 +227,13 @@ class _UsageLedger:
 class UserStore:
     """Loads and enforces a declared multi-user gateway configuration."""
 
-    def __init__(self, users: list[GatewayUser], *, state_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        users: list[GatewayUser],
+        *,
+        state_dir: Path | None = None,
+        clock: Callable[[], float] | None = None,
+    ) -> None:
         if not users:
             raise GatewayAuthError(
                 "a users file must declare at least one user",
@@ -234,7 +247,9 @@ class UserStore:
                 hint="user names are identity keys for budgets and receipts — they must be unique",
             )
         self._users: dict[str, GatewayUser] = {u.name: u for u in users}
-        self._buckets: dict[str, _Bucket] = {u.name: _Bucket(u.rpm) for u in users if u.rpm}
+        self._buckets: dict[str, _Bucket] = {
+            u.name: _Bucket(u.rpm, clock=clock) for u in users if u.rpm
+        }
         from zyko.platform.paths import data_dir
 
         self.ledger = _UsageLedger((state_dir or data_dir(create=True)) / _STATE_FILE)
@@ -291,6 +306,7 @@ class UserStore:
         *,
         state_dir: Path | None = None,
         source: str = "<doc>",
+        clock: Callable[[], float] | None = None,
     ) -> "UserStore":
         raw_users = doc.get("users")
         if not isinstance(raw_users, list) or not raw_users:
@@ -351,7 +367,7 @@ class UserStore:
                     stored_key=str(key if key is not None else key_hash),
                 )
             )
-        return cls(users, state_dir=state_dir)
+        return cls(users, state_dir=state_dir, clock=clock)
 
     # ----------------------------------------------------------- authentication
     def authenticate(self, token: str) -> GatewayUser | None:

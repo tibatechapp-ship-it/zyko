@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import time
 import urllib.error
 import urllib.request
 
@@ -144,12 +143,34 @@ def test_snapshot_never_leaks_key_material():
 
 
 def test_rpm_bucket_exhausts_then_refills():
-    store = UserStore.from_doc({"users": [{"name": "burst", "key": "k", "rpm": 6000}]})
+    """Exhaust, refuse, refill — on an injected clock, not the wall clock.
+
+    This test used to sleep 0.12 s and assert the bucket was empty after 6000
+    calls. A 6000 rpm bucket refills 100 tokens/s, i.e. one token per 10 ms of
+    *test run time*, so on a slow runner (Windows CI) the 6000-call loop alone
+    took long enough to refill the bucket and the "capacity reached" assertion
+    flipped. It failed on windows-latest · py3.11 in runs 41711705447 and
+    41712602606 for exactly that reason. The bucket now takes a clock.
+    """
+
+    class Clock:
+        def __init__(self) -> None:
+            self.now = 1000.0
+
+        def __call__(self) -> float:
+            return self.now
+
+    clock = Clock()
+    store = UserStore.from_doc({"users": [{"name": "burst", "key": "k", "rpm": 6000}]}, clock=clock)
     user = store.get("burst")
     assert all(store.check_rate(user) for _ in range(6000))
-    assert not store.check_rate(user)  # capacity reached
-    time.sleep(0.12)  # 6000/min = 100/s → ~12 tokens refill
-    assert store.check_rate(user)
+    assert not store.check_rate(user)  # capacity reached, no time has passed
+    clock.now += 0.5  # 6000/min = 100/s → 50 tokens refill
+    assert all(store.check_rate(user) for _ in range(50))
+    assert not store.check_rate(user)  # those 50 were all that refilled
+    clock.now += 60.0  # a full minute refills to capacity, never beyond it
+    assert all(store.check_rate(user) for _ in range(6000))
+    assert not store.check_rate(user)
 
 
 def test_unlimited_user_has_no_bucket():

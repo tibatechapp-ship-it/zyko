@@ -29,6 +29,8 @@ def build_parser() -> argparse.ArgumentParser:
             "  zyko ask 'Explain MCP in one line' --explain\n"
             "  zyko route 'summarize this file'          # planning only, no API call\n"
             "  zyko ask 'hello' --demo                   # offline, no keys needed\n"
+            "  zyko ask 'hello' --demo --receipt r.json  # ...and write a verifiable receipt\n"
+            "  zyko verify r.json                        # recompute it offline, no trust needed\n"
             "  zyko serve --port 8787                    # OpenAI-compatible gateway\n"
             "  zyko mcp serve                            # expose ZYKO as an MCP server\n"
             "  zyko sessions list                        # inspect stored chat memory\n"
@@ -96,6 +98,23 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--json", action="store_true")
     with_router(p)
     p.set_defaults(func=cmd.cmd_route)
+
+    # verify (offline receipt replay)
+    p = sub.add_parser("verify", help="verify a routing receipt offline (recompute every score)")
+    p.add_argument("receipt", help="receipt JSON written by `zyko ask ... --receipt FILE`")
+    p.add_argument(
+        "--ledger",
+        default=None,
+        help="quality ledger the receipt claims to come from (cross-checks quality scores)",
+    )
+    p.add_argument(
+        "--tolerance",
+        type=float,
+        default=5e-4,
+        help="float drift allowed (default 5e-4 — receipts round to 4 decimals)",
+    )
+    p.add_argument("--json", action="store_true", help="print the full report as JSON")
+    p.set_defaults(func=cmd.cmd_verify)
 
     # serve
     p = sub.add_parser("serve", help="OpenAI-compatible gateway over the router")

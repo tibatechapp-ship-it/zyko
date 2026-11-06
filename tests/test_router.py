@@ -158,3 +158,17 @@ def test_ledger_rejects_garbage(tmp_path):
 def test_candidate_key_format():
     cand = RouteCandidate("openai", "gpt-4o")
     assert cand.key == "openai/gpt-4o"
+
+
+# ------------------------------------------------- score invariants (receipts)
+def test_scores_stay_in_unit_range_for_any_prompt_size():
+    """Regression: a 2-token prompt used to normalise against an 800-token board.
+
+    ``cost_score`` went above 1.0, which broke the "every component lives in
+    [0, 1]" invariant receipts publish and that `zyko verify` enforces.
+    """
+    router = _router(FakeProvider(), strategy="balanced")
+    for est_in, est_out in ((2, 16), (800, 400), (120_000, 8_000)):
+        for _, breakdown in router.rank(est_input_tokens=est_in, est_output_tokens=est_out):
+            for value in (breakdown.quality, breakdown.cost_score, breakdown.latency_score):
+                assert 0.0 <= value <= 1.0

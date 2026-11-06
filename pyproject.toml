@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zyko"
-version = "0.7.0"
+version = "0.8.0"
 description = "ZYKO — Universal AI Orchestration Platform: multi-provider routing, Policy-as-Code, MCP-native agents. Runs on Linux, Windows, macOS, Android and Termux."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -23,6 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
@@ -34,7 +35,15 @@ dependencies = [
 [project.optional-dependencies]
 ui = ["rich>=13.0"]
 structured = ["pydantic>=2.0"]
-dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.4", "pydantic>=2.0"]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+    # pydantic-core has no wheel for Python 3.14 on Termux/Android yet; the
+    # suite skips those tests via pytest.importorskip, so `.[dev]` must not
+    # demand a Rust toolchain on the platform ZYKO advertises first-class.
+    "pydantic>=2.0; python_version < '3.14'",
+]
 android = ["kivy>=2.3"]
 
 [project.scripts]
