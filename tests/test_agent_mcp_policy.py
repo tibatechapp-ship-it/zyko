@@ -19,12 +19,14 @@ def _bare_agent(allows: bool) -> Agent:
 
 def test_mcp_tool_blocked_by_policy():
     agent = _bare_agent(allows=False)
-    out = asyncio.run(agent._execute(ToolCall(name="mcp__srv__do_thing", arguments={})))
+    call = ToolCall(id="call_1", name="mcp__srv__do_thing", arguments={})
+    out = asyncio.run(agent._execute(call))
     assert "denied by policy" in out, out
 
 
 def test_mcp_tool_not_blocked_when_policy_permits():
     agent = _bare_agent(allows=True)
-    out = asyncio.run(agent._execute(ToolCall(name="mcp__srv__do_thing", arguments={})))
+    call = ToolCall(id="call_1", name="mcp__srv__do_thing", arguments={})
+    out = asyncio.run(agent._execute(call))
     assert "denied by policy" not in out, out
     assert "no MCP server named" in out, out
