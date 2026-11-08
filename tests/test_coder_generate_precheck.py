@@ -61,14 +61,28 @@ def test_git_initial_commit_arabic_and_deterministic(tmp_path: Path) -> None:
         return subprocess.run(
             ["git", "-C", str(path), "log", "--format=%an|%ae|%s|%aI"],
             capture_output=True,
-            text=True,
+            encoding="utf-8",
+            errors="replace",
             check=True,
         ).stdout
 
+    def raw_commit(path: Path) -> str:
+        """كائن الالتزام الخام — بلا إعادة ترميز مخرجات على Windows."""
+        out = subprocess.run(
+            ["git", "-C", str(path), "cat-file", "commit", "HEAD"],
+            capture_output=True,
+            check=True,
+        ).stdout
+        return out.decode("utf-8")
+
     l1, l2 = log(tmp_path / "a"), log(tmp_path / "b")
-    assert "zyko-coder" in l1 and INIT_COMMIT_MSG in l1
-    assert "2026-01-01T00:00:00" in l1  # git يطبع +00:00 كـ Z في %aI
-    assert l1 == l2  # حتمية كاملة: نفس المستودع بايت-ببايت
+    # الهوية الحتمية عبر سجل git (مهما كان ترميز مخرجاته المحلي — متطابق دائمًا)
+    assert l1 == l2
+    # محتوى الرسالة من كائن الالتزام نفسه: UTF-8 خالص بلا تدخل الطرفية
+    raw = raw_commit(tmp_path / "a")
+    assert "zyko-coder" in raw
+    assert INIT_COMMIT_MSG in raw
+    assert "1767225600 +0000" in raw  # FIXED_DATE كـ epoch في الكائن الخام
 
     diff = subprocess.run(
         ["git", "-C", str(tmp_path / "b"), "rev-parse", "HEAD^{tree}"],
