@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.1 — Phase 0 of the coding engine: deterministic Arabic tools
+## 0.8.2 — Phase 0 of the coding engine: deterministic Arabic tools
 
 First slice of the 90-day "coding engine" plan (Phase 0, D1–D7): two
 model-free Arabic tools vendored as Layer-1 `zyko.tools`, wired into the
