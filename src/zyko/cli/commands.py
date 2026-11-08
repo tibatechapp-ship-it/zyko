@@ -911,7 +911,11 @@ def cmd_new(args: Any) -> int:
         except (EOFError, KeyboardInterrupt):
             print("\nأُلغي — لم يُكتب أي ملف")
             return 1
-        if answer.strip().lower() not in {"y", "yes", "ن", "نعم"}:
+        # قائمتان متجانستان النصوص — الخلط العربي/اللاتيني في مجموعة واحدة
+        # يفجّر RTL-PY-001 (أداة المرحلة 0 اصطادته في ذاتها هنا)
+        latin_ok = answer.strip().lower() in {"y", "yes"}
+        arabic_ok = answer.strip() in {"ن", "نعم"}
+        if not (latin_ok or arabic_ok):
             print("أُلغي — لم يُكتب أي ملف")
             return 1
 

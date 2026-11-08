@@ -116,14 +116,26 @@ def materialize(
         result.warnings.append(result.git_skipped_reason)
         return result
 
-    for cmd in (["init", "-q"], ["add", "."], ["commit", "-q", "-m", INIT_COMMIT_MSG]):
-        r = _git(root, *cmd, env=env)
-        if r.returncode != 0:
-            reason = (r.stderr or r.stdout).strip().splitlines()
-            result.git_skipped_reason = reason[0][:160] if reason else f"فشل git {' '.join(cmd)}"
-            result.warnings.append(f"تخطّي git: {result.git_skipped_reason}")
-            return result
-    result.git_committed = True
+    # الرسالة عبر ملف UTF-8 لا argv: مناداة العملية على Windows تمرّ بترميز
+    # النظام (cp1252) فيتشوّه العربية المخزَّنة في الالتزام نفسه.
+    import tempfile
+
+    msg_file = Path(tempfile.gettempdir()) / f"zyko-commit-{os.getpid()}.txt"
+    msg_file.write_text(INIT_COMMIT_MSG + "\n", encoding="utf-8")
+    try:
+        steps = (["init", "-q"], ["add", "."], ["commit", "-q", "-F", str(msg_file)])
+        for cmd in steps:
+            r = _git(root, *cmd, env=env)
+            if r.returncode != 0:
+                reason = (r.stderr or r.stdout).strip().splitlines()
+                result.git_skipped_reason = (
+                    reason[0][:160] if reason else f"فشل git {' '.join(cmd)}"
+                )
+                result.warnings.append(f"تخطّي git: {result.git_skipped_reason}")
+                return result
+        result.git_committed = True
+    finally:
+        msg_file.unlink(missing_ok=True)
     return result
 
 

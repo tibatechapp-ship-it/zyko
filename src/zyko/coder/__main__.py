@@ -21,7 +21,11 @@ from .heuristics import draft_plan
 from .plan import PlanValidationError, ProjectPlan, safe_slug
 from .precheck import check_source_tree, full_gate
 
-_APPROVAL_WORDS = {"y", "yes", "ن", "نعم", "نعمy", "1"}
+
+def _is_approval(answer: str) -> bool:
+    """قائمتان متجانستان النصوص — تجنّب RTL-PY-001 للقوائم المختلطة."""
+    normalized = answer.strip().lower()
+    return normalized in {"y", "yes"} or answer.strip() in {"ن", "نعم"}
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -96,7 +100,7 @@ def cmd_new(args: argparse.Namespace) -> int:
         except (EOFError, KeyboardInterrupt):
             print("\nأُلغي — لم يُكتب أي ملف")
             return 1
-        if answer.strip().lower() not in _APPROVAL_WORDS:
+        if not _is_approval(answer):
             print("أُلغي — لم يُكتب أي ملف")
             return 1
 
