@@ -106,3 +106,28 @@ jobs:
           zyko route "planning only"
           zyko policy redact "mail bob@corp.com"
           echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","clientInfo":{}}}' | zyko mcp serve
+
+  phase1-coder:
+    name: phase-1 coder (deterministic generation gate — 10 Arabic descriptions)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install (coder tests exercise the real fastapi template)
+        run: pip install -e .[dev] pytest-cov fastapi httpx
+      - name: Coder coverage gate (≥85%)
+        run: >
+          pytest tests/test_coder_plan.py tests/test_coder_templates.py
+          tests/test_coder_generate_precheck.py tests/test_coder_gate.py
+          tests/test_coder_cli.py tests/test_coder_crew_prompts.py
+          --cov=zyko.coder --cov-report=term --cov-fail-under=85 -q
+      - name: Phase-1 acceptance gate — 10/10 generate, ≥8/10 first-run tests
+        run: python -m zyko.coder gate
+      - name: zyko new — plan preview writes nothing, then approved build works
+        run: |
+          zyko new --plan "قائمة مهام بسيطة للفريق" --json > /tmp/plan.json
+          python -c "import json; d=json.load(open('/tmp/plan.json')); assert d['template'], d"
+          cd /tmp && zyko new --plan "قائمة مهام بسيطة للفريق" --yes --no-git --run-tests
+          test -f /tmp/todo-cli/RECEIPT.md && echo "receipt OK"
