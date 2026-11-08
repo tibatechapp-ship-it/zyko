@@ -96,6 +96,8 @@ class Agent:
 
     async def _execute(self, call: ToolCall) -> str:
         qualified = MCPClient.split_qualified(call.name)
+        if self.policy and not self.policy.allows_tool(call.name):
+            return f"error: tool '{call.name}' denied by policy"
         if qualified:
             server_name, tool_name = qualified
             client = next((c for c in self.mcp_clients if c.name == server_name), None)
