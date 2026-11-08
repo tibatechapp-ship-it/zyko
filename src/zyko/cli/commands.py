@@ -871,3 +871,81 @@ def _request_from(args: Any, *, prompt: str | None = None, model: str | None = N
         model=model or getattr(args, "model", None),
         max_tokens=getattr(args, "max_tokens", None),
     )
+
+
+# ------------------------------------------------------------------ new (coder)
+def cmd_new(args: Any) -> int:
+    """المرحلة 1 — توليد مشروع من وصف عربي: مخطط → موافقة → توليد → فحص.
+
+    Same flow as ``python -m zyko.coder new``. With ``--json`` it only
+    prints the plan (preview); otherwise nothing is written before the
+    plan is shown and approved (explicitly or via --yes).
+    """
+    from zyko.coder.generate import build_all_files, materialize
+    from zyko.coder.heuristics import draft_plan
+    from zyko.coder.plan import PlanValidationError, ProjectPlan, safe_slug
+    from zyko.coder.precheck import check_source_tree, full_gate
+
+    plan = draft_plan(args.plan)
+    overrides: dict[str, str] = {}
+    if getattr(args, "name", None):
+        overrides["name"] = safe_slug(args.name, fallback=plan.name)
+    if getattr(args, "template", None):
+        overrides["template"] = args.template
+    if overrides:
+        try:
+            plan = ProjectPlan.from_dict(plan.to_dict() | overrides)
+        except PlanValidationError as exc:
+            ui.error(str(exc))
+            return 2
+
+    if getattr(args, "json", False):
+        print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+        return 0
+
+    # بوابة الموافقة — لا يُكتب أي ملف قبل رؤية المخطط وقبوله
+    print(plan.summary_ar())
+    if not getattr(args, "yes", False):
+        try:
+            answer = input("\nهل توافق على هذا المخطط؟ [نعم/y] ")
+        except (EOFError, KeyboardInterrupt):
+            print("\nأُلغي — لم يُكتب أي ملف")
+            return 1
+        # قائمتان متجانستان النصوص — الخلط العربي/اللاتيني في مجموعة واحدة
+        # يفجّر RTL-PY-001 (أداة المرحلة 0 اصطادته في ذاتها هنا)
+        latin_ok = answer.strip().lower() in {"y", "yes"}
+        arabic_ok = answer.strip() in {"ن", "نعم"}
+        if not (latin_ok or arabic_ok):
+            print("أُلغي — لم يُكتب أي ملف")
+            return 1
+
+    out = Path(args.out) if getattr(args, "out", None) else Path.cwd() / plan.name
+    try:
+        result = materialize(plan, out, git_init=not getattr(args, "no_git", False))
+    except FileExistsError as exc:
+        ui.error(str(exc))
+        return 2
+
+    static = check_source_tree(build_all_files(plan))
+    print(f"\nوُلّد {len(result.files)} ملفًا في {result.root}")
+    if result.git_committed:
+        print("git: التزام أول عربي ✓")
+    elif result.git_skipped_reason:
+        print(f"git: تخطّي ({result.git_skipped_reason})")
+
+    if not static.ok:
+        for pr in static.problems:
+            print(f"  - {pr}", file=sys.stderr)
+        ui.error("الفحص الثابت رفض المشروع")
+        return 1
+    print(ui.ok("فحص ثابت (ast + RTL): نظيف"))
+
+    if getattr(args, "run_tests", False):
+        full = full_gate(plan, result.root, run_tests=True)
+        if full.problems:
+            for pr in full.problems:
+                print(f"  - {pr}", file=sys.stderr)
+            ui.error("اختبارات المشروع لم تمر")
+            return 1
+        print(ui.ok("اختبارات المشروع: مرّت"))
+    return 0

@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.9.0 — Phase 1 of the coding engine: `zyko.coder` — deterministic project generation
+
+Second slice of the 90-day plan (Phase 1, D8–D21): from an Arabic
+description to a complete, tested, receipted project — models *fill the
+plan*, everything else is deterministic and byte-reproducible.
+
+### Added
+- **`zyko.coder.plan` (D10–11)** — validated `ProjectPlan` dataclass:
+  name (latin slug), template, Arabic description, modules (safe python
+  identifiers), PEP 508 dependencies, run commands. Strict `from_dict`
+  rejects unknown keys and non-string fields and reports *all* problems
+  at once in Arabic — model drift is caught, never silently defaulted.
+- **`zyko.coder.templates` (D8–9)** — three Jinja-less templates:
+  `python-cli` (src-layout stores + argparse CLI), `fastapi-api`
+  (in-memory CRUD + /health), `static-site` (RTL-first HTML with
+  logical CSS properties only). Each generated file carries its Arabic
+  reason (for the receipt).
+- **`zyko.coder.generate` (D12–13)** — plan → full file tree + `git
+  init` + Arabic initial commit with pinned identity and fixed dates:
+  same plan ⇒ byte-identical repository. Refuses to write into a
+  non-empty directory.
+- **`zyko.coder.precheck` (D14)** — nothing broken reaches the user:
+  `ast.parse` + `compile()` on every python file, `zyko.tools.rtl`
+  gate (errors block), optional pytest run with a hard timeout.
+- **`zyko.coder.receipt` (D19)** — `RECEIPT.md` per project: original
+  description, validated plan, every file with its reason and a sha256
+  manifest (16-hex). Offline-verifiable via `sha256sum`.
+- **`zyko.coder.crew_prompts` (D15–16)** — Arabic system prompts for
+  the three roles (planner → coder → checker) over `zyko.crew`; the
+  checker consumes the deterministic precheck report, never replaces it
+  (hybrid order: deterministic first).
+- **`zyko.coder.heuristics`** — deterministic Arabic-description →
+  draft plan (10 intents: todo/notes/expenses/pomodoro/blog/restaurant/
+  gallery/bookings/store/school) — the model-free stand-in used by CI
+  and `zyko new` previews.
+- **`zyko.coder.gate` (D20–21)** — the acceptance harness: 10 realistic
+  Arabic descriptions, end-to-end. Phase gate: 10/10 generate, ≥8/10
+  pass their first test run. Current state: **10/10 · 10/10**.
+- **CLI** — `zyko new --plan "وصف عربي"` (plan preview → explicit
+  approval → build; `--json` previews without writing) and
+  `python -m zyko.coder plan|new|check|gate`.
+- **CI** — new `phase1-coder` job: zyko.coder coverage ≥85% (90%), the
+  full 10-description gate, and a `zyko new` end-to-end smoke.
+
 ## 0.8.2 — Phase 0 of the coding engine: deterministic Arabic tools
 
 First slice of the 90-day "coding engine" plan (Phase 0, D1–D7): two

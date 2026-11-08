@@ -244,6 +244,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd.cmd_bench)
 
+    # new (coder — المرحلة 1: توليد مشروع من وصف عربي)
+    p = sub.add_parser(
+        "new",
+        help="generate a project from an Arabic description (plan → approve → build)",
+    )
+    p.add_argument("--plan", "-p", required=True, help="الوصف العربي للمشروع")
+    p.add_argument("--out", "-o", default=None, help="مجلد الإخراج (افتراضي: ./<name>)")
+    p.add_argument("--name", default=None, help="تجاوز اسم المشروع في المخطط")
+    p.add_argument(
+        "--template",
+        choices=["python-cli", "fastapi-api", "static-site"],
+        default=None,
+        help="تجاوز القالب المختار",
+    )
+    p.add_argument("--yes", "-y", action="store_true", help="الموافقة على المخطط دون سؤال")
+    p.add_argument("--no-git", action="store_true", help="بلا git init والتزام أول")
+    p.add_argument("--json", action="store_true", help="اعرض المخطط JSON فقط دون كتابة")
+    p.add_argument("--run-tests", action="store_true", help="شغّل اختبارات المشروع بعد التوليد")
+    p.set_defaults(func=cmd.cmd_new)
+
     return parser
 
 
