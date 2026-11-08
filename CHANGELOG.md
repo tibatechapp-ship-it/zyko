@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.9.0 — Phase 1 of the coding engine: `zyko.coder` — deterministic project generation
+## 0.9.1 — Phase 1 of the coding engine: `zyko.coder` — deterministic project generation
 
 Second slice of the 90-day plan (Phase 1, D8–D21): from an Arabic
 description to a complete, tested, receipted project — models *fill the
