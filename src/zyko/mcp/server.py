@@ -48,6 +48,46 @@ ZYKO_TOOLS: list[dict[str, Any]] = [
             "required": ["prompt"],
         },
     },
+    {
+        "name": "pii_ar_scan",
+        "description": (
+            "Deterministic Arabic PII detection — phones (22 countries), national IDs "
+            "(8 formats, checksum-validated), IBAN (mod-97), bank cards (Luhn, incl. mada), "
+            "names, addresses, emails. No model needed, fully reproducible. Phase 0 (D6)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "Arabic/Arabic-mixed text to scan"},
+                "min_confidence": {"type": "number", "description": "default 0.5"},
+            },
+            "required": ["text"],
+        },
+    },
+    {
+        "name": "rtl_check",
+        "description": (
+            "Deterministic RTL problem check (15 rules) for CSS / HTML / Python / text: "
+            "text-align:left in RTL, physical margins, missing dir, Arabic-vs-Latin "
+            "comparisons, Trojan-Source bidi chars. No model needed. Phase 0 (D6)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "source to check"},
+                "lang": {
+                    "type": "string",
+                    "enum": ["css", "html", "python", "text"],
+                    "description": "default: text",
+                },
+                "path": {
+                    "type": "string",
+                    "description": "alternative to text: check a file or folder on disk",
+                },
+            },
+            "required": [],
+        },
+    },
 ]
 
 
@@ -110,12 +150,84 @@ class ZykoMCPServer:
             if not prompt:
                 raise ZykoError("zyko_chat requires a non-empty 'prompt'")
             text = await self._chat_text(prompt, arguments.get("model"))
+        elif name == "pii_ar_scan":
+            text = self._pii_ar_scan_text(arguments)
+        elif name == "rtl_check":
+            text = self._rtl_check_text(arguments)
         else:
             return {
                 "content": [{"type": "text", "text": f"unknown tool '{name}'"}],
                 "isError": True,
             }
         return {"content": [{"type": "text", "text": text}], "isError": False}
+
+    # -------------------------------------------------- deterministic tools
+    @staticmethod
+    def _pii_ar_scan_text(arguments: dict[str, Any]) -> str:
+        """`pii_ar_scan` — Arabic PII findings as readable text (no model)."""
+        import json
+
+        from zyko.tools.pii_ar import TYPE_LABELS, PIIScanner
+
+        text = str(arguments.get("text") or "")
+        if not text.strip():
+            raise ZykoError("pii_ar_scan requires a non-empty 'text'")
+        min_conf = float(arguments.get("min_confidence") or 0.5)
+        findings = PIIScanner(min_confidence=min_conf).scan(text)
+        payload = {
+            "tool": "pii_ar_scan",
+            "count": len(findings),
+            "findings": [
+                {
+                    "type": f.type,
+                    "type_ar": TYPE_LABELS.get(f.type, f.type),
+                    "value": f.value,
+                    "valid": f.valid,
+                    "confidence": round(f.confidence, 2),
+                    "start": f.start,
+                    "end": f.end,
+                }
+                for f in findings
+            ],
+        }
+        return json.dumps(payload, ensure_ascii=False, indent=2)
+
+    @staticmethod
+    def _rtl_check_text(arguments: dict[str, Any]) -> str:
+        """`rtl_check` — RTL problem findings as readable text (no model)."""
+        import json
+
+        from zyko.tools.rtl import SEVERITY_AR, RTLChecker
+
+        text_arg = arguments.get("text")
+        path_arg = arguments.get("path")
+        if text_arg:
+            lang = arguments.get("lang") or "text"
+            findings = RTLChecker().check_source(str(text_arg), lang, "<text>")
+            files = 1
+        elif path_arg:
+            findings, files = RTLChecker().check_path(str(path_arg))
+        else:
+            raise ZykoError("rtl_check requires 'text' (with optional 'lang') or 'path'")
+        payload = {
+            "tool": "rtl_check",
+            "files_scanned": files,
+            "count": len(findings),
+            "findings": [
+                {
+                    "rule": f.rule,
+                    "severity": f.severity,
+                    "severity_ar": SEVERITY_AR[f.severity],
+                    "message": f.message,
+                    "file": f.file,
+                    "line": f.line,
+                    "col": f.col,
+                    "suggestion": f.suggestion,
+                }
+                for f in findings
+            ],
+        }
+        return json.dumps(payload, ensure_ascii=False, indent=2)
 
     # --------------------------------------------------------------- backends
     def _ensure_router(self) -> Any:

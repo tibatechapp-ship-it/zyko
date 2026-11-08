@@ -1,0 +1,28 @@
+# examples/policies/pii_ar.yaml — بوابة الخصوصية العربية (المرحلة 0 — D5)
+#
+# تفعيلها:
+#   zyko policy check examples/policies/pii_ar.yaml          # تحقق من الصياغة
+#   zyko ask --policy examples/policies/pii_ar.yaml "..."    # استخدمها
+#
+# ماذا تفعل: كل prompt يمر عبر محرك الحجب العربي الحتمي (zyko.tools.pii_ar)
+# قبل وصوله لأي نموذج — هواتف 22 دولة، 8 هويات وطنية بتحقق رياضي، آيبان
+# mod-97، بطاقات Luhn (بما فيها مدى)، أسماء بمعجم، عناوين، بريد — ثم تعمل
+# الأنماط العامة (email/phone/…) على ما تبقى.
+version: 1
+name: pii_ar
+
+defaults:
+  max_tokens_per_request: 4096
+
+privacy:
+  # pii_ar محرك دوال (بلا regex واحد): تحقق checksums ومعاجم — يعمل أولًا،
+  # ثم تأتي الأنماط العامة للنص اللاتيني المتبقي.
+  redact:
+    - pii_ar
+    - email
+    - phone
+    - credit_card
+    - iban
+
+audit:
+  enabled: true

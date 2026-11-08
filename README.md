@@ -491,7 +491,7 @@ defaults:
 models:
   deny: ["*opus*"]
 privacy:
-  redact: [email, phone, credit_card, iban, ssn]
+  redact: [pii_ar, email, phone, credit_card, iban, ssn]  # pii_ar: محرك حجب عربي حتمي (0.8.1)
 tools:
   deny: ["shell*"]
 rate_limit:
@@ -503,6 +503,7 @@ zyko ask "..." --policy strict    # كل نداء يمر عبر السياسة: 
 ```
 
 تجربة فورية: `zyko policy redact "card 4111 1111 1111 1111 mail bob@corp.com"`
+وحجب عربي كامل (هواتف/هويات/آيبان/أسماء): `zyko policy redact "اسمي محمد أحمد ورقمي 0501234567" examples/policies/pii_ar.yaml`
 
 ## النواة الاختيارية (Rust)
 

@@ -59,6 +59,11 @@ BUILTIN_PATTERNS: dict[str, tuple[str, str]] = {
 # them, so pattern application order is fixed regardless of user list order.
 _PATTERN_PRIORITY = {"credit_card": 0, "iban": 1, "ssn": 2, "email": 3, "phone": 4}
 
+# Function-based redactors: a single regex cannot do math validation
+# (mod-97 IBAN, Luhn, checksum national IDs) or dictionary names — the
+# deterministic Arabic engine can. Phase 0 (D5): `privacy.redact: [pii_ar]`.
+KNOWN_FN_REDACTORS = ("pii_ar",)
+
 # Keys the policy schema understands; anything else is almost certainly a
 # typo that would otherwise silently disable a control the author believed
 # was active ("privcy:", "budget_per_day:", ...).
@@ -77,6 +82,19 @@ KNOWN_TOP_LEVEL = {
 KNOWN_DEFAULTS_KEYS = {"budget_usd_per_day", "max_tokens_per_request"}
 
 
+def _fn_redactor(name: str):
+    """Resolve a function redactor by name (lazy import keeps startup fast)."""
+    if name == "pii_ar":
+        from zyko.tools.pii_ar import redact as _pii_ar_redact
+
+        def _redact(text: str) -> tuple[str, int]:
+            cleaned, findings = _pii_ar_redact(text, mode="placeholder")
+            return cleaned, len(findings)
+
+        return _redact
+    raise ConfigError(f"unknown function redactor '{name}'")
+
+
 def _luhn_ok(digits: str) -> bool:
     total, alt = 0, False
     for ch in reversed(digits):
@@ -93,15 +111,23 @@ def _luhn_ok(digits: str) -> bool:
 @dataclass
 class Redactor:
     rules: list[tuple[str, str, str]] = field(default_factory=list)  # (compiled, replace, label)
+    fn_rules: list[tuple[Any, str]] = field(
+        default_factory=list
+    )  # (callable(text)->(text, n), label)
 
     @classmethod
     def from_doc(cls, privacy: dict[str, Any]) -> "Redactor":
         rules: list[tuple[str, str, str]] = []
+        fn_rules: list[tuple[Any, str]] = []
         for name in privacy.get("redact") or []:
+            if name in KNOWN_FN_REDACTORS:
+                fn_rules.append((_fn_redactor(name), name))
+                continue
             if name not in BUILTIN_PATTERNS:
                 raise ConfigError(
                     f"unknown builtin redaction pattern '{name}'",
-                    hint=f"available: {', '.join(BUILTIN_PATTERNS)}",
+                    hint="available: "
+                    + ", ".join(sorted((*BUILTIN_PATTERNS, *KNOWN_FN_REDACTORS))),
                 )
             pattern, replace = BUILTIN_PATTERNS[name]
             rules.append((_PATTERN_PRIORITY.get(name, 9), re.compile(pattern), replace, name))
@@ -118,13 +144,22 @@ class Redactor:
             except (KeyError, re.error) as exc:
                 raise ConfigError(f"invalid custom redaction rule: {exc}") from exc
         rules.sort(key=lambda r: r[0])
-        return cls([(regex, replace, label) for _, regex, replace, label in rules])
+        return cls(
+            [(regex, replace, label) for _, regex, replace, label in rules],
+            fn_rules=fn_rules,
+        )
 
     def __bool__(self) -> bool:
-        return bool(self.rules)
+        return bool(self.rules) or bool(self.fn_rules)
 
     def apply(self, text: str) -> tuple[str, list[str]]:
         applied: list[str] = []
+        # Function redactors run first: the Arabic engine already orders its
+        # detectors internally (card > IBAN > ID > phone > …) and validates
+        # checksums, so later generic regexes only see what it left behind.
+        for fn, label in self.fn_rules:
+            text, n = fn(text)
+            applied.extend([label] * n)
         for regex, replace, label in self.rules:
 
             def _sub(match: re.Match[str], *, _label=label, _replace=replace) -> str:
