@@ -77,7 +77,9 @@ jobs:
           --cov-report=term --cov-fail-under=85 -q
       - name: Phase-0 gate — Arabic PII sample 20/20
         run: |
-          python -m zyko.tools.pii_ar scan --file samples/arabic_mix.txt --format json > /tmp/gate.json
+          # scan exits 1 by design when findings exist (linter convention) —
+          # the gate asserts on the JSON payload, not the exit code.
+          python -m zyko.tools.pii_ar scan --file samples/arabic_mix.txt --format json > /tmp/gate.json || true
           python -c "import json; d=json.load(open('/tmp/gate.json')); assert d['count'] == 20, f'{d[\"count\"]}/20'; print('gate 20/20 OK')"
       - name: Phase-0 gate — pii_ar policy validates and redacts
         run: |
