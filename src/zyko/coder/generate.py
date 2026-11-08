@@ -61,10 +61,12 @@ def _git_env(real_dates: bool) -> dict[str, str]:
 
 def _git(root: Path, *args: str, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     # المدخلات داخلية ثابتة (git + لائحة أوسطات مبرمجة) — بلا shell ولا مدخلات مستخدم
+    # encoding صريح: التزامنا عربية، والافتراضي على Windows هو cp1252 فيشوّهها
     return subprocess.run(  # nosec B607 B603
         ["git", "-C", str(root), *args],
         capture_output=True,
-        text=True,
+        encoding="utf-8",
+        errors="replace",
         env=env,
         timeout=60,
         check=False,

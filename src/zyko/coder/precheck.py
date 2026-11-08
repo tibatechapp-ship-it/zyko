@@ -135,11 +135,13 @@ def run_project_tests(root: Path, timeout: int = 180) -> PrecheckReport:
     env["PYTHONIOENCODING"] = "utf-8"
     try:
         # sys.executable ثابت وأوسطات مبرمجة — بلا shell ولا مدخلات مستخدم
+        # encoding صريح: رسائل pytest عربية والافتراضي على Windows cp1252
         proc = subprocess.run(  # nosec B603
             [sys.executable, "-m", "pytest", "-q", "--no-header", "-x"],
             cwd=str(root),
             capture_output=True,
-            text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             env=env,
             check=False,
@@ -150,7 +152,10 @@ def run_project_tests(root: Path, timeout: int = 180) -> PrecheckReport:
 
     tail = "\n".join((proc.stdout or "").splitlines()[-8:])
     report.test_output_tail = tail
-    if proc.returncode != 0:
+    if proc.returncode == 5:
+        # pytest: لا اختبارات مجمَّعة — الجناح كله تخطّى أو فارغ؛ لا يُحسب نجاحًا
+        report.add_problem("لم تُجمَع أي اختبارات (كلها متخطاة أو الجناح فارغ) — لا يُحسب نجاحًا")
+    elif proc.returncode != 0:
         first_fail = next(
             (ln for ln in (proc.stdout or "").splitlines() if ln.startswith("FAILED")),
             "",

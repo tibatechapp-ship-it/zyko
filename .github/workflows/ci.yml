@@ -20,7 +20,8 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: Install
-        run: pip install -e .[dev]
+        # fastapi+httpx: بوابة المرحلة 1 تمارن اختبارات القالب الحقيقي لا skip
+        run: pip install -e .[dev] fastapi httpx
       - name: Test
         run: pytest -q
 
