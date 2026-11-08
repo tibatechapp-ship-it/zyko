@@ -60,6 +60,34 @@ jobs:
         working-directory: rust/zyko-kernel
         run: cargo check
 
+  phase0-tools:
+    name: phase-0 Arabic tools (coverage ≥85% + RTL gate + typography)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e .[dev] pytest-cov
+      - name: Deterministic tools coverage gate (≥85%)
+        run: >
+          pytest tests/test_tools_pii_ar.py tests/test_tools_rtl.py
+          tests/test_tools_policy_mcp.py --cov=zyko.tools
+          --cov-report=term --cov-fail-under=85 -q
+      - name: Phase-0 gate — Arabic PII sample 20/20
+        run: |
+          python -m zyko.tools.pii_ar scan --file samples/arabic_mix.txt --format json > /tmp/gate.json
+          python -c "import json; d=json.load(open('/tmp/gate.json')); assert d['count'] == 20, f'{d[\"count\"]}/20'; print('gate 20/20 OK')"
+      - name: Phase-0 gate — pii_ar policy validates and redacts
+        run: |
+          python -m zyko policy check examples/policies/pii_ar.yaml
+          python -m zyko policy redact "اسمي محمد أحمد ورقمي 0501234567" examples/policies/pii_ar.yaml | grep -v "محمد أحمد"
+      - name: RTL self-gate on ZYKO source (fail on warning+)
+        run: python -m zyko.tools.rtl check --path src --fail-on warning
+      - name: Arabic typography scan
+        run: python scripts/check_arabic_typography.py src
+
   cli-smoke:
     runs-on: ubuntu-latest
     steps:

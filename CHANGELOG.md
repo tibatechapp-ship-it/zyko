@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.8.1 — Phase 0 of the coding engine: deterministic Arabic tools
+
+First slice of the 90-day "coding engine" plan (Phase 0, D1–D7): two
+model-free Arabic tools vendored as Layer-1 `zyko.tools`, wired into the
+policy engine, the MCP server, and CI. Deterministic means: no model calls,
+no randomness, byte-identical results — model outage never stops them.
+
+### Added
+- **`zyko.tools.pii_ar`** — deterministic Arabic PII detection & redaction:
+  phones across 22 country rules (Arabic-Indic digits preserved as-is),
+  8 national-ID formats with math validation (Egyptian birthdate check,
+  Saudi 1/2 prefix, UAE 784+15), IBAN with mod-97 (20 countries), Luhn cards
+  including **mada**, dictionary-based names, addresses, emails.
+  CLI: `python -m zyko.tools.pii_ar scan|redact` (exit 0/1/2).
+- **`zyko.tools.rtl`** — deterministic RTL problem detector, 15 rules across
+  CSS (`text-align:left` in RTL context, physical margins/floats),
+  HTML (missing `dir` on Arabic documents, `rtl` without `lang`,
+  inline `text-align:left` inside RTL), Python (Arabic-vs-Latin string
+  comparisons that can never match, Arabic-Indic vs ASCII digit comparisons,
+  mixed-script membership lists, Trojan-Source bidi controls
+  CVE-2021-42574, unparseable files, mixed-script identifiers) and
+  mixed-direction text lines. CLI: `python -m zyko.tools.rtl check|rules`.
+- **Policy (D5)** — `privacy.redact` now accepts **`pii_ar`**: a
+  function-based redactor (checksums and dictionaries cannot be one regex)
+  that runs *before* the generic patterns, so Arabic PII is masked first
+  and the Latin regexes only see what it left behind.
+  Example: `examples/policies/pii_ar.yaml` —
+  `zyko policy check examples/policies/pii_ar.yaml`,
+  `zyko policy redact "اسمي محمد أحمد ورقمي 0501234567" examples/policies/pii_ar.yaml`.
+- **MCP (D6)** — two new tools on `zyko mcp serve`: **`pii_ar_scan`**
+  (text → typed, checksum-validated findings) and **`rtl_check`**
+  (text+lang or path → rule, severity, message, suggestion per finding).
+  Both return JSON text content and need no router/model.
+- **CI (D7)** — new `phase0-tools` job: coverage gate ≥85% for
+  `zyko.tools` (measured 92%), 20/20 planted-PII gate on
+  `samples/arabic_mix.txt`, policy validation gate, RTL self-gate
+  (`zyko.tools.rtl check --path src --fail-on warning`), and an Arabic
+  typography scan (`scripts/check_arabic_typography.py`: Latin comma /
+  question mark / semicolon between Arabic words).
+- **82 new tests** — across `tests/test_tools_pii_ar.py`,
+  `tests/test_tools_rtl.py`, `tests/test_tools_policy_mcp.py`, plus the
+  MCP tools-list regression update (repo total: 666).
+
 ## 0.8.0 — the receipt becomes verifiable: `zyko verify`
 
 The "verifiable routing" pillar had a receipt but no verifier: a third party

@@ -1,0 +1,11 @@
+/* عينة تجريبية لبوابة rtl_check — مخالفات مقصودة (لا تستخدم في إنتاج) */
+
+[dir="rtl"] .card {
+  text-align: left;      /* RTL-CSS-001 */
+  margin-left: 16px;     /* RTL-CSS-003 */
+}
+
+.page-title {
+  text-align: right;     /* RTL-CSS-002 */
+  float: left;           /* RTL-CSS-004 */
+}
