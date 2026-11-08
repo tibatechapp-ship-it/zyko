@@ -170,6 +170,28 @@ class DeepSeekProvider(OpenAICompatProvider):
         ModelInfo(
             "deepseek", "deepseek-reasoner", 64_000, 8_192, True, False, 0.55, 2.19, ["reasoning"]
         ),
+        # DeepSeek V4 family — 1M context, agentic-optimized.
+        # NOTE: model slugs and per-MTok prices must be re-checked against
+        # api-docs.deepseek.com before relying on them for cost estimates.
+        # max_output is set conservatively; the API may allow more.
+        ModelInfo(
+            "deepseek",
+            "deepseek-v4-pro",
+            1_000_000,
+            65_536,
+            input_price_per_mtok=1.32,
+            output_price_per_mtok=3.96,
+            tags=["agentic", "long-context"],
+        ),
+        ModelInfo(
+            "deepseek",
+            "deepseek-v4.1-flash-1017",
+            1_000_000,
+            65_536,
+            input_price_per_mtok=0.96,
+            output_price_per_mtok=1.91,
+            tags=["cheap", "long-context"],
+        ),
     ]
 
 
