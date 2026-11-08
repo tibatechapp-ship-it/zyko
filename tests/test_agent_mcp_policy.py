@@ -1,4 +1,5 @@
 """Regression: MCP tool calls must obey the agent policy."""
+
 import asyncio
 from unittest.mock import Mock
 
