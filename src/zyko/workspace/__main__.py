@@ -78,6 +78,10 @@ def _build_parser() -> argparse.ArgumentParser:
         "--include-timing", action="store_true", help="أضف الزمن (يكسر الحتمية البايتية)"
     )
 
+    p_run.add_argument(
+        "--html", default=None, help="اكتب لوحة HTML عربية مكتفية ذاتيًا إلى هذا الملف"
+    )
+
     p_gate = sub.add_parser("gate", help="بوابة قبول المرحلة 5 (ست بوابات)")
     p_gate.add_argument("--max-seconds", type=float, default=5.0)
 
@@ -85,7 +89,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _cmd_run(args: argparse.Namespace) -> int:
+def cmd_run(args: argparse.Namespace) -> int:
     # ---- تحقق استخدام على مستوى CLI (رسائل عربية، خروج 2)
     if args.in_place and args.out:
         print(
@@ -122,6 +126,12 @@ def _cmd_run(args: argparse.Namespace) -> int:
         print(workspace_summary_line(result))
     else:
         print(workspace_result_to_text(result))
+    if getattr(args, "html", None):
+        # لوحة HTML بجانب المخرجات النصية — الطباعة على stderr كي يبقى stdout حتميًا.
+        from zyko.factory.report_html import workspace_result_html, write_html_panel
+
+        write_html_panel(args.html, workspace_result_html(result))
+        print(f"كُتبت لوحة HTML: {args.html}", file=sys.stderr)
     if not result.ok:
         return EXIT_USAGE
     if result.min_score_after is not None and result.min_score_after < args.fail_under:
@@ -135,7 +145,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
-def _cmd_gate(args: argparse.Namespace) -> int:
+def cmd_gate(args: argparse.Namespace) -> int:
     gate_result = run_phase5_gate(max_seconds=args.max_seconds)
     print(gate_result.table_ar())
     return EXIT_OK if gate_result.ok else EXIT_FINDINGS
@@ -145,9 +155,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     if args.command == "run":
-        return _cmd_run(args)
+        return cmd_run(args)
     if args.command == "gate":
-        return _cmd_gate(args)
+        return cmd_gate(args)
     print(workspace_promise_text())
     return EXIT_OK
 
