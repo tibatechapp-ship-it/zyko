@@ -286,6 +286,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--check", action="store_true", help="فحص الصياغة فقط دون كتابة أو تنفيذ")
     p.set_defaults(func=cmd.cmd_py)
 
+    # ai (المرحلة 8: طبقة الذكاء فوق المصنع — جلسات موثّقة عبر البوابات)
+    p = sub.add_parser(
+        "ai",
+        help="طبقة الذكاء فوق المصنع: map / run / gate",
+    )
+    from zyko.ai.cli import register_to as _register_ai
+
+    _register_ai(p.add_subparsers(dest="ai_cmd"))
+    p.set_defaults(func=cmd.cmd_ai)
+
     return parser
 
 

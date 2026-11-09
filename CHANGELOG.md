@@ -1,5 +1,78 @@
 # Changelog
 
+## Unreleased — Phase 8 of the coding engine: `zyko.ai` — intelligence assembled over the factory
+
+The factory was one machine; this release assembles the first
+**intelligence layer on top of it**. `zyko.ai` is where brains live:
+today the deterministic `planner` (the same `zyko.coder` planner, no
+model, no network), tomorrow any LLM — but the contract is the same
+for every brain: **a brain never touches the project directly**. Its
+proposal is text, and that text must pass the factory's own
+deterministic gates — the Arabic PII scanner (hard reject) and the
+RTL gateway (rejects direction errors) — before anything is built.
+Every session then walks the factory in order: gated proposal →
+generation loop (review→fix, `PipelineEngine`) → quality guard
+(baseline update→check, `BaselineEngine`) — and each step is signed
+into an evidence receipt with sha256 fingerprints, byte-deterministic
+like the rest of the machine. A suspicious goal (a phone number in
+the description) is rejected at the plan gate before a single byte is
+written; hostile inputs (empty, non-string, crowded out-dir, overlong
+goal) fail structurally safe. The golden rule holds: the brain adds,
+the gates decide.
+
+### Added
+- **`zyko.ai.brains`** — the brain contract and the gates:
+  - `Brain` protocol (`name`, `deterministic`, `propose(request) →
+    Proposal`), runtime-checkable — the socket every future model
+    plugs into.
+  - `check_proposal_gates(text)` — the fixed factory order: PII then
+    RTL; any PII finding rejects outright; RTL `error` severity
+    rejects, warnings/info are recorded as evidence only.
+  - `PlannerBrain` — the default deterministic brain wrapping
+    `draft_plan`; its own verdict (`planner`) records plan validation.
+  - `GatedBrain` — the wrapper that forces the factory gates on ANY
+    brain (`GatedBrain(OllamaBrain(...))` later); a crashing brain is
+    captured as a documented rejection, never an exception leak.
+- **`zyko.ai.session`** — `AISession.run(goal, out_dir)`: the
+  documented session (plan → generate → baseline update → baseline
+  check) with structural input guards mirroring the loop's own
+  (non-string, empty, overlong goal, non-empty out-dir ⇒ exit-2
+  record, no writes, no traceback). Dry-run completes the loop in
+  memory, records the baseline steps as skipped, and writes nothing.
+- **`zyko.ai.receipt`** — the evidence receipt
+  (`zyko.ai.receipt/v1`): per-step verdict, exit code, Arabic
+  details, and sha256 evidence of every written file and of the
+  baseline itself; `to_json()` is byte-deterministic (sorted keys,
+  no timestamps unless `include_timing`), `to_md()` renders the same
+  evidence as an Arabic receipt. Written to `<out>/.zyko/
+  ai_receipt.json` and `AI_RECEIPT.md` after generation — the receipt
+  is part of the project it certifies.
+- **`zyko.ai.gate`** — the Phase-8 gate: 12 deterministic gates over
+  3 Arabic anchors (clean: proposal accepted, session accepted,
+  baseline green, byte-identical receipts across two runs;
+  suspicious: PII rejected before any write with the refusal
+  documented; adversarial: empty/non-string/crowded/overlong inputs
+  fail safe) — `python -m zyko.ai gate`, the same gate contract as
+  the previous phases (`ok` + `table_ar()`).
+- **`zyko ai` on the main CLI** and `python -m zyko.ai` —
+  `map` / `run --goal … --out … [--dry-run] [--fail-under N]
+  [--rounds N] [--format text|json|summary] [--include-timing]` /
+  `gate`. Exit codes follow the factory contract: 0 accepted, 1
+  rejected at a gate, 2 structural.
+
+### Tests
+- 50 new tests (`test_ai_brains.py`, `test_ai_receipt.py`,
+  `test_ai_session.py`, `test_ai_gate.py`, `test_ai_cli.py`):
+  gate order and PII hard-reject (western and Arabic-Indic digits),
+  planner determinism and fallback planning, gated-brain crash
+  capture, protocol checkability, receipt byte determinism and
+  stable keys, evidence hashes verified against real files, full
+  session with on-disk receipt, plan-gate rejection writing nothing,
+  dry-run writing nothing, all four structural guards, two-session
+  byte-identical receipts, the 12-gate phase gate (repeatable,
+  Arabic-signed), and the CLI contract (exit 0/1/2, JSON parseable,
+  map over the main CLI). Suite total: 1,405.
+
 ## 0.16.0 — `zyko py`: the daad gateway (Phase 3 of the daad plan)
 
 ZYKO met its first standalone language: **daad** (ضاد) — a byte-
@@ -632,7 +705,6 @@ makes the strongest claim in the README runnable.
   `docs/READY.md` is explicitly marked as the archived v0.3.3 snapshot.
 - Python 3.14 classifier added (the suite runs green there, including on
   Termux/Android).
-
 
 ## 0.7.0 — governed multi-user gateway: identities, not just a token
 
