@@ -219,3 +219,41 @@ jobs:
           print('pipeline JSON payload OK — every outcome carries suggestion_ar')
           "
           test ! -e /tmp/p4-ci/dry && echo "dry-run wrote nothing OK"
+
+  phase5-workspace:
+    name: phase-5 workspace (existing projects — determinism/idempotence/robustness gates)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e .[dev] pytest-cov
+      - name: Workspace coverage gate (≥85%)
+        run: >
+          pytest tests/test_workspace_engine.py tests/test_workspace_report_cli.py
+          tests/test_workspace_robustness.py tests/test_workspace_gate.py
+          tests/test_workspace_mcp.py
+          --cov=zyko.workspace --cov-report=term --cov-fail-under=85 -q
+      - name: Phase-5 gate — 3 anchors × 6 gates (complete/deterministic/idempotent/improved/robust/fast)
+        run: python -m zyko.workspace gate
+      - name: Workspace CLI — dry by default, consent-gated writes (exit-code contract)
+        run: |
+          rm -rf /tmp/p5-ci && mkdir -p /tmp/p5-ci
+          cp -r samples/workspace/small_tool /tmp/p5-ci/proj
+          python -m zyko.workspace run --src /tmp/p5-ci/proj --fail-under 60 --format json > /tmp/p5-ci/dry.json
+          python -c "
+          import json
+          d = json.load(open('/tmp/p5-ci/dry.json', encoding='utf-8'))
+          assert d['schema'] == 'zyko.workspace/1' and d['ok'] and d['fixed_total'] > 0
+          assert d['written'] == [], 'dry run must write nothing'
+          assert all(o['suggestion_ar'] for f in d['per_file'] for o in f['outcomes'])
+          print('workspace dry JSON OK — every outcome carries suggestion_ar')
+          "
+          python -m zyko.workspace run --src /tmp/p5-ci/proj --out /tmp/p5-ci/fixed --fail-under 60 > /dev/null
+          python -c "import ast,pathlib; [ast.parse(p.read_text(encoding='utf-8')) for p in pathlib.Path('/tmp/p5-ci/fixed').rglob('*.py')]; print('fixed copy parses OK')"
+          if python -m zyko.workspace run --src /tmp/p5-ci/proj --in-place 2>/tmp/p5-ci/err.txt; then
+            echo "ERROR: in-place without --yes must fail"; exit 1
+          fi
+          grep -q -- "--yes" /tmp/p5-ci/err.txt && echo "in-place without --yes refused OK"

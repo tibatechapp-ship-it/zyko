@@ -1,0 +1,54 @@
+{
+  "schema": "zyko.workspace-samples/1",
+  "directory": "samples/workspace/small_tool",
+  "files": [
+    {
+      "file": "clean_util.py",
+      "sha256": "cf2379e065218230e7335347993d24cd72329147ff74dcaba6d02632aec7b9e5",
+      "score_before": 100,
+      "score_after": 100,
+      "expect_changed": false,
+      "expect_fixed": [],
+      "expect_manual": [],
+      "expect_open": []
+    },
+    {
+      "file": "secure.py",
+      "sha256": "8862ffd27eea1522682949f63d92b84e52c3f01a8cd3058e5980659d03d0d176",
+      "score_before": 96,
+      "score_after": 100,
+      "expect_changed": true,
+      "expect_fixed": [
+        "R-SEC-106"
+      ],
+      "expect_manual": [
+        "R-QLT-205"
+      ],
+      "expect_open": []
+    },
+    {
+      "file": "tool.py",
+      "sha256": "fa966e9455cbf837d9ca575344613cb0f2bd39f635f9a71284440f1e4d8eeb82",
+      "score_before": 72,
+      "score_after": 96,
+      "expect_changed": true,
+      "expect_fixed": [
+        "R-ERR-001",
+        "R-ERR-003",
+        "R-ERR-004",
+        "R-QLT-204",
+        "R-QLT-204",
+        "R-QLT-204",
+        "R-QLT-206",
+        "R-QLT-207",
+        "R-QLT-209"
+      ],
+      "expect_manual": [
+        "R-QLT-205",
+        "R-QLT-205",
+        "R-QLT-205"
+      ],
+      "expect_open": []
+    }
+  ]
+}

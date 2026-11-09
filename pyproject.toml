@@ -4,14 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zyko"
-version = "0.11.0"
-description = "ZYKO — Universal AI Orchestration Platform: multi-provider routing, Policy-as-Code, MCP-native agents. Runs on Linux, Windows, macOS, Android and Termux."
+version = "0.12.0"
+description = "ZYKO — the deterministic Arabic coding engine (generate, review, fix in one command) on a verifiable AI-orchestration platform. Runs on Linux, Windows, macOS, Android and Termux."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "ZYKO Contributors" }]
 keywords = [
-    "ai", "llm", "orchestration", "router", "agents", "mcp",
+    "ai", "llm", "orchestration", "router", "agents", "mcp", "coding-engine",
+    "code-review", "auto-fix", "arabic",
     "policy-as-code", "multi-provider", "termux", "android",
 ]
 classifiers = [

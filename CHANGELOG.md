@@ -1,5 +1,68 @@
 # Changelog
 
+## 0.12.0 — Phase 5 of the coding engine: `zyko.workspace` — the engine on existing projects
+
+Final slice of the 90-day plan (Phase 5, D73–D90). Until now the engine
+only improved code it had generated itself. This release opens it onto
+**any Python directory on your disk**: review (27 rules) → fix (12 safe
+paths) → re-review, with the same three contracts every phase shipped —
+byte determinism, structured failures instead of exceptions, and every
+finding keeping its original `suggestion_ar`. Caution around the user's
+disk is a first-class feature: the default is a **dry run that writes
+nothing**; `--out` writes a fixed copy into a new empty directory only;
+`--in-place` demands an explicit `--yes`; and no file is written unless
+its final source survives `ast`.
+
+### Added
+- **`zyko.workspace.engine`** — `WorkspaceEngine.run(src)`: deterministic
+  scan (sorted relative paths, no symlinks, system directories skipped,
+  500-file cap with an Arabic note) → per-file UTF-8 read (bad encoding /
+  oversized files become documented skips, never crashes) → 27-rule
+  review → fix rounds (0 = review-only, cap 3, convergence stop) →
+  re-review → verified writes only (re-checked with `parses()` before
+  the first byte lands). Hostile input — wrong type, empty path, missing
+  directory, file instead of directory, negative/non-int/bool rounds,
+  occupied output directory, in-place without confirmation, copy and
+  in-place together, unknown write mode (12 cases) — ⇒ structured
+  `failed_stage` (scan/reviewer/fixer/write/workspace) + Arabic reason +
+  exit 2, never an exception. A crashing injected reviewer/fixer is
+  exported the same way. Empty or all-unreadable directories are honest
+  successes (`لا مراجعة`, exit 0), not errors.
+- **`zyko.workspace.report`** — deterministic JSON/text emitters
+  (schema `zyko.workspace/1`) plus a one-line summary and the
+  guarantees table; every outcome line shows
+  `الإصلاح: suggestion_ar`, every skip shows its Arabic reason; timing
+  only with `include_timing=True`.
+- **`zyko.workspace.gate`** — six quantitative gates on three Arabic
+  anchor trees (flat CLI, nested package, mixed tree with a broken-syntax
+  file and a UTF-16 file): **W1** end-to-end completion with real fixes,
+  **W2** byte determinism across identical copies (paths normalized),
+  **W3** idempotence (the engine on its own final output changes
+  nothing), **W4** no-regression, **W5** robustness (12/12 hostile
+  inputs → structured failures), **W6** performance (<5s per anchor).
+- **`zyko.workspace.__main__`** — `run` (`--src`, `--out`, `--in-place`
+  + `--yes`, `--rounds`, `--fail-under`, `--format text|json|summary`),
+  `gate`, `promise`. Exit codes 0/1/2 — the same convention as reviewer,
+  fixer and pipeline.
+- **MCP tool `fix_workspace`** — the engine on an existing directory as
+  a dry-run tool (never writes), joining the five deterministic tools
+  (now 6 of 9 total).
+- **Sample** — `samples/workspace/small_tool/` (three files: two with
+  planted findings, one perfectly clean) + a generated `manifest.json`
+  pinning per-file scores and per-rule fates; a test re-runs the engine
+  on the sample and fails if reality drifts from the manifest.
+
+### Fixed
+- **Stale metadata the 0.11.0 pass missed**: the English half of the
+  README still headlined «v0.8.0» and both halves still claimed
+  «579 tests» in the quick-start while the suite had reached 1230; all
+  synced to 0.12.0 (badge, AR/EN headers, quick-start counts).
+
+### Gates
+`python -m zyko.workspace gate` → ✅ (3 anchors × 6 gates, robustness
+12/12); `zyko.workspace` coverage 94% (≥85% enforced in CI); full suite
+1230 passed; ruff check/format clean.
+
 ## 0.11.0 — Phase 4 of the coding engine: `zyko.pipeline` — the feedback loop in one command
 
 Fifth slice of the 90-day plan (Phase 4, D59–D72): coder → reviewer →

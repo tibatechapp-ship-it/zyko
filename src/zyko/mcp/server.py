@@ -167,6 +167,33 @@ ZYKO_TOOLS: list[dict[str, Any]] = [
             "required": ["description"],
         },
     },
+    {
+        "name": "fix_workspace",
+        "description": (
+            "The deterministic Arabic engine on an EXISTING project directory "
+            "(Phase 5, D73-90). Walks the given directory for Python files, "
+            "runs the 27-rule review, applies the 12 safe auto-fix paths in "
+            "rounds, then re-reviews: returns per-file scores before/after, "
+            "every finding's fate with its suggestion_ar, and skipped files "
+            "(bad encoding / broken syntax) with Arabic reasons. Dry-run only "
+            "(never writes files, never touches the network). Same guarantees "
+            "as python -m zyko.workspace run."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Path to an existing Python project directory",
+                },
+                "rounds": {
+                    "type": "integer",
+                    "description": "review->fix rounds (0 = review only, cap 3, default 1)",
+                },
+            },
+            "required": ["path"],
+        },
+    },
 ]
 
 
@@ -239,6 +266,8 @@ class ZykoMCPServer:
             text = self._auto_fix_text(arguments)
         elif name == "run_pipeline":
             text = self._run_pipeline_text(arguments)
+        elif name == "fix_workspace":
+            text = self._fix_workspace_text(arguments)
         else:
             return {
                 "content": [{"type": "text", "text": f"unknown tool '{name}'"}],
@@ -407,6 +436,37 @@ class ZykoMCPServer:
                 "ok": True,
                 "summary": pipeline_payload_summary(result),
                 "plan": result.plan,
+                "per_file": [dict(f) for f in result.per_file],
+            }
+        return json.dumps(payload, ensure_ascii=False, indent=2)
+
+    @staticmethod
+    def _fix_workspace_text(arguments: dict[str, Any]) -> str:
+        """`fix_workspace` — المحرك على مجلد قائم (تجريبية دائمًا: لا كتابة)."""
+        import json
+        from pathlib import Path
+
+        from zyko.workspace import WorkspaceEngine, workspace_payload_summary
+
+        path_arg = arguments.get("path")
+        if not isinstance(path_arg, str) or not path_arg.strip():
+            raise ZykoError("fix_workspace requires a non-empty 'path'")
+        if not Path(path_arg).exists():
+            raise ZykoError(f"fix_workspace: path does not exist: {path_arg}")
+        rounds = arguments.get("rounds", 1)
+        result = WorkspaceEngine().run(path_arg, rounds=rounds, write="none")
+        if not result.ok:
+            payload = {
+                "tool": "fix_workspace",
+                "ok": False,
+                "failed_stage": result.failed_stage,
+                "error_ar": result.error_ar,
+            }
+        else:
+            payload = {
+                "tool": "fix_workspace",
+                "ok": True,
+                "summary": workspace_payload_summary(result),
                 "per_file": [dict(f) for f in result.per_file],
             }
         return json.dumps(payload, ensure_ascii=False, indent=2)
