@@ -135,7 +135,9 @@ class AISession:
         )
 
         # ---- 2) بوابة التوليد: تفويض حرفي لمحرك الحلقة (بلا إعادة تنفيذ)
-        result = PipelineEngine().run(desc, out_path, git_init=False, rounds=self.rounds, write=write)
+        result = PipelineEngine().run(
+            desc, out_path, git_init=False, rounds=self.rounds, write=write
+        )
         receipt.min_score_after = result.min_score_after
         gen_ok = bool(result.ok) and result.min_score_after >= self.fail_under
         if gen_ok:
@@ -201,7 +203,8 @@ class AISession:
                 title_ar="بوابة خط الأساس — تسجيل",
                 ok=bool(update.ok),
                 exit_code=update.exit_code,
-                details_ar=update.verdict_ar or ("؛ ".join(update.problems) if update.problems else "تسجيل خط الأساس"),
+                details_ar=update.verdict_ar
+                or ("؛ ".join(update.problems) if update.problems else "تسجيل خط الأساس"),
                 evidence={baseline_rel: hash_file(update.baseline_path)} if update.ok else {},
             )
         )
