@@ -103,7 +103,7 @@ def apply_edits(source: str, edits: list[Edit]) -> tuple[str, list[Edit], list[t
             a = st.abs_pos(e.line, e.col)
             b = st.abs_pos(e.end_line, e.end_col)
         except Exception:  # noqa: BLE001 — موقع معطوب يُسقط قطعته ولا يُسقط التطبيق
-            continue
+            continue  # nosec B112 — التقوية المقصودة: قطعة فاسدة تُهمل بأمان
         if b < a:
             continue
         decorated.append((a, b, e))
