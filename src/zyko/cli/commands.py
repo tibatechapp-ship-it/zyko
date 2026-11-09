@@ -1012,3 +1012,14 @@ def cmd_py(args: Any) -> int:
             file=sys.stderr,
         )
         return 1
+
+
+def cmd_ai(args: Any) -> int:
+    """طبقة الذكاء (المرحلة 8) — تفويض حرفي إلى zyko.ai.cli.
+
+    كل جلسة تمرّ بوابات المصنع: اقتراح العقل عبر PII←RTL، والتوليد عبر
+    الحلقة، وخط الأساس عبر الحارس — وإيصال موقّع بالبصمات في كل حالة.
+    """
+    from zyko.ai.cli import handle_ai
+
+    return handle_ai(args)
