@@ -33,8 +33,12 @@ def test_ai_via_main_cli(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 # ------------------------------------------------------------- الجلسة
-def test_run_clean_goal_exit0_and_writes_receipt(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    rc = ai_main(["run", "--goal", CLEAN_GOAL, "--out", str(tmp_path / "proj"), "--format", "summary"])
+def test_run_clean_goal_exit0_and_writes_receipt(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    rc = ai_main(
+        ["run", "--goal", CLEAN_GOAL, "--out", str(tmp_path / "proj"), "--format", "summary"]
+    )
     assert rc == 0
     assert "مقبولة" in capsys.readouterr().out
     assert (tmp_path / "proj" / ".zyko" / "ai_receipt.json").is_file()
@@ -55,12 +59,23 @@ def test_run_pii_goal_exit1(tmp_path: Path, capsys: pytest.CaptureFixture[str]) 
 
 
 def test_run_empty_goal_exit2(tmp_path: Path) -> None:
-    assert ai_main(["run", "--goal", "   ", "--out", str(tmp_path / "x"), "--format", "summary"]) == 2
+    assert (
+        ai_main(["run", "--goal", "   ", "--out", str(tmp_path / "x"), "--format", "summary"]) == 2
+    )
 
 
 def test_run_dry_run_writes_nothing(tmp_path: Path) -> None:
     rc = ai_main(
-        ["run", "--goal", CLEAN_GOAL, "--out", str(tmp_path / "dry"), "--dry-run", "--format", "summary"]
+        [
+            "run",
+            "--goal",
+            CLEAN_GOAL,
+            "--out",
+            str(tmp_path / "dry"),
+            "--dry-run",
+            "--format",
+            "summary",
+        ]
     )
     assert rc == 0
     assert not (tmp_path / "dry").exists()
