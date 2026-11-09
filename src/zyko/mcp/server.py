@@ -194,6 +194,32 @@ ZYKO_TOOLS: list[dict[str, Any]] = [
             "required": ["path"],
         },
     },
+    {
+        "name": "baseline_check",
+        "description": (
+            "The quality guard over time (Phase 6): compares an EXISTING "
+            "project directory against its stored deterministic baseline "
+            "(.zyko/baseline.json) and reports regressions, improvements, "
+            "new/gone files, and new vs resolved findings with Arabic "
+            "verdicts. Read-only: never writes anything. If no baseline "
+            "exists yet the answer says so (run 'update' once). Same "
+            "guarantees as python -m zyko.baseline check."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Path to an existing Python project directory",
+                },
+                "baseline": {
+                    "type": "string",
+                    "description": "Optional baseline file path (default <path>/.zyko/baseline.json)",
+                },
+            },
+            "required": ["path"],
+        },
+    },
 ]
 
 
@@ -268,6 +294,8 @@ class ZykoMCPServer:
             text = self._run_pipeline_text(arguments)
         elif name == "fix_workspace":
             text = self._fix_workspace_text(arguments)
+        elif name == "baseline_check":
+            text = self._baseline_check_text(arguments)
         else:
             return {
                 "content": [{"type": "text", "text": f"unknown tool '{name}'"}],
@@ -467,6 +495,42 @@ class ZykoMCPServer:
                 "tool": "fix_workspace",
                 "ok": True,
                 "summary": workspace_payload_summary(result),
+                "per_file": [dict(f) for f in result.per_file],
+            }
+        return json.dumps(payload, ensure_ascii=False, indent=2)
+
+    @staticmethod
+    def _baseline_check_text(arguments: dict[str, Any]) -> str:
+        """`baseline_check` — حارس الجودة (قراءة فقط: لا كتابة إطلاقًا)."""
+        import json
+        from pathlib import Path
+
+        from zyko.baseline import BaselineEngine, baseline_payload_summary
+
+        path_arg = arguments.get("path")
+        if not isinstance(path_arg, str) or not path_arg.strip():
+            raise ZykoError("baseline_check requires a non-empty 'path'")
+        if not Path(path_arg).exists():
+            raise ZykoError(f"baseline_check: path does not exist: {path_arg}")
+        baseline_arg = arguments.get("baseline")
+        if baseline_arg is not None and (
+            not isinstance(baseline_arg, str) or not baseline_arg.strip()
+        ):
+            raise ZykoError("baseline_check: 'baseline' must be a non-empty string when given")
+        result = BaselineEngine().check(path_arg, baseline_path=baseline_arg)
+        if not result.ok:
+            payload = {
+                "tool": "baseline_check",
+                "ok": False,
+                "failed_stage": result.failed_stage,
+                "error_ar": result.error_ar,
+            }
+        else:
+            payload = {
+                "tool": "baseline_check",
+                "ok": True,
+                "exit_code": result.exit_code,
+                "summary": baseline_payload_summary(result),
                 "per_file": [dict(f) for f in result.per_file],
             }
         return json.dumps(payload, ensure_ascii=False, indent=2)

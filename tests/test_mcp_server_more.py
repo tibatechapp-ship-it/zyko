@@ -74,6 +74,7 @@ def test_ping_and_tools_list():
     # 0.8.1: أدوات المرحلة 0 الحتمية — 0.9.2: code_review — 0.10.0: auto_fix
     # 0.11.0: run_pipeline (الحلقة، تجريبية دائمًا)
     # 0.12.0: fix_workspace (المحرك على مجلد قائم، تجريبية دائمًا)
+    # 0.13.0: baseline_check (حارس الجودة، قراءة فقط دائمًا)
     assert names == [
         "zyko_models",
         "zyko_route",
@@ -84,6 +85,7 @@ def test_ping_and_tools_list():
         "auto_fix",
         "run_pipeline",
         "fix_workspace",
+        "baseline_check",
     ]
 
 
