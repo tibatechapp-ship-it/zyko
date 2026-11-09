@@ -61,3 +61,81 @@ def fetch_insecure(url):
 def wipe_temp():
     """ينظف مجلد المؤقتات بأمر صدف مباشر."""
     os.system("rm -rf /tmp/zyko-cache")  # P-11 R-SEC-108
+
+
+# ---------------- موجة ميزان (v0.15.0): عيوب القواعد R-SEC-109…R-SEC-119
+
+
+def read_report():
+    """يقرأ تقريرًا من مسار أدخله المستخدم مباشرة."""
+    path = input("المسار: ")
+    with open(path, encoding="utf-8") as fh:  # R-SEC-109
+        return fh.read()
+
+
+def build_context():
+    """يبني سياق SSL بلا تحقق من الشهادات."""
+    import ssl
+
+    return ssl._create_unverified_context()  # R-SEC-110
+
+
+def fetch_url(url):
+    """يجلب عنوانًا بلا مهلة زمنية."""
+    import requests
+
+    return requests.get(url)  # R-SEC-111
+
+
+def load_checkpoint(path):
+    """يحمل نقطة تفتيش نموذج بلا قيد الأوزان."""
+    import torch
+
+    return torch.load(path)  # R-SEC-112
+
+
+def load_model(name):
+    """يحمل نموذجًا يسمح بتنفيذ شيفرة بعيدة."""
+    return from_pretrained(name, trust_remote_code=True)  # R-SEC-113
+
+
+def build_template_engine():
+    """يبني محرك قوالب بلا تهريب HTML."""
+    import jinja2
+
+    return jinja2.Environment(autoescape=False)  # R-SEC-114
+
+
+def render_greeting(body):
+    """يعلن نصًا آمنًا لـ HTML دون تهريب."""
+    from django.utils.safestring import mark_safe
+
+    return mark_safe(body)  # R-SEC-115
+
+
+def extract_archive(path):
+    """يستخرج أرشيفًا بلا فلتر آمن."""
+    import tarfile
+
+    with tarfile.open(path) as tar:
+        tar.extractall()  # R-SEC-116
+
+
+def stage_file():
+    """يكتب ملفًا في مجلد مؤقت مصمت."""
+    with open("/tmp/zyko-stage.txt", "w", encoding="utf-8") as fh:  # R-SEC-117
+        return fh
+
+
+def ping_host():
+    """يستدعي مضيفًا أدخله المستخدم كسلسلة أمر خام."""
+    import subprocess
+
+    host = input("المضيف: ")
+    return subprocess.run(host, check=False)  # R-SEC-118
+
+
+def query_orders(cursor, request):
+    """ينفذ استعلامًا واردًا نصه من بيانات الطلب."""
+    q = request.args.get("q")
+    return cursor.execute(q)  # R-SEC-119

@@ -146,7 +146,7 @@ ZYKO_TOOLS: list[dict[str, Any]] = [
             "The deterministic Arabic feedback loop in one call: coder -> "
             "reviewer -> fixer (Phase 4, D59-72). Takes an Arabic project "
             "description, plans it, generates the file tree in memory, runs "
-            "the 27-rule review, applies the 12 safe auto-fix paths, then "
+            "the 38-rule review, applies the 12 safe auto-fix paths, then "
             "re-reviews: returns per-file scores before/after and every "
             "finding's fate with its suggestion_ar. Dry-run only (never "
             "writes files, never touches the network). Same guarantees as "
@@ -172,7 +172,7 @@ ZYKO_TOOLS: list[dict[str, Any]] = [
         "description": (
             "The deterministic Arabic engine on an EXISTING project directory "
             "(Phase 5, D73-90). Walks the given directory for Python files, "
-            "runs the 27-rule review, applies the 12 safe auto-fix paths in "
+            "runs the 38-rule review, applies the 12 safe auto-fix paths in "
             "rounds, then re-reviews: returns per-file scores before/after, "
             "every finding's fate with its suggestion_ar, and skipped files "
             "(bad encoding / broken syntax) with Arabic reasons. Dry-run only "

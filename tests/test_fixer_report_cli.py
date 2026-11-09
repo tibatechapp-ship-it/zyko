@@ -77,12 +77,13 @@ def test_batch_json_summary():
     assert payload["files"][0]["path"] == "r.py"
 
 
-def test_rules_table_lists_all_27():
+def test_rules_table_lists_all_38():
     t = fix_rules_table_text()
     auto_rows = sum(1 for ln in t.splitlines() if "| آلي |" in ln)
     manual_rows = sum(1 for ln in t.splitlines() if "| يدوي |" in ln)
-    assert auto_rows == 12 and manual_rows == 15
+    assert auto_rows == 12 and manual_rows == 26
     assert "R-ERR-001" in t and "R-QLT-209" in t
+    assert "R-SEC-119" in t  # موجة ميزان
 
 
 def test_severity_breakdown_arabic():

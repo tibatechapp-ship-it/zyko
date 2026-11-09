@@ -713,9 +713,11 @@ def test_lambda_in_dict_value_untouched():
 
 # ================================================== السجل والأسباب اليدوية
 def test_registry_sizes_match_reviewer():
+    from zyko.reviewer.rules import RULES
+
     assert len(AUTO_FIXABLE) == 12
-    assert len(MANUAL_RULES) == 15
-    assert len(AUTO_FIXABLE) + len(MANUAL_RULES) == 27
+    assert len(MANUAL_RULES) == 26
+    assert len(AUTO_FIXABLE) + len(MANUAL_RULES) == 38 == len(RULES)
 
 
 def test_manual_reasons_cover_all_and_arabic():

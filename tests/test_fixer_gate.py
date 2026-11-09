@@ -63,11 +63,11 @@ def test_gate_determinism_row_wording():
     assert "بايتات متطابقة" in g3.detail_ar
 
 
-def test_gate_g6_covers_27_rules():
+def test_gate_g6_covers_38_rules():
     result = run_phase3_gate()
     g6 = result.rows[5]
     assert g6.passed
-    assert "12/12" in g6.detail_ar and "15/15" in g6.detail_ar
+    assert "12/12" in g6.detail_ar and "26/26" in g6.detail_ar
 
 
 def test_gate_performance_under_default_budget():

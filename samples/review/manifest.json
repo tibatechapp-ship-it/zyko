@@ -107,6 +107,61 @@
           "id": "P-11",
           "rule": "R-SEC-108",
           "line": 63
+        },
+        {
+          "id": "P-12",
+          "rule": "R-SEC-109",
+          "line": 72
+        },
+        {
+          "id": "P-13",
+          "rule": "R-SEC-110",
+          "line": 79
+        },
+        {
+          "id": "P-14",
+          "rule": "R-SEC-111",
+          "line": 86
+        },
+        {
+          "id": "P-15",
+          "rule": "R-SEC-112",
+          "line": 93
+        },
+        {
+          "id": "P-16",
+          "rule": "R-SEC-113",
+          "line": 98
+        },
+        {
+          "id": "P-17",
+          "rule": "R-SEC-114",
+          "line": 105
+        },
+        {
+          "id": "P-18",
+          "rule": "R-SEC-115",
+          "line": 112
+        },
+        {
+          "id": "P-19",
+          "rule": "R-SEC-116",
+          "line": 120
+        },
+        {
+          "id": "P-20",
+          "rule": "R-SEC-117",
+          "line": 125
+        },
+        {
+          "id": "P-21",
+          "rule": "R-SEC-118",
+          "line": 133
+        },
+        {
+          "id": "P-22",
+          "rule": "R-SEC-119",
+          "line": 139
         }
       ]
     },

@@ -5,7 +5,7 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — Universal AI Orchestration Platform" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-1355%20passing-22c55e)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-1406%20passing-22c55e)](.github/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-84cc16)](.github/workflows/ci.yml)
 [![Security](https://img.shields.io/badge/bandit-0%20findings-22c55e?logo=shield&logoColor=white)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
@@ -21,9 +21,35 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.14.0** · محرك برمجة عربي حتمي: **توليد ← مراجعة ← إصلاح ← حارس — من بوابة واحدة، وعلى أي مشروع قائم على قرصك** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** · **RAG** محلي بلا اعتماديات
+**النسخة 0.15.0** · محرك برمجة عربي حتمي: **توليد ← مراجعة ← إصلاح ← حارس — من بوابة واحدة، وعلى أي مشروع قائم على قرصك** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** · **RAG** محلي بلا اعتماديات
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
+
+---
+
+## ما الجديد في 0.15.0؟ (موجة ميزان — المُراجِع يكبر إلى 38 قاعدة مع تحليل تدفق البيانات)
+
+استوعب محرك المراجعة (المرحلة 2) القواعد الأمنية المُثبتة ميدانيًا من
+مشروع **ميزان** (المستودع الشقيق `MIZAN`)، أعيد بناؤها بأسلوب ZYKO:
+AST خالص، حتمية بايتية، عربية أولًا: **11 قاعدة أمنية جديدة
+(R-SEC-109…119)** وتقوية قاعدة واحدة (R-SEC-102). ثلاث قواعد منها
+(اجتياز المسارات، الإدخال إلى عملية، الطلب إلى SQL) مدعومة بوحدة
+**تحليل تدفق البيانات** الجديدة (`zyko.reviewer.taint`): عائلتا مصادر
+مُقاستان (`input()`/`sys.argv` وبيانات `request.*`) تنتشران عبر
+الإسنادات حتى الثبات، والقاعدة لا تُطلق إلا على **مسار مصدر-مضخة
+مؤكد** — لا تخمين شكلي. وبلا شبكة وبلا نموذج وبلا عشوائية — محرك
+التدفق stdlib AST خالص.
+
+- **من ميزان بلا إنذارات كاذبه**: كل قاعدة تحمل إصلاحات FP المُقاسة
+  في حملة ميزان على 50 مستودعًا حقيقيًا: استثناء `zipfile` من
+  `extractall`، لا إزعاج `timeout` على الجلسات، عناصر IN النائبة لا
+  تُنذر، والتوثيق لا يُكشف لمسارات `/tmp`.
+- **البوابات أقوى**: بوابة المرحلة 2 الآن **40/40 عيبًا مزروعًا** و
+  **38/38 قاعدة حية** (6/6)، وبوابة المرحلة 3 تغطي السجل الكامل
+  (12 آلي + 26 يدوي = 38) — 6/6.
+- **51 اختبارًا جديدًا** في `tests/test_reviewer_rules_mizan.py`:
+  إيجابي/سلبي لكل قاعدة، وحدات taint، وعقد عدم التكرار مع R-SEC-104 —
+  **1406 اختبارًا ناجحًا**.
 
 ---
 
@@ -111,7 +137,7 @@ python -m zyko.pipeline run --description "أريد قائمة مهام يومي
 
 أمر واحد يربط المحركات الثلاثة الحتمية — **توليد ← مراجعة ← إصلاح** —
 ويعيد **مشروعًا مُصلَحًا** لا مشروعًا خامًا: مخطط من الوصف العربي، توليد
-في الذاكرة، مراجعة بـ27 قاعدة، إصلاح بـ12 مسارًا آمنًا (كل إصلاح مُتحقق
+في الذاكرة، مراجعة بـ38 قاعدة، إصلاح بـ12 مسارًا آمنًا (كل إصلاح مُتحقق
 منه بإعادة تحليل `ast` قبل الكتابة)، ثم إعادة فحص تُظهر تحسّن كل ملف.
 
 - **درجات قبل/بعد لكل ملف**: مثال حقيقي من بوابة المرحلة — `core.py` للقوالب 68←96 و78←96، بلا تراجع في أي ملف أبدًا (بوابة G4).
@@ -123,7 +149,7 @@ python -m zyko.pipeline run --description "أريد قائمة مهام يومي
 وأيضًا من هذا المحرك (المرحلتان 2 و3): **`zyko.reviewer`** — مراجعة عربية بلا هلوسة، كل ملاحظة موقعة بسطر وعمود ومعرّف قاعدة؛ و**`zyko.fixer`** — إصلاح آمن يرفض كتابة أي نص لم يجتز إعادة التحليل.
 
 ```bash
-python -m zyko.reviewer review --path ./مشروعي --format json  # 27 قاعدة، درجة 0–100
+python -m zyko.reviewer review --path ./مشروعي --format json  # 38 قاعدة، درجة 0–100
 python -m zyko.fixer fix --path ./مشروعي --write              # 12 مسارًا آمنًا
 python -m zyko.pipeline gate                                  # بوابة الحلقة كاملة
 ```
@@ -645,7 +671,7 @@ zyko info   # kernel backend: rust
 
 ```bash
 pip install -e .[dev]
-pytest -q            # 1355 اختبارًا: المحرك البرمجي (توليد/مراجعة/إصلاح/حلقة/مساحة العمل/الحارس/بوابة المصنع)، توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض، مخرجات منظمة، تتبّع
+pytest -q            # 1406 اختبارًا: المحرك البرمجي (توليد/مراجعة/إصلاح/حلقة/مساحة العمل/الحارس/بوابة المصنع)، توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض، مخرجات منظمة، تتبّع
 pytest --cov=src/zyko   # تغطية 95%
 ruff check src tests && ruff format --check src tests
 make security        # bandit + pip-audit (نفس بوابة CI)
@@ -680,7 +706,29 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.14.0** · The deterministic Arabic coding engine — **generate → review → fix → guard, from one gate, and on any existing project on your disk** · multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** · **local RAG with zero dependencies** · **sequential multi-agent crews** · **governed multi-user gateway** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.15.0** · The deterministic Arabic coding engine — **generate → review → fix → guard, from one gate, and on any existing project on your disk** · multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** · **local RAG with zero dependencies** · **sequential multi-agent crews** · **governed multi-user gateway** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.15.0 — the MIZAN wave: the reviewer grows to 38 rules with dataflow taint analysis
+
+The reviewer engine (Phase 2) absorbed the field-proven security rules
+from the sibling **MIZAN** project, reimplemented in ZYKO's style:
+pure AST, byte-deterministic, Arabic-first. **11 new security rules
+(R-SEC-109…119)** plus one strengthened rule (R-SEC-102). Three of
+them are backed by the new **dataflow taint module**
+(`zyko.reviewer.taint`): two measured source families propagate to a
+fixpoint and the rule fires only on a confirmed source-to-sink path.
+Still zero network, zero model, zero randomness.
+
+- **MIZAN's field FP fixes come along**: the `zipfile` carve-out on
+  `extractall`, no `timeout` nagging on session receivers,
+  placeholder-builder SQL idioms stay silent, docstrings never flagged
+  for `/tmp`.
+- **Stronger gates**: Phase-2 gate now measures **40/40 planted
+  defects** and **38/38 live rules** (6/6); the Phase-3 gate covers the
+  full registry (12 auto + 26 manual = 38) — 6/6.
+- **51 new tests** — **1406 tests passing**.
+
+---
 
 ## What's new in 0.14.0 — Phase 7: `zyko.factory`, the unified factory gate
 

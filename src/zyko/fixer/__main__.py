@@ -35,7 +35,7 @@ EXIT_USAGE = 2
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m zyko.fixer",
-        description="مُصلِح الشيفرة الحتمي عربيًا — 12 مسارًا آمنًا فوق 27 قاعدة، بلا نموذج وبلا شبكة",
+        description="مُصلِح الشيفرة الحتمي عربيًا — 12 مسارًا آمنًا فوق 38 قاعدة، بلا نموذج وبلا شبكة",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

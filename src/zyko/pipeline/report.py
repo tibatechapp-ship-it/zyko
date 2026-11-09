@@ -104,7 +104,7 @@ def stages_table_text() -> str:
         (
             "reviewer",
             "المراجعة",
-            "27 قاعدة AST ⇒ درجة 0–100 وملاحظات موقعها دقيق وكلها بـ suggestion_ar",
+            "38 قاعدة AST ⇒ درجة 0–100 وملاحظات موقعها دقيق وكلها بـ suggestion_ar",
         ),
         (
             "fixer",

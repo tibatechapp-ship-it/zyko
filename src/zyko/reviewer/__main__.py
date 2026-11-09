@@ -34,7 +34,7 @@ EXIT_USAGE = 2
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m zyko.reviewer",
-        description="مراجع الشيفرة الحتمي عربيًا — 27 قاعدة AST بلا نموذج وبلا شبكة",
+        description="مراجع الشيفرة الحتمي عربيًا — 38 قاعدة AST بلا نموذج وبلا شبكة",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

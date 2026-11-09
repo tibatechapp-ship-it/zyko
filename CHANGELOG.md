@@ -1,5 +1,66 @@
 # Changelog
 
+## 0.15.0 — The MIZAN wave: `zyko.reviewer` grows to 38 rules with dataflow taint analysis
+
+The reviewer engine (Phase 2) absorbed the field-proven security rules
+from the **MIZAN** project (sibling repository `tibatechapp-ship-it/MIZAN`),
+reimplemented in ZYKO's pure-AST, byte-deterministic, Arabic-first style:
+**11 new security rules (R-SEC-109…R-SEC-119)** + one strengthened rule.
+Three of them (path-traversal, input-to-subprocess, request-to-sql) are
+backed by a new **dataflow taint module** (`zyko.reviewer.taint`): two
+measured source families (`input()`/`sys.argv` and Flask/Django
+`request.*` data attributes) propagate through assignments to a
+fixpoint, and the rule fires **only on a confirmed source-to-sink
+path** — no shape guessing. Every rule carries MIZAN's field-measured
+false-positive fixes: the `zipfile` carve-out on `extractall`, no
+`timeout` nagging on session receivers, placeholder-builder
+interpolation kept out of SQL alarms, docstrings never flagged for
+`/tmp`. Still zero network, zero model, zero randomness — the taint
+engine is stdlib AST only.
+
+### Added
+- **`zyko.reviewer.taint`** — single-file, module-scope fixpoint taint
+  propagation (input sources: `input()`, `sys.argv`; request sources:
+  `request.args/form/values/json/data/GET/POST/files/headers/cookies`
+  chains). Deterministic and pure; documented PoC limits (no
+  function-boundary isolation, no interprocedural flow).
+- **New security rules** (IDs, severities, and semantics ported from
+  MIZAN's `analyzer.py`, each with positive+negative test coverage):
+  - `R-SEC-109` (medium) — `open()` on a path tainted by `input()`/`sys.argv`
+  - `R-SEC-110` (high) — `ssl._create_unverified_context()` (qualified or bare-imported)
+  - `R-SEC-111` (low) — `requests.*` HTTP verbs without `timeout=` (sessions out of scope, documented)
+  - `R-SEC-112` (high) — `torch.load` without `weights_only=True`
+  - `R-SEC-113` (high) — `trust_remote_code=True` anywhere
+  - `R-SEC-114` (high) — `autoescape=False` anywhere
+  - `R-SEC-115` (medium) — `mark_safe(...)` calls
+  - `R-SEC-116` (high) — `extractall()` without a PEP 706 safe filter; `zipfile` receivers exempt (field-measured carve-out)
+  - `R-SEC-117` (low) — hardcoded `/tmp` and `/var/tmp` literals in value positions (docstrings excluded)
+  - `R-SEC-118` (high) — taint-confirmed `input()`/`sys.argv` → process sink (`subprocess.*`, `os.system/popen`, bare-imported)
+  - `R-SEC-119` (high) — taint-confirmed `request.*` → `execute()/executemany()/executescript()`; no duplicate finding where the structural R-SEC-104 already covers the shape
+- **R-SEC-102 strengthened** — unsafe deserialization now covers
+  `cPickle`, `marshal`, `dill`, and `shelve.open` (deserializes values
+  via pickle on access), matching MIZAN's measured family.
+- **Fixer registry** — the 11 new rules registered as manual paths with
+  explicit Arabic reasons (`12 آلي + 26 يدوي = 38`); the fixer gate's
+  no-dead-path check covers all 38.
+
+### Samples & gates
+- `samples/review/bad_security.py` plants the 11 new defects
+  (P-12…P-22); the Phase-2 gate now measures **40/40 planted defects**
+  and **38/38 live rules** (no dead rule) — 6/6 gates pass.
+- `samples/fix/bad_security.py` carries the same wave so every new
+  manual rule surfaces with its suggested fix; the Phase-3 gate is
+  **6/6** (`12/12` auto paths, `26/26` manual rules).
+
+### Tests
+- 51 new tests (`tests/test_reviewer_rules_mizan.py`): registry shape,
+  taint engine units (sources, fixpoint chains, for-targets,
+  determinism), positive+negative pairs for every new rule carrying
+  MIZAN's field FP fixes, the R-SEC-104/R-SEC-119 no-duplicate
+  contract (and its DML-free f-string coverage gap), R-SEC-102 family
+  extension, and byte determinism over a mixed-wave source —
+  **1406 tests passing** (was 1355).
+
 ## 0.14.0 — Phase 7 of the coding engine: `zyko.factory` — the unified factory gate + HTML panels for every engine
 
 The engines were each complete behind their own door; this release

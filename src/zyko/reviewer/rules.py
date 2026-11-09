@@ -11,6 +11,13 @@
   quality        — الجودة
 
 الخطورة: critical > high > medium > low > info، ولكل منها وزن يُخصم من 100.
+
+موجة ميزان (v0.15.0): 11 قاعدة أمنية جديدة (R-SEC-109…119) منقولة بإعادة
+بناء من محرك ميزان المُثبت ميدانيًا (حملة 50 مستودعًا حقيقيًا)، وقواعد
+R-SEC-118/R-SEC-119/R-SEC-109 تعتمد على تحليل تدفق البيانات في taint.py.
+كل قاعدة منها تحمل إصلاحات الإنذارات الكاذبة المُقاسة ميدانيًا في ميزان:
+استثناء zipfile من tarfile-extractall، وعدم إطلاق request-without-timeout
+على جلسات، وعدم كشف قيم العناصر النائبة في استعلامات IN الديناميكية.
 """
 
 from __future__ import annotations
@@ -20,6 +27,8 @@ import re
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Callable
+
+from zyko.reviewer import taint as _taint
 
 # --------------------------------------------------------------- التصنيفات
 CATEGORIES: tuple[str, ...] = ("error_handling", "security", "quality")
@@ -349,6 +358,11 @@ def _eval_exec(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     return out
 
 
+# عائلات إزالة التسلسل الخطرة (موجة ميزان): كلها تنفذ شيفرة عند التحميل،
+# وshelve.open يزيل تسلسل القيم عبر pickle عند الوصول إليها.
+_UNSAFE_DESERIALIZERS = frozenset({"pickle", "_pickle", "cPickle", "marshal", "dill"})
+
+
 def _pickle_load(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     # استيراد مباشر: from pickle import loads
     direct: set[str] = set()
@@ -359,9 +373,13 @@ def _pickle_load(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     for n in ast.walk(tree):
         if not isinstance(n, ast.Call):
             continue
-        if isinstance(n.func, ast.Attribute) and n.func.attr in ("load", "loads"):
-            if _name_of(n.func.value) in ("pickle", "_pickle"):
+        if isinstance(n.func, ast.Attribute):
+            root = _name_of(n.func.value)
+            if n.func.attr in ("load", "loads") and root in _UNSAFE_DESERIALIZERS:
                 out.append((n.lineno, n.col_offset, _name_of(n.func)))
+            # موجة ميزان: shelve.open يزيل تسلسل القيم عبر pickle عند القراءة
+            elif n.func.attr == "open" and root == "shelve":
+                out.append((n.lineno, n.col_offset, "shelve.open"))
         elif (
             isinstance(n.func, ast.Name) and n.func.id in ("load", "loads") and n.func.id in direct
         ):
@@ -497,6 +515,320 @@ def _os_exec(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
             and _name_of(n.func.value) == "os"
         ):
             out.append((n.lineno, n.col_offset, f"os.{n.func.attr}"))
+    return out
+
+
+# ------------------------------------------ قواعد الأمن — موجة ميزان (R-SEC-109+)
+def _collect_zipfile_vars(tree: ast.Module) -> set[str]:
+    """أسماء مرتبطة بنسخ zipfile.* (استثناء قواعد B202): أهداف الإسناد
+    وروابط with — قوس أمان مُقاس ميدانيًا في ميزان لأن اجتياز روابط
+    symlinks الخاص بـ tar لا ينطبق على صيغة zip."""
+    names: set[str] = set()
+    for n in ast.walk(tree):
+        if isinstance(n, (ast.With, ast.AsyncWith)):
+            for item in n.items:
+                expr, optional = item.context_expr, item.optional_vars
+                if (
+                    isinstance(expr, ast.Call)
+                    and isinstance(expr.func, ast.Attribute)
+                    and _name_of(expr.func) == "zipfile.ZipFile"
+                    and isinstance(optional, ast.Name)
+                ):
+                    names.add(optional.id)
+        elif isinstance(n, ast.Assign) and isinstance(n.value, ast.Call):
+            func = n.value.func
+            if isinstance(func, ast.Attribute) and _name_of(func) == "zipfile.ZipFile":
+                for target in n.targets:
+                    if isinstance(target, ast.Name):
+                        names.add(target.id)
+    return names
+
+
+def _path_traversal(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
+    """R-SEC-109 (path-traversal في ميزان): فتح ملف بمسار منسل من
+    input()/sys.argv — تدفق بيانات مؤكد، لا تخمين بنيوي."""
+    tainted = _taint.propagate(tree, _taint.is_input_source)
+    out: list[Anchor] = []
+    for n in ast.walk(tree):
+        if (
+            isinstance(n, ast.Call)
+            and isinstance(n.func, ast.Name)
+            and n.func.id == "open"
+            and n.args
+            and _taint.expr_tainted(n.args[0], tainted, _taint.is_input_source)
+        ):
+            out.append((n.lineno, n.col_offset, _name_of(n.args[0])[:60] or None))
+    return out
+
+
+def _ssl_unverified_context(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
+    """R-SEC-110 (B323 في ميزان): ssl._create_unverified_context() يعطل
+    التحقق من الشهادات للعملية كلها — مؤهلًا أو مستوردًا بالاسم."""
+    direct = False
+    for n in ast.walk(tree):
+        if isinstance(n, ast.ImportFrom) and n.module == "ssl":
+            direct = direct or any(a.name == "_create_unverified_context" for a in n.names)
+    out: list[Anchor] = []
+    for n in ast.walk(tree):
+        if not isinstance(n, ast.Call):
+            continue
+        if isinstance(n.func, ast.Name) and n.func.id == "_create_unverified_context" and direct:
+            out.append((n.lineno, n.col_offset, None))
+        elif (
+            isinstance(n.func, ast.Attribute)
+            and n.func.attr == "_create_unverified_context"
+            and _name_of(n.func.value) == "ssl"
+        ):
+            out.append((n.lineno, n.col_offset, None))
+    return out
+
+
+_HTTP_VERB_METHODS = frozenset(
+    {"get", "post", "put", "patch", "delete", "head", "options", "request"}
+)
+
+
+def _request_without_timeout(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
+    """R-SEC-111 (B113 في ميزان): نداءات requests.<فعل HTTP> بلا وسيط
+    timeout. أضيق من Bandit عمدًا: مستقبلات الجلسات (session.get) خارج
+    النطاق — انحراف موثق يبقي القاعدة بلا إنذارات كاذبة."""
+    out: list[Anchor] = []
+    for n in ast.walk(tree):
+        if not isinstance(n, ast.Call) or not isinstance(n.func, ast.Attribute):
+            continue
+        if n.func.attr not in _HTTP_VERB_METHODS:
+            continue
+        if _name_of(n.func.value) != "requests":
+            continue
+        if any(kw.arg == "timeout" for kw in n.keywords):
+            continue
+        out.append((n.lineno, n.col_offset, f"requests.{n.func.attr}"))
+    return out
+
+
+def _torch_unsafe_load(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
+    """R-SEC-112 (B614 في ميزان): torch.load يزيل التسلسل عبر pickle ما لم
+    يُصرَّح بـ weights_only=True (تخفيف PyTorch)."""
+    out: list[Anchor] = []
+    for n in ast.walk(tree):
+        if not (
+            isinstance(n, ast.Call)
+            and isinstance(n.func, ast.Attribute)
+            and n.func.attr == "load"
+            and _name_of(n.func.value) == "torch"
+        ):
+            continue
+        safe = any(
+            kw.arg == "weights_only"
+            and isinstance(kw.value, ast.Constant)
+            and kw.value.value is True
+            for kw in n.keywords
+        )
+        if not safe:
+            out.append((n.lineno, n.col_offset, None))
+    return out
+
+
+def _hf_trust_remote_code(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
+    """R-SEC-113 (B615 في ميزان): أي نداء يفعّل trust_remote_code=True
+    ينفذ شيفرة منسلة من مستودع نموذج بعيد."""
+    out: list[Anchor] = []
+    for n in ast.walk(tree):
+        if not isinstance(n, ast.Call):
+            continue
+        if any(
+            kw.arg == "trust_remote_code"
+            and isinstance(kw.value, ast.Constant)
+            and kw.value.value is True
+            for kw in n.keywords
+        ):
+            out.append((n.lineno, n.col_offset, _name_of(n.func)[:60] or None))
+    return out
+
+
+def _jinja2_autoescape_false(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
+    """R-SEC-114 (B701 في ميزان): autoescape=False يعطل تهريب HTML —
+    باب هجمات XSS (القاعدة على شكل الوسيط أينما ظهر)."""
+    out: list[Anchor] = []
+    for n in ast.walk(tree):
+        if not isinstance(n, ast.Call):
+            continue
+        if any(
+            kw.arg == "autoescape"
+            and isinstance(kw.value, ast.Constant)
+            and kw.value.value is False
+            for kw in n.keywords
+        ):
+            out.append((n.lineno, n.col_offset, _name_of(n.func)[:60] or None))
+    return out
+
+
+def _django_mark_safe(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
+    """R-SEC-115 (B703 في ميزان): mark_safe يعلن المحتوى آمنًا لـ HTML
+    دون تهريب — راجع مسار المدخل."""
+    out: list[Anchor] = []
+    for n in ast.walk(tree):
+        if not isinstance(n, ast.Call):
+            continue
+        if (isinstance(n.func, ast.Name) and n.func.id == "mark_safe") or (
+            isinstance(n.func, ast.Attribute) and n.func.attr == "mark_safe"
+        ):
+            out.append((n.lineno, n.col_offset, _name_of(n.func)[:60]))
+    return out
+
+
+_TARFILE_SAFE_FILTERS = frozenset({"data", "tar"})
+
+
+def _tarfile_extractall(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
+    """R-SEC-116 (B202 في ميزان): extractall بلا فلتر آمن (PEP 706) قد
+    يكتب خارج المجلد الهدف (اجتياز مسارات). مستقبلات zipfile مستثناة —
+    اجتياز روابط symlink الخاص بـ tar لا ينطبق على صيغة zip."""
+    zipfile_vars = _collect_zipfile_vars(tree)
+    out: list[Anchor] = []
+    for n in ast.walk(tree):
+        if not (
+            isinstance(n, ast.Call)
+            and isinstance(n.func, ast.Attribute)
+            and n.func.attr == "extractall"
+        ):
+            continue
+        filter_safe = any(
+            kw.arg == "filter"
+            and isinstance(kw.value, ast.Constant)
+            and isinstance(kw.value.value, str)
+            and kw.value.value in _TARFILE_SAFE_FILTERS
+            for kw in n.keywords
+        )
+        receiver_root = _taint.root_name(n.func.value)
+        direct_zip_call = (
+            isinstance(n.func.value, ast.Call) and _taint.root_name(n.func.value.func) == "zipfile"
+        )
+        if (
+            receiver_root not in ({"zipfile"} | zipfile_vars)
+            and not direct_zip_call
+            and not filter_safe
+        ):
+            out.append((n.lineno, n.col_offset, receiver_root or None))
+    return out
+
+
+def _check_tmp_value(node: ast.AST, value: ast.expr | str | None, out: list[Anchor]) -> None:
+    """فحص قيمة واحدة: نص /tmp أو /var/tmp في موضع قيمة، بمستوى تداخل
+    واحد داخل قوائم/صفوف/مجموعات (حدود المقاطع آمنة)."""
+    if isinstance(value, ast.Constant):
+        value = value.value
+    if isinstance(value, str) and (
+        value == "/tmp"
+        or value.startswith("/tmp/")
+        or value == "/var/tmp"
+        or value.startswith("/var/tmp/")
+    ):
+        out.append((node.lineno, node.col_offset, value[:40]))
+    elif isinstance(value, (ast.Tuple, ast.List, ast.Set)):
+        for elt in value.elts:
+            if isinstance(elt, ast.Constant):
+                _check_tmp_value(node, elt.value, out)
+
+
+def _hardcoded_tmp_path(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
+    """R-SEC-117 (B108 في ميزان): مسارات /tmp و/var/tmp مصمتة في مواضع
+    قيم الاستدعاءات والإسناد — نصوص التوثيق والتعبيرات العارية لا تُكشف
+    (انحراف دقة موثق)."""
+    out: list[Anchor] = []
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Call):
+            for arg in n.args:
+                _check_tmp_value(n, arg, out)
+            for kw in n.keywords:
+                _check_tmp_value(n, kw.value, out)
+        elif isinstance(n, ast.Assign):
+            _check_tmp_value(n, n.value, out)
+        elif isinstance(n, ast.AnnAssign) and n.value is not None:
+            _check_tmp_value(n, n.value, out)
+    return out
+
+
+_PROCESS_SINK_METHODS = frozenset(
+    {"run", "Popen", "call", "check_call", "check_output", "getoutput", "getstatusoutput"}
+)
+
+
+def _input_to_subprocess(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
+    """R-SEC-118 (input-to-subprocess في ميزان): نص أمر منسل من input()
+    أو sys.argv يصل مضخة عملية — تدفق مؤكد لا شكلي. يغطي subprocess.*
+    المؤهل وأسماء os.system/os.popen المستوردة بالاسم."""
+    bare_sinks: set[str] = set()
+    for n in ast.walk(tree):
+        if isinstance(n, ast.ImportFrom) and n.module in ("os", "subprocess"):
+            bare_sinks.update(a.name for a in n.names if a.name in ("system", "popen"))
+    tainted = _taint.propagate(tree, _taint.is_input_source)
+    out: list[Anchor] = []
+    for n in ast.walk(tree):
+        if not isinstance(n, ast.Call):
+            continue
+        is_sink = False
+        if isinstance(n.func, ast.Attribute):
+            if n.func.attr in _PROCESS_SINK_METHODS and _name_of(n.func.value) == "subprocess":
+                is_sink = True
+            elif n.func.attr in ("system", "popen") and _name_of(n.func.value) == "os":
+                is_sink = True
+        elif (
+            isinstance(n.func, ast.Name)
+            and n.func.id in ("system", "popen")
+            and n.func.id in bare_sinks
+        ):
+            is_sink = True
+        if not is_sink:
+            continue
+        if any(_taint.expr_tainted(a, tainted, _taint.is_input_source) for a in n.args):
+            out.append((n.lineno, n.col_offset, _name_of(n.func)[:60] or None))
+    return out
+
+
+def _sql104_covers(arg0: ast.expr) -> bool:
+    """صحيح إذا كان شكل وسيط الاستعلام مغطى أصلًا بـ R-SEC-104 البنيوي
+    (الدمج بـ % أو + أو f-string يحوي DML في جزئه الحرفي) — الهدف عدم
+    إصدار ملاحظة مكررة على السطر نفسه، لا تفويت تغطية."""
+    if isinstance(arg0, ast.JoinedStr):
+        literal = "".join(p.value for p in arg0.values if isinstance(p, ast.Constant))
+        return bool(_SQL_DML_RE.search(literal))
+    if (
+        isinstance(arg0, ast.BinOp)
+        and isinstance(arg0.op, ast.Mod)
+        and isinstance(arg0.left, ast.Constant)
+    ):
+        return bool(_SQL_DML_RE.search(str(arg0.left.value)))
+    if (
+        isinstance(arg0, ast.BinOp)
+        and isinstance(arg0.op, ast.Add)
+        and isinstance(arg0.left, ast.Constant)
+        and not isinstance(arg0.right, ast.Constant)
+    ):
+        return bool(_SQL_DML_RE.search(str(arg0.left.value)))
+    return False
+
+
+def _request_to_sql(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
+    """R-SEC-119 (request-to-sql في ميزان): نص استعلام ملوث ببيانات
+    request.* يصل execute()/executemany()/executescript() — تدفق مؤكد.
+    لا يُطلق على الأشكال التي تغطيها R-SEC-104 أصلًا — لا ملاحظة مكررة
+    على السطر نفسه."""
+    tainted = _taint.propagate(tree, _taint.is_request_source)
+    out: list[Anchor] = []
+    for n in ast.walk(tree):
+        if not (
+            isinstance(n, ast.Call)
+            and isinstance(n.func, ast.Attribute)
+            and n.func.attr in ("execute", "executemany", "executescript")
+            and n.args
+        ):
+            continue
+        arg0 = n.args[0]
+        if _sql104_covers(arg0):
+            continue
+        if _taint.expr_tainted(arg0, tainted, _taint.is_request_source):
+            out.append((n.lineno, n.col_offset, _name_of(n.func)[:60] or None))
     return out
 
 
@@ -814,6 +1146,95 @@ RULES: tuple[Rule, ...] = (
         "استدعاء os.system أو os.popen ينفّذ أوامر النظام مباشرة",
         "استخدم subprocess.run بقائمة وسيطات وبدون shell",
         _os_exec,
+    ),
+    # ---- الأمن — موجة ميزان (v0.15.0): إعادة بناء لقواعد مُثبتة ميدانيًا
+    _rule(
+        "R-SEC-109",
+        "medium",
+        "security",
+        "فتح ملف بمسار منسل من input() أو sys.argv يفتح باب اجتياز المسارات",
+        "تحقق من المسار وطبّعه مقابل جذر مسموح قبل الفتح",
+        _path_traversal,
+    ),
+    _rule(
+        "R-SEC-110",
+        "high",
+        "security",
+        "ssl._create_unverified_context يعطل التحقق من الشهادات للعملية كلها",
+        "استخدم ssl.create_default_context وأضف CA موثوقًا للشهادات الداخلية",
+        _ssl_unverified_context,
+    ),
+    _rule(
+        "R-SEC-111",
+        "low",
+        "security",
+        "طلب HTTP عبر requests بلا timeout قد يعلّق التطبيق إلى ما لا نهاية",
+        "أضف timeout=(اتصال، قراءة) إلى كل نداءات الشبكة",
+        _request_without_timeout,
+    ),
+    _rule(
+        "R-SEC-112",
+        "high",
+        "security",
+        "torch.load يزيل التسلسل عبر pickle وقد ينفذ شيفرة من نقطة تفتيش غير موثوقة",
+        "أضف weights_only=True لتحميل الأوزان فقط",
+        _torch_unsafe_load,
+    ),
+    _rule(
+        "R-SEC-113",
+        "high",
+        "security",
+        "trust_remote_code=True ينفذ شيفرة منسلة من مستودع نموذج بعيد",
+        "أزل الخيار أو راجع شيفرة النموذج وثبّت نسخة مفحوصة محليًا",
+        _hf_trust_remote_code,
+    ),
+    _rule(
+        "R-SEC-114",
+        "high",
+        "security",
+        "autoescape=False يعطل تهريب HTML ويفتح باب هجمات XSS",
+        "أبقِ autoescape مفعّلًا أو استخدم select_autoescape",
+        _jinja2_autoescape_false,
+    ),
+    _rule(
+        "R-SEC-115",
+        "medium",
+        "security",
+        "mark_safe يعلن المحتوى آمنًا لـ HTML دون تهريب وقد يمرر XSS",
+        "راجع مسار المدخل وفضّل Escape أو القوالب ذات التهريب التلقائي",
+        _django_mark_safe,
+    ),
+    _rule(
+        "R-SEC-116",
+        "high",
+        "security",
+        "extractall بلا فلتر آمن قد يكتب خارج المجلد الهدف عبر روابط symlink",
+        "مرّر filter='data' (PEP 706) أو افحص الأعضاء قبل الاستخراج",
+        _tarfile_extractall,
+    ),
+    _rule(
+        "R-SEC-117",
+        "low",
+        "security",
+        "مسار /tmp مصمت يدعو لسباقات symlink وأسماء ملفات قابلة للتخمين",
+        "استخدم وحدة tempfile لإنشاء مسارات مؤقتة آمنة",
+        _hardcoded_tmp_path,
+    ),
+    _rule(
+        "R-SEC-118",
+        "high",
+        "security",
+        "نص أمر منسل من input() أو sys.argv يصل مضخة عملية — حقن أوامر مؤكد بالتدفق",
+        "فكّك الأمر إلى قائمة وسائط ثابتة ولا تمرر إدخال المستخدم خامًا",
+        _input_to_subprocess,
+    ),
+    _rule(
+        "R-SEC-119",
+        "high",
+        "security",
+        "استعلام يصل execute() من بيانات request.* — حقن SQL مؤكد بتدفق البيانات",
+        "استخدم استعلامات معاملات ومرر قيم الطلب كوسائط لا كنص استعلام",
+        _request_to_sql,
     ),
     # ---- الجودة
     _rule(

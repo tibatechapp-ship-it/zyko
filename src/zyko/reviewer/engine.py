@@ -98,7 +98,7 @@ class ReviewResult:
 
 
 class ReviewEngine:
-    """محرك المراجعة الحتمي: 27 قاعدة AST، بلا نموذج وبلا شبكة."""
+    """محرك المراجعة الحتمي: 38 قاعدة AST، بلا نموذج وبلا شبكة."""
 
     def __init__(self, cfg: RuleConfig | None = None, *, rules: tuple | None = None) -> None:
         self.cfg = cfg or RuleConfig()

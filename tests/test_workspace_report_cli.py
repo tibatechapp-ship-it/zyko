@@ -110,7 +110,7 @@ def test_payload_summary_fields(tmp_path):
 def test_promise_text_mentions_guarantees():
     text = workspace_promise_text()
     assert "zyko.workspace/1" in text
-    assert "27 قاعدة" in text and "12 مسارًا" in text
+    assert "38 قاعدة" in text and "12 مسارًا" in text
     assert "لا شيء افتراضيًا" in text
 
 

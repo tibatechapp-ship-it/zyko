@@ -76,7 +76,7 @@ def test_manifest_files_exist_and_rules_known():
         for planted in entry["planted"]:
             assert planted["rule"] in RULES_BY_ID, planted
             total_planted += 1
-    assert total_planted == 29
+    assert total_planted == 40
 
 
 def test_manifest_planted_lines_inside_files():
