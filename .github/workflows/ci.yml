@@ -310,3 +310,37 @@ jobs:
           assert any(f['path'] == 'tool.py' and f['status'] == 'regressed' for f in d['per_file'])
           print('regression payload OK — file named, findings counted')
           "
+
+  # ------------------------------------------------------------------
+  # المرحلة 7 — بوابة المصنع الموحدة: كل محركات الحتمية من باب واحد
+  # ------------------------------------------------------------------
+  phase7-factory:
+    name: phase-7 factory (unified gate — 24 gates over engines 3+4+5+6, HTML panels, delegation parity)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e .[dev] pytest-cov
+      - name: Factory coverage gate (≥85%)
+        run: >
+          pytest tests/test_factory_cli.py tests/test_factory_html.py
+          --cov=zyko.factory --cov-report=term --cov-fail-under=85 -q
+      - name: Phase-7 gate — the unified gate runs all four phase gates (24 gates) and signs one verdict
+        run: python -m zyko.factory gates
+      - name: Factory CLI — map, workspace with HTML panel, baseline delegation, escape guarantee
+        run: |
+          rm -rf /tmp/p7-ci && mkdir -p /tmp/p7-ci
+          zyko factory | grep -q "المصنع ZYKO" && echo "factory map OK"
+          cp -r samples/workspace/small_tool /tmp/p7-ci/proj
+          zyko factory workspace --src /tmp/p7-ci/proj --fail-under 0 --format summary --html /tmp/p7-ci/panel.html
+          python -c "
+          h = open('/tmp/p7-ci/panel.html', encoding='utf-8').read()
+          assert h.startswith('<!doctype html>') and 'dir=\"rtl\"' in h and '<script' not in h.lower()
+          print('factory HTML panel OK — doctype, RTL, scriptless')
+          "
+          python -m zyko.baseline update --src /tmp/p7-ci/proj --format summary > /dev/null
+          zyko factory baseline check --src /tmp/p7-ci/proj --format summary
+          echo "factory baseline delegation OK"
