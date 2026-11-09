@@ -212,6 +212,29 @@ plan*, everything else is deterministic and byte-reproducible.
 - **CI** — new `phase1-coder` job: zyko.coder coverage ≥85% (90%), the
   full 10-description gate, and a `zyko new` end-to-end smoke.
 
+## 0.9.0 — DeepSeek V4 models: 1M context in the router catalog
+
+Platform-track release between 0.8.2 and 0.9.1, outside the 90-day engine
+plan. It shipped with a git tag and a GitHub release but never received a
+CHANGELOG section — added retroactively during the repository
+tag-organization pass (November 2026), with content taken verbatim from
+its release notes.
+
+### Added
+- Two DeepSeek V4 models in the catalog: `deepseek-v4-pro` — 1M context,
+  $1.32/$3.96 per MTok, tagged `agentic`, `long-context`; and
+  `deepseek-v4.1-flash-1017` — 1M context, $0.96/$1.91 per MTok, tagged
+  `cheap`, `long-context`. Both feed directly into router scoring
+  (cost / latency) and into `zyko models`.
+
+### Caveats
+- `max_output` set conservatively to 65,536; DeepSeek may allow more.
+- Slugs and prices should be re-verified against api-docs.deepseek.com
+  before using them for production cost estimates.
+
+### Tests
+- 584 passing (was 581).
+
 ## 0.8.2 — Phase 0 of the coding engine: deterministic Arabic tools
 
 First slice of the 90-day "coding engine" plan (Phase 0, D1–D7): two
@@ -254,6 +277,25 @@ no randomness, byte-identical results — model outage never stops them.
 - **82 new tests** — across `tests/test_tools_pii_ar.py`,
   `tests/test_tools_rtl.py`, `tests/test_tools_policy_mcp.py`, plus the
   MCP tools-list regression update (repo total: 666).
+
+## 0.8.1 — MCP tools now honor the policy allow-list
+
+Security patch between 0.8.0 and 0.8.2. It shipped with a git tag and a
+GitHub release but never received a CHANGELOG section — added retroactively
+during the repository tag-organization pass (November 2026), with content
+taken verbatim from its release notes.
+
+### Fixed
+- **Agent tool policy now applies to MCP tools too.** `Agent._execute()`
+  gated only built-in tools through `PolicyEngine.allows_tool()`; MCP tool
+  calls bypassed the policy entirely. The allow-list is now enforced for
+  every tool name (built-in and `mcp__server__tool`), closing the last
+  policy gap before the tool dispatcher. Found during the post-0.8.0
+  security review; verified with two regression tests in
+  `tests/test_agent_mcp_policy.py`.
+
+### Tests
+- 581 passing (was 579).
 
 ## 0.8.0 — the receipt becomes verifiable: `zyko verify`
 
