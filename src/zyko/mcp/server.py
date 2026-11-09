@@ -140,6 +140,33 @@ ZYKO_TOOLS: list[dict[str, Any]] = [
             "required": [],
         },
     },
+    {
+        "name": "run_pipeline",
+        "description": (
+            "The deterministic Arabic feedback loop in one call: coder -> "
+            "reviewer -> fixer (Phase 4, D59-72). Takes an Arabic project "
+            "description, plans it, generates the file tree in memory, runs "
+            "the 27-rule review, applies the 12 safe auto-fix paths, then "
+            "re-reviews: returns per-file scores before/after and every "
+            "finding's fate with its suggestion_ar. Dry-run only (never "
+            "writes files, never touches the network). Same guarantees as "
+            "python -m zyko.pipeline run --dry-run."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "description": "Arabic description of the project to build",
+                },
+                "rounds": {
+                    "type": "integer",
+                    "description": "review->fix rounds after generation (0 = review only, cap 3, default 1)",
+                },
+            },
+            "required": ["description"],
+        },
+    },
 ]
 
 
@@ -210,6 +237,8 @@ class ZykoMCPServer:
             text = self._code_review_text(arguments)
         elif name == "auto_fix":
             text = self._auto_fix_text(arguments)
+        elif name == "run_pipeline":
+            text = self._run_pipeline_text(arguments)
         else:
             return {
                 "content": [{"type": "text", "text": f"unknown tool '{name}'"}],
@@ -350,6 +379,36 @@ class ZykoMCPServer:
             "summary": summarize_fix(results),
             "results": [r.to_dict() for r in results],
         }
+        return json.dumps(payload, ensure_ascii=False, indent=2)
+
+    @staticmethod
+    def _run_pipeline_text(arguments: dict[str, Any]) -> str:
+        """`run_pipeline` — الحلقة كاملة (تجريبية دائمًا: لا كتابة على القرص)."""
+        import json
+
+        from zyko.pipeline import PipelineEngine, pipeline_payload_summary
+
+        description = arguments.get("description")
+        if not isinstance(description, str) or not description.strip():
+            raise ZykoError("run_pipeline requires a non-empty Arabic 'description'")
+        rounds = arguments.get("rounds", 1)
+        result = PipelineEngine().run(description, "<mcp-memory>", rounds=rounds, write=False)
+        if not result.ok:
+            payload = {
+                "tool": "run_pipeline",
+                "ok": False,
+                "failed_stage": result.failed_stage,
+                "error_ar": result.error_ar,
+                "problems": result.problems,
+            }
+        else:
+            payload = {
+                "tool": "run_pipeline",
+                "ok": True,
+                "summary": pipeline_payload_summary(result),
+                "plan": result.plan,
+                "per_file": [dict(f) for f in result.per_file],
+            }
         return json.dumps(payload, ensure_ascii=False, indent=2)
 
     # --------------------------------------------------------------- backends

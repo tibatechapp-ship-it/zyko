@@ -5,7 +5,7 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — Universal AI Orchestration Platform" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-579%20passing-22c55e)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-1131%20passing-22c55e)](.github/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-98%25-84cc16)](.github/workflows/ci.yml)
 [![Security](https://img.shields.io/badge/bandit-0%20findings-22c55e?logo=shield&logoColor=white)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
@@ -21,9 +21,38 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.8.0** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** يُصدَّر إلى أي خلفية OTLP · **RAG** محلي بلا اعتماديات
+**النسخة 0.11.0** · محرك برمجة عربي حتمي: **توليد ← مراجعة ← إصلاح في أمر واحد** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** · **RAG** محلي بلا اعتماديات
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
+
+---
+
+## ما الجديد في 0.11.0؟ (المرحلة 4 — `zyko.pipeline`: الحلقة كاملة بأمر واحد)
+
+```bash
+python -m zyko.pipeline run --description "أريد قائمة مهام يومية بسيطة أضيف فيها المهام وأشطبها عند إنجازها" --out ~/مشاريعي/todo-cli
+```
+
+أمر واحد يربط المحركات الثلاثة الحتمية — **توليد ← مراجعة ← إصلاح** —
+ويعيد **مشروعًا مُصلَحًا** لا مشروعًا خامًا: مخطط من الوصف العربي، توليد
+في الذاكرة، مراجعة بـ27 قاعدة، إصلاح بـ12 مسارًا آمنًا (كل إصلاح مُتحقق
+منه بإعادة تحليل `ast` قبل الكتابة)، ثم إعادة فحص تُظهر تحسّن كل ملف.
+
+- **درجات قبل/بعد لكل ملف**: مثال حقيقي من بوابة المرحلة — `core.py` للقوالب 68←96 و78←96، بلا تراجع في أي ملف أبدًا (بوابة G4).
+- **كل ملاحظة تحمل `suggestion_ar`**: أُصلحت أم بقي أمرها للإنسان، النص العربي الأصلي من المراجع يصل التقرير كما هو.
+- **حتمية بايت-ببايت**: نفس الوصف ⇒ نفس التقرير (بوابة G2)، والمُصلِح على ناتج الحلقة لا يغيّر شيئًا (بوابة G3 — الاعتدال).
+- **فشل مهيكل لا انهيارات**: وصف فارغ أو ضخم أو جولات سالبة أو مجلد غير فارغ ⇒ رسالة عربية وخروج 2 (بوابة G5: 9/9 مدخلًا عدائيًا).
+- **بوابة المرحلة**: `python -m zyko.pipeline gate` — ست بوابات كمية (تكامل، حتمية، اعتدال، تحسن، متانة، أداء).
+
+وأيضًا من هذا المحرك (المرحلتان 2 و3): **`zyko.reviewer`** — مراجعة عربية بلا هلوسة، كل ملاحظة موقعة بسطر وعمود ومعرّف قاعدة؛ و**`zyko.fixer`** — إصلاح آمن يرفض كتابة أي نص لم يجتز إعادة التحليل.
+
+```bash
+python -m zyko.reviewer review --path ./مشروعي --format json  # 27 قاعدة، درجة 0–100
+python -m zyko.fixer fix --path ./مشروعي --write              # 12 مسارًا آمنًا
+python -m zyko.pipeline gate                                  # بوابة الحلقة كاملة
+```
+
+في MCP: أداة **`run_pipeline`** تنفّذ الحلقة تجريبيًا (لا كتابة على القرص) بجوار `code_review` و`auto_fix` — خمس أدوات حتمية بلا نموذج وبلا شبكة.
 
 ---
 

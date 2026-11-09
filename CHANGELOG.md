@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.11.0 — Phase 4 of the coding engine: `zyko.pipeline` — the feedback loop in one command
+
+Fifth slice of the 90-day plan (Phase 4, D59–D72): coder → reviewer →
+fixer wired into **one deterministic command**. One Arabic description
+in, a **fixed** project out — not a raw scaffold — plus a byte-deterministic
+Arabic report (text or JSON, schema `zyko.pipeline/1`) documenting every
+file's score before/after and every finding's fate with its original
+`suggestion_ar` untouched. Still no model, no network — the loop is
+what LLM pipelines advertise and cannot prove.
+
+### Added
+- **`zyko.pipeline.engine`** — `PipelineEngine.run(description, out_dir)`:
+  heuristic plan (injectable) → in-memory generation → 27-rule review →
+  fix rounds (0 = review-only, cap 3 with an Arabic note, convergence
+  stop) → re-review → verified writes only (files whose fixed source
+  re-parsed). Contract, same spirit as phases 2–3: hostile input (wrong
+  type, empty/oversized description, negative/non-int/bool rounds,
+  occupied target dir) ⇒ structured `failed_stage` + Arabic reason +
+  exit 2 — never an exception; a crashing injected planner/reviewer/
+  fixer is exported the same way. Every outcome keeps `suggestion_ar`.
+- **`zyko.pipeline.report`** — deterministic JSON/text emitters plus a
+  one-line summary and a stages table; every outcome line shows
+  `الإصلاح: suggestion_ar`; timing only with `include_timing=True`.
+- **`zyko.pipeline.gate`** — six quantitative gates on four Arabic
+  anchors covering the three templates: **G1** end-to-end completion,
+  **G2** byte determinism (two runs, identical payloads), **G3**
+  idempotence (the fixer on the loop's final output changes nothing),
+  **G4** no-regression (no file scores lower) + real fixes present,
+  **G5** robustness (9/9 hostile inputs → structured failures), **G6**
+  performance (<5s per anchor).
+- **`zyko.pipeline.__main__`** — `run` (the one command: `--dry-run`,
+  `--rounds`, `--git`, `--fail-under`, `--format text|json|summary`),
+  `gate`, `stages`. Exit codes 0/1/2 — same convention as reviewer
+  and fixer (0 accepted, 1 findings remain, 2 structured failure).
+- **MCP tool `run_pipeline`** — the loop as a dry-run MCP tool (never
+  writes files), joining `code_review` and `auto_fix` (now 5
+  deterministic tools).
+
+### Fixed
+- **Stale repo metadata**: README still announced «النسخة 0.8.0» and a
+  579-tests badge while the suite had grown to 1125; the Phase 2/3
+  surfaces (`zyko.reviewer`, `zyko.fixer`) had no "what's new" section
+  at all; `CITATION.cff` still cited 0.8.0. All synced to 0.11.0.
+
+### Gates
+`python -m zyko.pipeline gate` → ✅ (4 anchors × 6 gates, robustness
+9/9); `zyko.pipeline` coverage 94% (≥85% enforced in CI); full suite
+1131 passed; ruff check/format clean; bandit clean.
+
 ## 0.10.0 — Phase 3 of the coding engine: `zyko.fixer` — deterministic Arabic auto-fix
 
 Fourth slice of the 90-day plan (Phase 3, D41–D58): the fix half of
