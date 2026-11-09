@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — Phase 8 of the coding engine: `zyko.ai` — intelligence assembled over the factory
+## 0.17.0 — Phase 8 of the coding engine: `zyko.ai` — intelligence assembled over the factory
 
 The factory was one machine; this release assembles the first
 **intelligence layer on top of it**. `zyko.ai` is where brains live:
