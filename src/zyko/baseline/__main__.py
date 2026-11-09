@@ -97,13 +97,13 @@ def _print_update(result: BaselineUpdateResult, fmt: str, timing: bool) -> None:
         print(baseline_update_to_text(result))
 
 
-def _cmd_update(args: argparse.Namespace) -> int:
+def cmd_update(args: argparse.Namespace) -> int:
     result = BaselineEngine().update(args.src, baseline_path=args.baseline)
     _print_update(result, args.format, args.include_timing)
     return EXIT_OK if result.ok else EXIT_USAGE
 
 
-def _cmd_check(args: argparse.Namespace) -> int:
+def cmd_check(args: argparse.Namespace) -> int:
     result = BaselineEngine().check(args.src, baseline_path=args.baseline)
     if args.format == "json":
         print(baseline_check_to_json(result, include_timing=args.include_timing))
@@ -128,7 +128,7 @@ def _cmd_check(args: argparse.Namespace) -> int:
     return result.exit_code
 
 
-def _cmd_show(args: argparse.Namespace) -> int:
+def cmd_show(args: argparse.Namespace) -> int:
     bpath = Path(args.baseline) if args.baseline else default_baseline_path(args.src)
     if not bpath.exists():
         print(
@@ -185,7 +185,7 @@ def _cmd_show(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
-def _cmd_gate(args: argparse.Namespace) -> int:
+def cmd_gate(args: argparse.Namespace) -> int:
     gate_result = run_phase6_gate(max_seconds=args.max_seconds)
     print(gate_result.table_ar())
     return EXIT_OK if gate_result.ok else EXIT_FINDINGS
@@ -195,13 +195,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     if args.command == "update":
-        return _cmd_update(args)
+        return cmd_update(args)
     if args.command == "check":
-        return _cmd_check(args)
+        return cmd_check(args)
     if args.command == "show":
-        return _cmd_show(args)
+        return cmd_show(args)
     if args.command == "gate":
-        return _cmd_gate(args)
+        return cmd_gate(args)
     print(baseline_promise_text())
     return EXIT_OK
 

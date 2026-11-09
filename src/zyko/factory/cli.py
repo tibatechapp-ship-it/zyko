@@ -1,18 +1,20 @@
 """zyko.factory.cli — بوابة المصنع الموحدة: أمر واحد لكل وحدات المحرك.
 
-المصنع كان ثلاث بوابات منفصلة (``python -m zyko.fixer`` ثم
-``.pipeline`` ثم ``.workspace``)؛ هذه الوحدة تجمعها خلف باب واحد::
+المصنع كان أربع بوابات منفصلة (``python -m zyko.fixer`` ثم
+``.pipeline`` ثم ``.workspace`` ثم ``.baseline``)؛ هذه الوحدة تجمعها
+خلف باب واحد::
 
-    zyko factory            # الخريطة (افتراضي بلا أمر فرعي)
-    zyko factory map        # الوحدات والعقود وأكواد الخروج
-    zyko factory fix        # المرحلة 3 — نفس سلوك python -m zyko.fixer fix
-    zyko factory pipeline   # المرحلة 4 — نفس سلوك python -m zyko.pipeline run
-    zyko factory workspace  # المرحلة 5 — نفس سلوك python -m zyko.workspace run
-    zyko factory gates      # بوابات 3+4+5 كاملة (18 بوابه) وخلاصة واحدة
+    zyko factory              # الخريطة (افتراضي بلا أمر فرعي)
+    zyko factory map          # الوحدات والعقود وأكواد الخروج
+    zyko factory fix          # المرحلة 3 — نفس سلوك python -m zyko.fixer fix
+    zyko factory pipeline     # المرحلة 4 — نفس سلوك python -m zyko.pipeline run
+    zyko factory workspace    # المرحلة 5 — نفس سلوك python -m zyko.workspace run
+    zyko factory baseline     # المرحلة 6 — نفس سلوك python -m zyko.baseline
+    zyko factory gates        # بوابات 3+4+5+6 كاملة (24 بوابه) وخلاصة واحدة
 
-التفويض حرفي: أوامر fix/pipeline/workspace تستدعي معالجات الوحدات
-نفسها (نفس الحجج، نفس أكواد الخروج، نفس الحتمية) — بلا إعادة تنفيذ
-ولا انحراف سلوك ممكن. علم ``--html`` متاح في البوابتين معًا.
+التفويض حرفي: أوامر fix/pipeline/workspace/baseline تستدعي معالجات
+الوحدات نفسها (نفس الحجج، نفس أكواد الخروج، نفس الحتمية) — بلا إعادة
+تنفيذ ولا انحراف سلوك ممكن. علم ``--html`` متاح في البوابتين معًا.
 """
 
 from __future__ import annotations
@@ -71,7 +73,9 @@ def _add_workspace_parser(sub: Any) -> None:
     p.add_argument("--src", required=True, help="مجلد المشروع القائم")
     p.add_argument("--out", default=None, help="اكتب نسخة مُصلَحة إلى هذا المجلد (جديد وفارغ)")
     p.add_argument(
-        "--in-place", action="store_true", help="عدّل الملفات المُصلَحة في المجلد الأصلي (يتطلب --yes)"
+        "--in-place",
+        action="store_true",
+        help="عدّل الملفات المُصلَحة في المجلد الأصلي (يتطلب --yes)",
     )
     p.add_argument(
         "--yes",
@@ -89,8 +93,31 @@ def _add_workspace_parser(sub: Any) -> None:
     p.add_argument("--html", default=None, help="اكتب لوحة HTML عربية إلى هذا الملف")
 
 
+def _add_baseline_parser(sub: Any) -> None:
+    p = sub.add_parser("baseline", help="المرحلة 6 — حارس الجودة: خط أساس وكشف تراجع")
+    b = p.add_subparsers(dest="baseline_cmd", required=True)
+
+    def _common(pb: Any) -> None:
+        pb.add_argument("--src", required=True, help="مجلد المشروع القائم")
+        pb.add_argument(
+            "--baseline", default=None, help="ملف خط الأساس (الافتراضي: <src>/.zyko/baseline.json)"
+        )
+        pb.add_argument("--format", choices=("text", "json", "summary"), default="text")
+        pb.add_argument(
+            "--include-timing", action="store_true", help="أضف الزمن (يكسر الحتمية البايتية)"
+        )
+
+    pu = b.add_parser("update", help="سجّل الوضع الحالي كخط أساس (ملف واحد فقط)")
+    _common(pu)
+    pc = b.add_parser("check", help="قارن الوضع الحالي بخط الأساس (قراءة فقط)")
+    _common(pc)
+    pc.add_argument("--html", default=None, help="اكتب تقرير HTML عربي حتمي إلى هذا المسار")
+    ps = b.add_parser("show", help="اعرض خط الأساس المخزّن وسجل التشغيلات")
+    _common(ps)
+
+
 def _add_gates_parser(sub: Any) -> None:
-    p = sub.add_parser("gates", help="بوابات المراحل 3+4+5 كاملة (18 بوابه) وخلاصة واحدة")
+    p = sub.add_parser("gates", help="بوابات المراحل 3+4+5+6 كاملة (24 بوابه) وخلاصة واحدة")
     p.add_argument("--max-seconds", type=float, default=5.0, help="ميزانية الأداء لكل بوابة")
 
 
@@ -100,6 +127,7 @@ def register_to(factory_sub: Any) -> None:
     _add_fix_parser(factory_sub)
     _add_pipeline_parser(factory_sub)
     _add_workspace_parser(factory_sub)
+    _add_baseline_parser(factory_sub)
     _add_gates_parser(factory_sub)
 
 
@@ -129,6 +157,22 @@ def handle_factory(args: argparse.Namespace) -> int:
         from zyko.workspace.__main__ import cmd_run
 
         return cmd_run(args)
+    if command == "baseline":
+        from zyko.baseline.__main__ import (
+            cmd_check,
+            cmd_show,
+            cmd_update,
+        )
+
+        sub = getattr(args, "baseline_cmd", None)
+        if sub == "update":
+            return cmd_update(args)
+        if sub == "check":
+            return cmd_check(args)
+        if sub == "show":
+            return cmd_show(args)
+        print(factory_map_text())
+        return EXIT_USAGE
     if command == "gates":
         return _cmd_gates(args)
     print(factory_map_text())
