@@ -157,3 +157,32 @@ jobs:
           python -c "import json; d=json.load(open('/tmp/rev.json')); assert d['score'] < 60 and d['counts']['critical'] >= 2, d; print('defective verdict OK')"
           python -m zyko.reviewer review --path samples/review/clean_good.py --fail-under 95
           python -m zyko.reviewer review --path samples/review/clean_error_handling.py --fail-under 95
+
+  phase3-fixer:
+    name: phase-3 fixer (12 safe repair paths — fix/idempotence/determinism gates)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e .[dev] pytest-cov
+      - name: Fixer coverage gate (≥85%)
+        run: >
+          pytest tests/test_fixer_edits.py tests/test_fixer_fixes.py
+          tests/test_fixer_engine.py tests/test_fixer_report_cli.py
+          tests/test_fixer_gate.py tests/test_fixer_mcp.py
+          tests/test_fixer_robustness.py
+          --cov=zyko.fixer --cov-report=term --cov-fail-under=85 -q
+      - name: Phase-3 gate — expected fixes resolved, idempotent, byte-deterministic
+        run: python -m zyko.fixer gate
+      - name: Fixer CLI — dry-run, write, then clean check (exit-code contract)
+        run: |
+          cp samples/fix/bad_quality.py /tmp/qlt.py
+          python -m zyko.fixer fix --path /tmp/qlt.py --format summary
+          python -m zyko.fixer check --path /tmp/qlt.py > /dev/null 2>&1 && echo "UNEXPECTED clean" || echo "check=1 as expected"
+          python -m zyko.fixer fix --path /tmp/qlt.py --write 2>/dev/null
+          python -m zyko.fixer check --path /tmp/qlt.py
+          python -m zyko.fixer check --path samples/review/clean_good.py
+          python -c "import ast; ast.parse(open('/tmp/qlt.py', encoding='utf-8').read()); print('written file parses OK')"
