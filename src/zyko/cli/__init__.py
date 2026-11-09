@@ -264,6 +264,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--run-tests", action="store_true", help="شغّل اختبارات المشروع بعد التوليد")
     p.set_defaults(func=cmd.cmd_new)
 
+    # factory (المرحلة 6: بوابة المصنع الموحدة — تفويض حرفي لوحدات المحرك)
+    p = sub.add_parser(
+        "factory",
+        help="بوابة المصنع الموحدة: map / fix / pipeline / workspace / gates",
+    )
+    from zyko.factory.cli import register_to as _register_factory
+
+    _register_factory(p.add_subparsers(dest="factory_cmd"))
+    p.set_defaults(func=cmd.cmd_factory)
+
     return parser
 
 

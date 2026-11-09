@@ -55,6 +55,10 @@ def _build_parser() -> argparse.ArgumentParser:
         "--include-timing", action="store_true", help="أضف الزمن (يكسر الحتمية البايتية)"
     )
 
+    p_fix.add_argument(
+        "--html", default=None, help="اكتب لوحة HTML عربية مكتفية ذاتيًا إلى هذا الملف"
+    )
+
     p_check = sub.add_parser("check", help="خروج 1 إن بقيت ملاحظات قابلة للإصلاح الآلي")
     p_check.add_argument("--path", required=True, help="ملف أو مجلد للفحص")
 
@@ -86,7 +90,7 @@ def _unified_diff(before: str, after: str, path: str) -> str:
     )
 
 
-def _cmd_fix(args: argparse.Namespace) -> int:
+def cmd_fix(args: argparse.Namespace) -> int:
     target = Path(args.path)
     if not target.exists():
         print(f"خطأ: المسار غير موجود: {target}", file=sys.stderr)
@@ -110,6 +114,12 @@ def _cmd_fix(args: argparse.Namespace) -> int:
         print(fix_summary_line(results))
     else:
         print(fix_result_to_text(results[0]) if len(results) == 1 else fix_results_to_text(results))
+    if getattr(args, "html", None):
+        # لوحة HTML بجانب المخرجات النصية — الطباعة على stderr كي يبقى stdout حتميًا.
+        from zyko.factory.report_html import fixer_results_html, write_html_panel
+
+        write_html_panel(args.html, fixer_results_html(results))
+        print(f"كُتبت لوحة HTML: {args.html}", file=sys.stderr)
     if args.diff:
         for r in results:
             if r.changed:
@@ -131,7 +141,7 @@ def _cmd_fix(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
-def _cmd_check(args: argparse.Namespace) -> int:
+def cmd_check(args: argparse.Namespace) -> int:
     target = Path(args.path)
     if not target.exists():
         print(f"خطأ: المسار غير موجود: {target}", file=sys.stderr)
@@ -152,7 +162,7 @@ def _cmd_check(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
-def _cmd_gate(args: argparse.Namespace) -> int:
+def cmd_gate(args: argparse.Namespace) -> int:
     gate_result = run_phase3_gate(args.samples, max_seconds=args.max_seconds)
     print(gate_result.table_ar())
     return EXIT_OK if gate_result.ok else EXIT_FINDINGS
@@ -162,11 +172,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     if args.command == "fix":
-        return _cmd_fix(args)
+        return cmd_fix(args)
     if args.command == "check":
-        return _cmd_check(args)
+        return cmd_check(args)
     if args.command == "gate":
-        return _cmd_gate(args)
+        return cmd_gate(args)
     print(fix_rules_table_text())
     return EXIT_OK
 

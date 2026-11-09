@@ -5,7 +5,7 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — Universal AI Orchestration Platform" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-1324%20passing-22c55e)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-1259%20passing-22c55e)](.github/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-84cc16)](.github/workflows/ci.yml)
 [![Security](https://img.shields.io/badge/bandit-0%20findings-22c55e?logo=shield&logoColor=white)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
@@ -21,30 +21,43 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.13.0** · محرك برمجة عربي حتمي: **توليد ← مراجعة ← إصلاح في أمر واحد — وعلى أي مشروع قائم على قرصك — وحارس جودة عبر الزمن** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** · **RAG** محلي بلا اعتماديات
+**النسخة 0.13.0** · محرك برمجة عربي حتمي: **توليد ← مراجعة ← إصلاح من بوابة واحدة — وعلى أي مشروع قائم على قرصك** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** · **RAG** محلي بلا اعتماديات
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
 
 ---
 
-## ما الجديد في 0.13.0؟ (المرحلة 6 — `zyko.baseline`: حارس الجودة عبر الزمن)
+## ما الجديد في 0.13.0؟ (المرحلة 6 — `zyko.factory`: بوابة المصنع الموحدة + لوحة HTML)
 
-حتى المرحلة 5 كان المحرك «لقطة واحدة»: يراجع ويعالج ثم يودّعك. هذا
-الإصدار يجعله **حارسًا دائمًا**: يسجّل حالة مشروعك في خط أساس حتمي
-(`.zyko/baseline.json`)، ثم كل فحص لاحق يقارن الوضع الحالي به ويعلن
-بالأرقام: ما التراجع؟ ما التحسن؟ وما الجديد؟
+كانت الوحدات كلٌّ خلف بابها؛ هذا الإصدار يجعلها **آلة واحدة**. كل محرك
+حتمي — التوليد، الإصلاح، الحلقة، المحرك على المجلدات القائمة — صار
+يُستدعى من بوابة واحدة **`zyko factory`** تفوّض حرفيًا لوحدات المحرك
+(نفس السلوك، نفس أكواد الخروج، نفس الحتمية البايتية — بلا أي انحراف
+ممكن)، ويحصل المصنع على مخرج بشري ثالث: **لوحة HTML عربية مكتفية
+ذاتيًا** تُفتح في أي متصفح — وعلى الهاتف — بلا جافاسكربت وبلا أي أصل
+خارجي.
 
 ```bash
-python -m zyko.baseline update --src ./مشروعي            # سجّل الوضع الحالي (ملف واحد فقط)
-python -m zyko.baseline check --src ./مشروعي             # قارن بالحارس — قراءة فقط دائمًا
-python -m zyko.baseline check --src ./مشروعي --html تقرير.html  # تقرير HTML عربي حتمي
-python -m zyko.baseline gate                             # بوابة المرحلة 6: 3 مراسٍ × 6 بوابات
+zyko factory                       # خريطة المصنع: الوحدات والعقود وأكواد الخروج
+zyko factory fix --path ./مشروعي   # المرحلة 3 — نفس python -m zyko.fixer fix
+zyko factory workspace --src ./مشروعي --html لوحة.html   # مراجعة ← إصلاح + لوحة HTML
+zyko factory gates                 # بوابات المراحل 3+4+5 (18 بوابه) وخلاصة واحدة
 ```
 
-- **كشف التراجع بالأرقام**: درجة أقل أو ملاحظات جديدة ⇒ خروج 1 واسم الملف وعدد الملاحظات الجديدة محسوبًا بدقة — والتحسن يُعلن مع اقتراح تثبيته بـ«update».
-- **انضباط القرص مُختبر**: «update» يكتب ملفًا واحدًا فقط ولا يلمس أي ملف مشروع؛ «check» و«show» قراءة فقط دائمًا؛ ولا طوابع زمنية إطلاقًا — رقم التشغيل `run_no` هو الساعة الوحيدة.
-- **خط أساس فاسد ليس نهاية العالم**: JSON مشوه أو ترميز فاسد أو مخطط غريب أو درجة نصية (12 مدخلًا عدائيًا) ⇒ فشل مهيكل عربي وخروج 2، و«update» فوق الفاسد يُصلحه من جديد.
-- **تقرير HTML عربي RTL**: بطاقات ملخص + جدول اتجاه عبر التشغيلات + جدول ملفًا ملفًا — حتمي البايتات، بلا جافاسكربت ولا موارد خارجية، وكل القيم مهرّبة.
+- **تفويض حرفي لا إعادة تنفيذ**: `zyko factory fix|pipeline|workspace`
+  يستدعي معالجات الوحدات نفسها — التكافؤ مع بوابات الوحدات مُختبَر
+  بايت-ببايت في حقيبة الاختبارات.
+- **بوابات مجمعة**: `zyko factory gates` يشغّل بوابات المراحل الثلاث
+  كاملة (18 بوابه كمية على مراسٍ عربية) ويحسم بخلاصة واحدة:
+  «المصنع مقبول» فقط إذا نجحت كلها.
+- **لوحة HTML حتمية وآمنة**: نفس النتيجة ⇒ نفس البايتات (بلا أختام
+  زمنية)؛ كل نص من القرص أو الوصف يُهرَّب (مسار عدائي يظهر نصًا لا
+  HTML)؛ بلا جافاسكربت إطلاقًا؛ وكل ملاحظة تعرض `suggestion_ar` كما
+  وردت حرفيًا. علم `--html` متاح في كل بوابات المحركات الثلاث.
+- **أساس zyko AI**: هذا المصنع هو ما سيُبنى فوقه الذكاء لاحقًا — طبقة
+  ذكاء تركب على آلة قابلة للتحقق تُحكم بالأرقام، لا على وعود.
+
+---
 
 ## ما الجديد في 0.12.0؟ (المرحلة 5 — `zyko.workspace`: المحرك على أرض الواقع)
 
@@ -64,7 +77,7 @@ python -m zyko.workspace gate                                       # بوابة
 - **اعتدال مضمون**: المحرك على ناتجه النهائي لا يغيّر شيئًا (بوابة W3)، ولا ملف يتراجع درجته (W4).
 - **عيّنة قابلة للتشغيل**: `samples/workspace/small_tool/` — ملفان بعيوب مزروعة وملف نظيف تمامًا، مع `manifest.json` يثبّت درجات ومصائر كل قاعدة، واختبار يفشل إن خالفت الواقع الميثاق.
 
-في MCP: أداة **`fix_workspace`** تنفّذ المحرك على مجلد قائم تجريبيًا (لا كتابة) — من سبع أدوات حتمية بلا نموذج وبلا شبكة.
+في MCP: أداة **`fix_workspace`** تنفّذ المحرك على مجلد قائم تجريبيًا (لا كتابة) — سادس الأدوات الحتمية بلا نموذج وبلا شبكة.
 
 ---
 
@@ -93,7 +106,7 @@ python -m zyko.fixer fix --path ./مشروعي --write              # 12 مسا�
 python -m zyko.pipeline gate                                  # بوابة الحلقة كاملة
 ```
 
-في MCP: أداة **`run_pipeline`** تنفّذ الحلقة تجريبيًا (لا كتابة على القرص) بجوار `code_review` و`auto_fix` — ضمن سبع أدوات حتمية بلا نموذج وبلا شبكة.
+في MCP: أداة **`run_pipeline`** تنفّذ الحلقة تجريبيًا (لا كتابة على القرص) بجوار `code_review` و`auto_fix` — ضمن ست أدوات حتمية بلا نموذج وبلا شبكة.
 
 ---
 
@@ -610,7 +623,7 @@ zyko info   # kernel backend: rust
 
 ```bash
 pip install -e .[dev]
-pytest -q            # 1324 اختبارًا: المحرك البرمجي (توليد/مراجعة/إصلاح/حلقة/مساحة العمل/خط الأساس)، توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض، مخرجات منظمة، تتبّع
+pytest -q            # 1259 اختبارًا: المحرك البرمجي (توليد/مراجعة/إصلاح/حلقة/مساحة العمل)، توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض، مخرجات منظمة، تتبّع
 pytest --cov=src/zyko   # تغطية 95%
 ruff check src tests && ruff format --check src tests
 make security        # bandit + pip-audit (نفس بوابة CI)
@@ -645,26 +658,42 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.13.0** · The deterministic Arabic coding engine — **generate → review → fix in one command, on any existing project on your disk, guarded over time** · multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** · **local RAG with zero dependencies** · **sequential multi-agent crews** · **governed multi-user gateway** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.13.0** · The deterministic Arabic coding engine — **generate → review → fix from one gate, and on any existing project on your disk** · multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** · **local RAG with zero dependencies** · **sequential multi-agent crews** · **governed multi-user gateway** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
 
-## What's new in 0.13.0 — Phase 6: `zyko.baseline`, the quality guard over time
+## What's new in 0.13.0 — Phase 6: `zyko.factory`, the unified factory gate + the HTML panel
 
-Until Phase 5 the engine was one-shot: review, fix, goodbye. It is now a
-**permanent guard**: it records your project's actual on-disk state in a
-deterministic baseline (`.zyko/baseline.json`) and every later `check`
-compares against it with numbers — what regressed, what improved, what is
-new. `update` writes exactly one file; `check`/`show` are read-only,
-always; no timestamps anywhere (the monotonic `run_no` is the only clock).
+The modules were each complete behind their own door; this release makes
+them **one machine**. Every deterministic engine — generation, fixer,
+pipeline, workspace — is now reachable from a single gate, **`zyko
+factory`**, that delegates literally (same handlers, same flags, same
+exit codes, same byte determinism — zero drift by construction). The
+factory also gets its third human output: a **self-contained Arabic RTL
+HTML panel** (`--html`) that opens in any browser — including a phone —
+with no JavaScript and no external assets.
 
 ```bash
-python -m zyko.baseline update --src ./my-project            # record the current state (one file)
-python -m zyko.baseline check --src ./my-project             # compare — read-only, always
-python -m zyko.baseline check --src ./my-project --html report.html  # deterministic Arabic RTL report
-python -m zyko.baseline gate                                 # Phase-6 gate: 3 anchors x 6 gates
+zyko factory                       # the factory map: units, contracts, exit codes
+zyko factory fix --path ./my-project                     # Phase 3 — same as python -m zyko.fixer fix
+zyko factory workspace --src ./my-project --html panel.html   # review → fix + HTML panel
+zyko factory gates                 # phase gates 3+4+5 (18 gates) with one summary verdict
 ```
 
-- Score drop or new findings ⇒ exit 1 with the file named and exact counts; improvements announce themselves and suggest re-running `update`. Corrupt baselines (12 hostile cases) fail structurally in Arabic (exit 2) — `update` over corruption recovers.
-- New MCP tool `baseline_check` — the 10th tool, 7th deterministic one.
+- **Literal delegation, no re-implementation**: `zyko factory
+  fix|pipeline|workspace` calls the module handlers themselves — parity
+  with the module CLIs is tested byte-for-byte.
+- **Combined gates**: `zyko factory gates` runs all three phase gates
+  (18 quantitative gates on Arabic anchors) and signs one verdict:
+  «المصنع مقبول» only if every gate passes.
+- **Deterministic, safe HTML panel**: same result ⇒ same bytes (no
+  timestamps); every disk/description string is escaped (a hostile path
+  renders as text, not markup); zero JavaScript; every finding keeps
+  its original `suggestion_ar` verbatim. `--html` is available on all
+  three engine CLIs.
+- **The base for zyko AI**: this factory is what intelligence will be
+  assembled on top of — a verifiable machine judged by numbers, not by
+  promises.
+
+---
 
 ## What's new in 0.12.0 — Phase 5: `zyko.workspace`, the engine on existing projects
 

@@ -949,3 +949,14 @@ def cmd_new(args: Any) -> int:
             return 1
         print(ui.ok("اختبارات المشروع: مرّت"))
     return 0
+
+
+def cmd_factory(args: Any) -> int:
+    """البوابة الموحدة للمصنع (المرحلة 6) — تفويض حرفي إلى zyko.factory.cli.
+
+    بلا أمر فرعي ⇒ خريطة المصنع؛ ومع أمر فرعي ينفَّذ في وحدات المحرك
+    نفسها (نفس الحجج، نفس أكواد الخروج، نفس الحتمية البايتية).
+    """
+    from zyko.factory.cli import handle_factory
+
+    return handle_factory(args)
