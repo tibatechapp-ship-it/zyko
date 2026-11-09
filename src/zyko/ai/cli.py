@@ -103,7 +103,9 @@ def register_to(sub: Any) -> None:
     )
     run_p.add_argument("--dry-run", action="store_true", help="لا تكتب شيئًا على القرص")
     run_p.add_argument("--format", choices=("json", "text", "summary"), default="text")
-    run_p.add_argument("--include-timing", action="store_true", help="أضف الزمن (يكسر الحتمية البايتية)")
+    run_p.add_argument(
+        "--include-timing", action="store_true", help="أضف الزمن (يكسر الحتمية البايتية)"
+    )
     gate_p = sub.add_parser("gate", help="بوابة المرحلة 8 — 12 بوابة على 3 مراسئ")
     gate_p.add_argument("--max-seconds", type=float, default=5.0, help="سقف زمن كل جلسة دليل")
 
