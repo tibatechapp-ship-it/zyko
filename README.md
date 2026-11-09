@@ -5,8 +5,8 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — Universal AI Orchestration Platform" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-1131%20passing-22c55e)](.github/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-98%25-84cc16)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-1230%20passing-22c55e)](.github/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-95%25-84cc16)](.github/workflows/ci.yml)
 [![Security](https://img.shields.io/badge/bandit-0%20findings-22c55e?logo=shield&logoColor=white)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Android%20%7C%20Termux-10b981)](android/README.md)
@@ -21,9 +21,31 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.11.0** · محرك برمجة عربي حتمي: **توليد ← مراجعة ← إصلاح في أمر واحد** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** · **RAG** محلي بلا اعتماديات
+**النسخة 0.12.0** · محرك برمجة عربي حتمي: **توليد ← مراجعة ← إصلاح في أمر واحد — وعلى أي مشروع قائم على قرصك** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** · **RAG** محلي بلا اعتماديات
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
+
+---
+
+## ما الجديد في 0.12.0؟ (المرحلة 5 — `zyko.workspace`: المحرك على أرض الواقع)
+
+حتى الآن كان المحرك يحسّن شيفرة وَلَدَها هو نفسه. هذا الإصدار يفتحه على
+**أي مجلد بايثون قائم على قرصك** — بنفس العقود الثلاثة: حتمية البايتات،
+فشل مهيكل لا انهيار، وكل ملاحظة تحمل `suggestion_ar` كما وردت.
+
+```bash
+python -m zyko.workspace run --src ./مشروعي                        # تجربة جافة: لا بايت يتغير
+python -m zyko.workspace run --src ./مشروعي --out ./مشروعي-المُصلَح  # نسخة مُصلَحة لمجلد جديد
+python -m zyko.workspace run --src ./مشروعي --in-place --yes        # تعديل موضعي بتأكيد صريح
+python -m zyko.workspace gate                                       # بوابة المرحلة: 3 مراسٍ × 6 بوابات
+```
+
+- **الحذر أولوية**: الافتراضي تجربة جافة؛ `--out` يُرفض إن كان المجلد غير فارغ؛ `--in-place` يتطلب `--yes` صراحةً؛ ولا يُكتب ملف إلا إذا نجت صياغته النهائية من `ast`.
+- **فساد القرص ليس عذرًا للانهيار**: ملف بترميز ليس UTF-8 أو صياغة مكسورة أو حجم فوق الحد ⇒ يُوثَّق تخطّيه عربيًا ويكمل الباقي (بوابة W5: 12/12 مدخلًا عدائيًا يفشل فشلًا مهيكلًا).
+- **اعتدال مضمون**: المحرك على ناتجه النهائي لا يغيّر شيئًا (بوابة W3)، ولا ملف يتراجع درجته (W4).
+- **عيّنة قابلة للتشغيل**: `samples/workspace/small_tool/` — ملفان بعيوب مزروعة وملف نظيف تمامًا، مع `manifest.json` يثبّت درجات ومصائر كل قاعدة، واختبار يفشل إن خالفت الواقع الميثاق.
+
+في MCP: أداة **`fix_workspace`** تنفّذ المحرك على مجلد قائم تجريبيًا (لا كتابة) — سادس الأدوات الحتمية بلا نموذج وبلا شبكة.
 
 ---
 
@@ -52,7 +74,7 @@ python -m zyko.fixer fix --path ./مشروعي --write              # 12 مسا�
 python -m zyko.pipeline gate                                  # بوابة الحلقة كاملة
 ```
 
-في MCP: أداة **`run_pipeline`** تنفّذ الحلقة تجريبيًا (لا كتابة على القرص) بجوار `code_review` و`auto_fix` — خمس أدوات حتمية بلا نموذج وبلا شبكة.
+في MCP: أداة **`run_pipeline`** تنفّذ الحلقة تجريبيًا (لا كتابة على القرص) بجوار `code_review` و`auto_fix` — ضمن ست أدوات حتمية بلا نموذج وبلا شبكة.
 
 ---
 
@@ -569,8 +591,8 @@ zyko info   # kernel backend: rust
 
 ```bash
 pip install -e .[dev]
-pytest -q            # 579 اختبارًا: توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض، مخرجات منظمة، تتبّع
-pytest --cov=src/zyko   # تغطية 98%
+pytest -q            # 1230 اختبارًا: المحرك البرمجي (توليد/مراجعة/إصلاح/حلقة/مساحة العمل)، توجيه، سياسات، MCP (بعمليات فرعية حقيقية)، بوابة، وكلاء، مزوّدون (HTTP مُحاكى)، تصلّب CLI، وضع العرض، مخرجات منظمة، تتبّع
+pytest --cov=src/zyko   # تغطية 95%
 ruff check src tests && ruff format --check src tests
 make security        # bandit + pip-audit (نفس بوابة CI)
 ```
@@ -604,7 +626,27 @@ Apache-2.0 — راجع [LICENSE](LICENSE).
 
 # ZYKO — Universal AI Orchestration Platform (English)
 
-**v0.8.0** · Multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** · **local RAG with zero dependencies** · **sequential multi-agent crews** · **governed multi-user gateway** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+**v0.12.0** · The deterministic Arabic coding engine — **generate → review → fix in one command, and on any existing project on your disk** · multi-provider routing with **verifiable** decisions · **Policy-as-Code** governance · **MCP-native** agents · **built-in tracing that exports anywhere** · **local RAG with zero dependencies** · **sequential multi-agent crews** · **governed multi-user gateway** — running on **Linux, Windows, macOS, Android and Termux** with a pure-Python core (only `httpx` + `PyYAML`).
+
+## What's new in 0.12.0 — Phase 5: `zyko.workspace`, the engine on existing projects
+
+Until now the engine only improved code it had generated itself. It now
+opens onto **any Python directory on your disk** — under the same three
+contracts: byte determinism, structured failures instead of exceptions,
+and every finding keeping its original `suggestion_ar`.
+
+```bash
+python -m zyko.workspace run --src ./my-project                  # dry run: writes nothing
+python -m zyko.workspace run --src ./my-project --out ./fixed    # fixed copy into a new dir
+python -m zyko.workspace run --src ./my-project --in-place --yes # in-place, explicit consent
+python -m zyko.workspace gate                                    # 3 anchors × 6 gates
+```
+
+- **Caution is a feature**: dry-run default; `--out` refuses non-empty targets; `--in-place` demands `--yes`; no file is written unless its final source survives `ast`.
+- **Broken disks never crash it**: non-UTF-8 encoding, broken syntax, oversized files ⇒ documented Arabic skips while everything else proceeds (W5: 12/12 hostile inputs fail structurally).
+- **Idempotence guaranteed**: the engine on its own final output changes nothing (W3); no file's score ever drops (W4).
+- **Runnable sample**: `samples/workspace/small_tool/` with a `manifest.json` pinning scores and per-rule fates, enforced by a test.
+- In MCP: **`fix_workspace`** runs the engine on an existing directory, dry-run only — the 6th deterministic tool (no model, no network).
 
 ## What's new in 0.8.0 — the receipt becomes verifiable: `zyko verify`
 
