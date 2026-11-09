@@ -217,7 +217,7 @@ class FixerEngine:
                     try:
                         edits.extend(self.planners[rid](ctx))
                     except Exception:  # noqa: BLE001 — عطب مخطط يُسقط إصلاحه ولا يُسقط المحرك
-                        continue
+                        continue  # nosec B112 — التقوية المقصودة: مخطط فاسد يُهمل بأمان
             if not edits:
                 break
             candidate, applied, _skipped = apply_edits(current, edits)
