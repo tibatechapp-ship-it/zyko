@@ -71,7 +71,7 @@ def test_ping_and_tools_list():
     )
     assert responses[0]["result"] == {}
     names = [t["name"] for t in responses[1]["result"]["tools"]]
-    # 0.8.1: أدوات المرحلة 0 الحتمية (بلا نموذج) — 0.9.2: أداة المرحلة 2 code_review
+    # 0.8.1: أدوات المرحلة 0 الحتمية — 0.9.2: code_review — 0.10.0: auto_fix
     assert names == [
         "zyko_models",
         "zyko_route",
@@ -79,6 +79,7 @@ def test_ping_and_tools_list():
         "pii_ar_scan",
         "rtl_check",
         "code_review",
+        "auto_fix",
     ]
 
 
