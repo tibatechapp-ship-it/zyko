@@ -132,3 +132,28 @@ jobs:
           python -c "import json; d=json.load(open('/tmp/plan.json')); assert d['template'], d"
           cd /tmp && zyko new --plan "قائمة مهام بسيطة للفريق" --yes --no-git --run-tests
           test -f /tmp/todo-cli/RECEIPT.md && echo "receipt OK"
+
+  phase2-reviewer:
+    name: phase-2 reviewer (27 Arabic rules — recall/precision/determinism gates)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e .[dev] pytest-cov
+      - name: Reviewer coverage gate (≥85%)
+        run: >
+          pytest tests/test_reviewer_rules.py tests/test_reviewer_engine.py
+          tests/test_reviewer_report_cli.py tests/test_reviewer_robustness.py
+          tests/test_reviewer_gate.py tests/test_reviewer_mcp.py
+          --cov=zyko.reviewer --cov-report=term --cov-fail-under=85 -q
+      - name: Phase-2 gate — 29/29 planted defects, clean stays clean, byte determinism
+        run: python -m zyko.reviewer gate
+      - name: Reviewer CLI — defective fails, clean passes (exit-code contract)
+        run: |
+          python -m zyko.reviewer review --path samples/review/bad_security.py --format json > /tmp/rev.json || true
+          python -c "import json; d=json.load(open('/tmp/rev.json')); assert d['score'] < 60 and d['counts']['critical'] >= 2, d; print('defective verdict OK')"
+          python -m zyko.reviewer review --path samples/review/clean_good.py --fail-under 95
+          python -m zyko.reviewer review --path samples/review/clean_error_handling.py --fail-under 95

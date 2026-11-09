@@ -148,7 +148,9 @@ async def test_mcp_rtl_check_tool_by_path():
         }
     )
     payload = json.loads(result["result"]["content"][0]["text"])
-    assert payload["files_scanned"] == 2  # rtl_bad.css + arabic_mix.txt
+    # المرساة: rtl_bad.css + arabic_mix.txt — وأضافت المرحلة 2 samples/review/*.py
+    assert payload["files_scanned"] >= 2
+    assert payload["files_scanned"] > 0
     rules = {f["rule"] for f in payload["findings"]}
     assert "RTL-CSS-001" in rules  # من rtl_bad.css
     assert "RTL-TXT-001" in rules  # من arabic_mix.txt

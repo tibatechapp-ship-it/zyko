@@ -1,0 +1,168 @@
+{
+  "defective": [
+    {
+      "file": "bad_errors.py",
+      "planted": [
+        {
+          "id": "P-01",
+          "rule": "R-ERR-001",
+          "line": 15
+        },
+        {
+          "id": "P-02",
+          "rule": "R-ERR-002",
+          "line": 16
+        },
+        {
+          "id": "P-03",
+          "rule": "R-ERR-004",
+          "line": 22
+        },
+        {
+          "id": "P-04",
+          "rule": "R-ERR-003",
+          "line": 26
+        },
+        {
+          "id": "P-05",
+          "rule": "R-ERR-005",
+          "line": 31
+        },
+        {
+          "id": "P-06",
+          "rule": "R-ERR-007",
+          "line": 42
+        },
+        {
+          "id": "P-07",
+          "rule": "R-ERR-008",
+          "line": 51
+        },
+        {
+          "id": "P-08",
+          "rule": "R-ERR-009",
+          "line": 58
+        },
+        {
+          "id": "P-09",
+          "rule": "R-ERR-010",
+          "line": 66
+        }
+      ]
+    },
+    {
+      "file": "bad_security.py",
+      "planted": [
+        {
+          "id": "P-01",
+          "rule": "R-SEC-105",
+          "line": 12
+        },
+        {
+          "id": "P-02",
+          "rule": "R-SEC-105",
+          "line": 13
+        },
+        {
+          "id": "P-03",
+          "rule": "R-SEC-101",
+          "line": 18
+        },
+        {
+          "id": "P-04",
+          "rule": "R-SEC-101",
+          "line": 23
+        },
+        {
+          "id": "P-05",
+          "rule": "R-SEC-102",
+          "line": 28
+        },
+        {
+          "id": "P-06",
+          "rule": "R-SEC-103",
+          "line": 34
+        },
+        {
+          "id": "P-07",
+          "rule": "R-SEC-104",
+          "line": 39
+        },
+        {
+          "id": "P-08",
+          "rule": "R-SEC-104",
+          "line": 45
+        },
+        {
+          "id": "P-09",
+          "rule": "R-SEC-106",
+          "line": 51
+        },
+        {
+          "id": "P-10",
+          "rule": "R-SEC-107",
+          "line": 58
+        },
+        {
+          "id": "P-11",
+          "rule": "R-SEC-108",
+          "line": 63
+        }
+      ]
+    },
+    {
+      "file": "bad_quality.py",
+      "planted": [
+        {
+          "id": "P-09",
+          "rule": "R-QLT-207",
+          "line": 8
+        },
+        {
+          "id": "P-01",
+          "rule": "R-QLT-208",
+          "line": 12
+        },
+        {
+          "id": "P-02",
+          "rule": "R-QLT-209",
+          "line": 18
+        },
+        {
+          "id": "P-03",
+          "rule": "R-QLT-206",
+          "line": 23
+        },
+        {
+          "id": "P-04",
+          "rule": "R-QLT-202",
+          "line": 32
+        },
+        {
+          "id": "P-05",
+          "rule": "R-QLT-203",
+          "line": 37
+        },
+        {
+          "id": "P-06",
+          "rule": "R-QLT-201",
+          "line": 42
+        },
+        {
+          "id": "P-07",
+          "rule": "R-QLT-204",
+          "line": 100
+        },
+        {
+          "id": "P-08",
+          "rule": "R-QLT-205",
+          "line": 111
+        }
+      ]
+    }
+  ],
+  "clean": [
+    "clean_good.py",
+    "clean_error_handling.py"
+  ]
+}
