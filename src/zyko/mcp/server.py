@@ -88,6 +88,30 @@ ZYKO_TOOLS: list[dict[str, Any]] = [
             "required": [],
         },
     },
+    {
+        "name": "code_review",
+        "description": (
+            "Deterministic Arabic code review (27 AST rules): error handling, "
+            "security, quality. Score 0-100 + Arabic verdict + findings with "
+            "rule id/line/col and a suggested fix each. No model, no network, "
+            "byte-reproducible. Phase 2 (D22-40)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "python source to review"},
+                "path": {
+                    "type": "string",
+                    "description": "file or folder to review (alternative to text)",
+                },
+                "fail_under": {
+                    "type": "number",
+                    "description": "minimum acceptable score, default 90",
+                },
+            },
+            "required": [],
+        },
+    },
 ]
 
 
@@ -154,6 +178,8 @@ class ZykoMCPServer:
             text = self._pii_ar_scan_text(arguments)
         elif name == "rtl_check":
             text = self._rtl_check_text(arguments)
+        elif name == "code_review":
+            text = self._code_review_text(arguments)
         else:
             return {
                 "content": [{"type": "text", "text": f"unknown tool '{name}'"}],
@@ -226,6 +252,40 @@ class ZykoMCPServer:
                 }
                 for f in findings
             ],
+        }
+        return json.dumps(payload, ensure_ascii=False, indent=2)
+
+    @staticmethod
+    def _code_review_text(arguments: dict[str, Any]) -> str:
+        """`code_review` — مراجعة عربية حتمية للشيفرة (بلا نموذج)."""
+        import json
+
+        from zyko.reviewer import ReviewEngine
+
+        text_arg = arguments.get("text")
+        path_arg = arguments.get("path")
+        fail_under = float(arguments.get("fail_under") or 90)
+        engine = ReviewEngine()
+        if text_arg:
+            results = [engine.review_source(str(text_arg), "<text>")]
+        elif path_arg:
+            from pathlib import Path
+
+            if not Path(path_arg).exists():
+                raise ZykoError(f"code_review: path does not exist: {path_arg}")
+            results = engine.review_path(str(path_arg))
+        else:
+            raise ZykoError("code_review requires 'text' or 'path'")
+        if not results:
+            raise ZykoError("code_review: no python files found at the given path")
+        min_score = min(r.score for r in results)
+        payload = {
+            "tool": "code_review",
+            "files": len(results),
+            "min_score": min_score,
+            "fail_under": fail_under,
+            "passed": min_score >= fail_under,
+            "results": [r.to_dict() for r in results],
         }
         return json.dumps(payload, ensure_ascii=False, indent=2)
 

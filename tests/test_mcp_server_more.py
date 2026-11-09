@@ -71,8 +71,15 @@ def test_ping_and_tools_list():
     )
     assert responses[0]["result"] == {}
     names = [t["name"] for t in responses[1]["result"]["tools"]]
-    # 0.8.1: added deterministic Phase-0 tools (no model needed)
-    assert names == ["zyko_models", "zyko_route", "zyko_chat", "pii_ar_scan", "rtl_check"]
+    # 0.8.1: أدوات المرحلة 0 الحتمية (بلا نموذج) — 0.9.2: أداة المرحلة 2 code_review
+    assert names == [
+        "zyko_models",
+        "zyko_route",
+        "zyko_chat",
+        "pii_ar_scan",
+        "rtl_check",
+        "code_review",
+    ]
 
 
 def test_notifications_get_no_response():
