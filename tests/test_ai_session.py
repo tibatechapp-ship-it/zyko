@@ -5,10 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from zyko.ai.brains import GatedBrain, PlannerBrain
-from zyko.ai.session import AISession, DEFAULT_FAIL_UNDER
+from zyko.ai.session import DEFAULT_FAIL_UNDER, AISession
 
 CLEAN_GOAL = "قائمة مهام بسيطة مع واجهة سطر أوامر ووحدة tasks"
 PII_GOAL = "قائمة مهام — للتنسيق اتصل على 0501234567"
