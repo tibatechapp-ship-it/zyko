@@ -186,3 +186,36 @@ jobs:
           python -m zyko.fixer check --path /tmp/qlt.py
           python -m zyko.fixer check --path samples/review/clean_good.py
           python -c "import ast; ast.parse(open('/tmp/qlt.py', encoding='utf-8').read()); print('written file parses OK')"
+
+  phase4-pipeline:
+    name: phase-4 pipeline (feedback loop — determinism/idempotence/robustness gates)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e .[dev] pytest-cov
+      - name: Pipeline coverage gate (≥85%)
+        run: >
+          pytest tests/test_pipeline_engine.py tests/test_pipeline_report_cli.py
+          tests/test_pipeline_robustness.py tests/test_pipeline_gate.py
+          tests/test_pipeline_mcp.py
+          --cov=zyko.pipeline --cov-report=term --cov-fail-under=85 -q
+      - name: Phase-4 gate — 4 anchors × 6 gates (complete/deterministic/idempotent/improved/robust/fast)
+        run: python -m zyko.pipeline gate
+      - name: Pipeline CLI — one command in, fixed project out (exit-code contract)
+        run: |
+          rm -rf /tmp/p4-ci && mkdir -p /tmp/p4-ci
+          python -m zyko.pipeline run --description "قائمة مهام للفريق مع تقارير" --out /tmp/p4-ci/todo --fail-under 60 > /dev/null 2>&1; echo "run exit=$? (0/1 expected)"
+          python -c "import ast,pathlib; [ast.parse(p.read_text(encoding='utf-8')) for p in pathlib.Path('/tmp/p4-ci/todo').rglob('*.py')]; print('fixed tree parses OK')"
+          python -m zyko.pipeline run --description "قائمة مهام للفريق" --out /tmp/p4-ci/dry --dry-run --fail-under 60 --format json > /tmp/p4-ci/report.json
+          python -c "
+          import json
+          d = json.load(open('/tmp/p4-ci/report.json', encoding='utf-8'))
+          assert d['schema'] == 'zyko.pipeline/1' and d['ok'] and d['fixed_total'] >= 0
+          assert all(o['suggestion_ar'] for f in d['per_file'] for o in f['outcomes'])
+          print('pipeline JSON payload OK — every outcome carries suggestion_ar')
+          "
+          test ! -e /tmp/p4-ci/dry && echo "dry-run wrote nothing OK"
