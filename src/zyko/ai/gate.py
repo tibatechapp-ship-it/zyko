@@ -114,9 +114,7 @@ def run_phase8_gate(
             )
         )
 
-        baseline_ok = any(
-            s.step == "baseline_check" and s.ok for s in receipt_a.steps
-        )
+        baseline_ok = any(s.step == "baseline_check" and s.ok for s in receipt_a.steps)
         result.rows.append(
             GateRow(
                 anchor="نظيف",
@@ -127,7 +125,9 @@ def run_phase8_gate(
         )
 
         receipt_b = AISession(rounds=1).run(clean_goal, tmp / "b", write=True)
-        same = _normalized_json(receipt_a.to_json(), "a") == _normalized_json(receipt_b.to_json(), "b")
+        same = _normalized_json(receipt_a.to_json(), "a") == _normalized_json(
+            receipt_b.to_json(), "b"
+        )
         result.rows.append(
             GateRow(
                 anchor="نظيف",
@@ -145,7 +145,9 @@ def run_phase8_gate(
                 anchor="مريب",
                 gate="بوابة PII ترفض الاقتراح",
                 passed=not r_proposal.accepted,
-                details_ar="الاقتراح مرفوض قبل أي توليد" if not r_proposal.accepted else "اقتراح مريب مُقبَل!",
+                details_ar="الاقتراح مرفوض قبل أي توليد"
+                if not r_proposal.accepted
+                else "اقتراح مريب مُقبَل!",
             )
         )
 
@@ -155,7 +157,9 @@ def run_phase8_gate(
                 anchor="مريب",
                 gate="لا توليد بعد الرفض",
                 passed=not out_susp.exists(),
-                details_ar="مجلد الإخراج لم يُنشأ" if not out_susp.exists() else "كُتب على القرص رغم الرفض!",
+                details_ar="مجلد الإخراج لم يُنشأ"
+                if not out_susp.exists()
+                else "كُتب على القرص رغم الرفض!",
             )
         )
 
@@ -224,7 +228,9 @@ def run_phase8_gate(
                 anchor="عدائي",
                 gate="هدف أطول من الحد ⇒ آمن",
                 passed=not r_long.ok and r_long.failed_step == "goal",
-                details_ar=f"الحد {MAX_DESCRIPTION_LEN} محرفًا يُحترم" if not r_long.ok else "تجاوز الحد بلا رفض",
+                details_ar=f"الحد {MAX_DESCRIPTION_LEN} محرفًا يُحترم"
+                if not r_long.ok
+                else "تجاوز الحد بلا رفض",
             )
         )
 
