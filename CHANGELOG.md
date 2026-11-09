@@ -1,5 +1,72 @@
 # Changelog
 
+## 0.13.0 — Phase 6 of the coding engine: `zyko.baseline` — the quality guard over time
+
+The engine so far was a one-shot: review, fix, goodbye. This release makes
+it a **permanent guard**: it records your project's actual on-disk state in
+a deterministic baseline file (`.zyko/baseline.json`) and every later
+`check` compares the current tree against it and answers with numbers —
+what regressed, what improved, what is new, what is gone. Same three
+contracts as every phase: byte determinism (no timestamps anywhere — the
+monotonic `run_no` is the only clock), structured failures instead of
+exceptions, and honest skip documentation. Disk discipline is explicit and
+tested: `update` writes exactly one file (the baseline) and never touches
+a project file; `check` and `show` are read-only, always; the HTML report
+is written only when `--html` is requested.
+
+### Added
+- **`zyko.baseline.engine`** — `BaselineEngine.update(src)`: deterministic
+  tree walk (reusing the Phase-5 collector: sorted relative paths, no
+  symlinks, system dirs skipped, 500-file cap) → per-file UTF-8 read with
+  documented skips → 27-rule review → per-file record `{sha256, score,
+  findings}` stored under schema `zyko.baseline/1` with a capped run
+  history (last 20 runs). `BaselineEngine.check(src)`: re-reviews the tree
+  and compares multiset-of-rule-ids per file — score drop **or** new
+  findings ⇒ regression (exit 1, file named, counts exact); score rise or
+  resolved findings ⇒ improvement (exit 0 + "update the baseline" advice);
+  new/gone/skipped files are reported per file; a missing baseline is a
+  documented state (exit 1, "run update first"), not an error; a corrupt
+  or invalid baseline (bad JSON, bad encoding, wrong schema, files not an
+  object, non-int/bool/out-of-range score, findings not strings, sha not a
+  string, history not a list, baseline is a directory — 12 hostile cases)
+  ⇒ structured `failed_stage` + Arabic reason + exit 2, never an
+  exception. `update` over a corrupt baseline recovers by recreating it
+  with an Arabic note. All-zero-review states ("لا مراجعة", "القياس
+  متوقف") are honest documented exits.
+- **`zyko.baseline.report`** — deterministic JSON/text emitters plus a
+  one-line summary and the guarantees table, and **`baseline_check_to_html`**:
+  a full Arabic RTL report (`dir="rtl"`, embedded CSS, no JavaScript, no
+  external resources, no timestamps) with summary cards, the run-history
+  trend table, and a per-file status table — every dynamic value passed
+  through `html.escape`, and byte-identical across runs on the same state.
+- **`zyko.baseline.gate`** — six quantitative gates on the same three
+  Phase-5 anchor trees (flat CLI, nested package, mixed tree): **W1**
+  update⇒check completes with zero regressions, **W2** byte-identical
+  baseline files across identical copies + identical check payloads
+  (paths normalized), **W3** regression detection (an injected `eval`
+  ⇒ exit 1, file named, new findings counted), **W4** improvement
+  detection (removing the worst file ⇒ announced per file), **W5**
+  robustness (12 hostile inputs ⇒ structured Arabic failures), **W6**
+  the full update+check cycle under 5 seconds per anchor.
+- **`zyko.baseline.__main__`** — `python -m zyko.baseline
+  update|check|show|gate|promise` with `--src/--baseline/--format
+  text|json|summary/--html/--include-timing`; exit contract 0/1/2
+  (0 = no regression, 1 = regression or missing baseline or stopped
+  measurement, 2 = usage error or structured failure); `--html` writes
+  the deterministic report only where explicitly asked.
+- **MCP tool `baseline_check`** (10th tool, 7th deterministic one) —
+  read-only baseline comparison over MCP with the same payload
+  guarantees; missing-baseline answers as structured JSON, not errors.
+- 94 new tests (`tests/test_baseline_{engine,report_cli,gate,robustness,mcp}.py`)
+  — **1324 tests passing**; workspace/MCP tool-count regressions updated.
+
+### Gates
+- Phase-6 gate green: 3 anchors × 6 gates (complete / deterministic /
+  detects-regression / detects-improvement / robust 12/12 / <5s).
+- CI job `phase6-baseline`: baseline-module coverage ≥85%, the full gate,
+  and a CLI cycle (update → check exit 0 → corrupt a file → check exit 1
+  → `--html` report parses as valid RTL HTML).
+
 ## 0.12.0 — Phase 5 of the coding engine: `zyko.workspace` — the engine on existing projects
 
 Final slice of the 90-day plan (Phase 5, D73–D90). Until now the engine

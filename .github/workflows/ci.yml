@@ -257,3 +257,56 @@ jobs:
             echo "ERROR: in-place without --yes must fail"; exit 1
           fi
           grep -q -- "--yes" /tmp/p5-ci/err.txt && echo "in-place without --yes refused OK"
+  phase6-baseline:
+    name: phase-6 baseline (quality guard — determinism/regression-detection/robustness gates)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e .[dev] pytest-cov
+      - name: Baseline coverage gate (≥85%)
+        run: >
+          pytest tests/test_baseline_engine.py tests/test_baseline_report_cli.py
+          tests/test_baseline_robustness.py tests/test_baseline_gate.py
+          tests/test_baseline_mcp.py
+          --cov=zyko.baseline --cov-report=term --cov-fail-under=85 -q
+      - name: Phase-6 gate — 3 anchors × 6 gates (complete/deterministic/detects-regression/detects-improvement/robust/fast)
+        run: python -m zyko.baseline gate
+      - name: Baseline CLI — update/check cycle with regression detection and HTML report
+        run: |
+          rm -rf /tmp/p6-ci && mkdir -p /tmp/p6-ci
+          cp -r samples/workspace/small_tool /tmp/p6-ci/proj
+          python -m zyko.baseline update --src /tmp/p6-ci/proj --format json > /tmp/p6-ci/upd.json
+          python -c "
+          import json
+          d = json.load(open('/tmp/p6-ci/upd.json', encoding='utf-8'))
+          assert d['schema'] == 'zyko.baseline/1' and d['ok'] and d['created'] and d['run_no'] == 1
+          print('baseline created OK — one file, run_no=1')
+          "
+          python -m zyko.baseline check --src /tmp/p6-ci/proj > /dev/null && echo "clean check exit 0 OK"
+          python -m zyko.baseline check --src /tmp/p6-ci/proj --html /tmp/p6-ci/report.html > /dev/null
+          python -c "
+          h = open('/tmp/p6-ci/report.html', encoding='utf-8').read()
+          assert 'dir=\"rtl\"' in h and '<script' not in h
+          print('HTML report OK — RTL, scriptless')
+          "
+          echo '
+
+          def _ci_probe(x):
+              return eval(x)
+          ' >> /tmp/p6-ci/proj/tool.py
+          if python -m zyko.baseline check --src /tmp/p6-ci/proj; then
+            echo "ERROR: regression must exit 1"; exit 1
+          fi
+          echo "regression detection exit 1 OK"
+          python -m zyko.baseline check --src /tmp/p6-ci/proj --format json > /tmp/p6-ci/reg.json || true
+          python -c "
+          import json
+          d = json.load(open('/tmp/p6-ci/reg.json', encoding='utf-8'))
+          assert d['regressed_files'] >= 1 and d['new_findings_total'] >= 1
+          assert any(f['path'] == 'tool.py' and f['status'] == 'regressed' for f in d['per_file'])
+          print('regression payload OK — file named, findings counted')
+          "

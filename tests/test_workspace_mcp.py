@@ -43,15 +43,24 @@ def call(server, name, args):
     return resp
 
 
-def test_fix_workspace_registered_with_the_deterministic_six():
+def test_fix_workspace_registered_with_the_deterministic_seven():
     names = [t["name"] for t in ZYKO_TOOLS]
-    # 9 أدوات مجموعًا: ثلاثة موجّهة للطوّر (models/route/chat) + ست حتمية بلا نموذج
-    assert len(ZYKO_TOOLS) == 9
+    # 10 أدوات مجموعًا: ثلاثة موجّهة للطوّر (models/route/chat) + سبع حتمية بلا نموذج
+    # 0.13.0: baseline_check (حارس الجودة — القراءة فقط)
+    assert len(ZYKO_TOOLS) == 10
     assert [
         n
         for n in names
         if n
-        in ("pii_ar_scan", "rtl_check", "code_review", "auto_fix", "run_pipeline", "fix_workspace")
+        in (
+            "pii_ar_scan",
+            "rtl_check",
+            "code_review",
+            "auto_fix",
+            "run_pipeline",
+            "fix_workspace",
+            "baseline_check",
+        )
     ] == [
         "pii_ar_scan",
         "rtl_check",
@@ -59,6 +68,7 @@ def test_fix_workspace_registered_with_the_deterministic_six():
         "auto_fix",
         "run_pipeline",
         "fix_workspace",
+        "baseline_check",
     ]
     tool = next(t for t in ZYKO_TOOLS if t["name"] == "fix_workspace")
     assert "EXISTING" in tool["description"]
@@ -67,8 +77,20 @@ def test_fix_workspace_registered_with_the_deterministic_six():
     assert tool["inputSchema"]["required"] == ["path"]
 
 
-def test_deterministic_tool_count_is_nine_total_six_deterministic():
-    assert len(ZYKO_TOOLS) == 9
+def test_deterministic_tool_count_is_ten_total_seven_deterministic():
+    # 0.13.0: baseline_check انضم إلى الحتميات السبع (10 أدوات مجموعًا)
+    assert len(ZYKO_TOOLS) == 10
+    deterministic = {
+        "pii_ar_scan",
+        "rtl_check",
+        "code_review",
+        "auto_fix",
+        "run_pipeline",
+        "fix_workspace",
+        "baseline_check",
+    }
+    names = {t["name"] for t in ZYKO_TOOLS}
+    assert deterministic <= names
 
 
 def test_fix_workspace_dry_run(server, tmp_path):
