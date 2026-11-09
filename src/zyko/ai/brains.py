@@ -39,8 +39,8 @@ class Proposal:
     @property
     def accepted(self) -> bool:
         """القبول = نص غير فارغ + اجتياز كل البوابات المُسجَّلة."""
-        return bool(self.text.strip()) and bool(self.verdicts) and all(
-            v.passed for v in self.verdicts
+        return (
+            bool(self.text.strip()) and bool(self.verdicts) and all(v.passed for v in self.verdicts)
         )
 
 
@@ -76,9 +76,7 @@ def check_proposal_gates(text: str) -> tuple[GateVerdict, ...]:
 
     pii = GateVerdict(gate="pii", passed=True, details_ar="نظيف — لا بيانات شخصية")
     rtl_errors = [
-        f
-        for f in RTLChecker().check_source(text, "text", "proposal.txt")
-        if f.severity == "error"
+        f for f in RTLChecker().check_source(text, "text", "proposal.txt") if f.severity == "error"
     ]
     if rtl_errors:
         rtl = GateVerdict(
