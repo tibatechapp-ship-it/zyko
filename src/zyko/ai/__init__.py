@@ -13,8 +13,8 @@
 
 from zyko.ai.brains import (
     Brain,
-    GateVerdict,
     GatedBrain,
+    GateVerdict,
     PlannerBrain,
     Proposal,
     check_proposal_gates,
