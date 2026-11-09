@@ -112,6 +112,34 @@ ZYKO_TOOLS: list[dict[str, Any]] = [
             "required": [],
         },
     },
+    {
+        "name": "auto_fix",
+        "description": (
+            "Deterministic Arabic auto-fixer (12 safe AST paths over the 27 "
+            "review rules): fixes bare except, raise-from, open-outside-with, "
+            "shell=True on list args, mutable defaults, unsafe yaml, weak "
+            "hashes, TLS verify off, missing Arabic docstrings, ==None, dead "
+            "imports, lambda assigns. Every finding keeps its suggestion_ar; "
+            "output re-parsed before acceptance; idempotent. Dry-run only "
+            "(never writes files). No model, no network. Phase 3 (D41-58)."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "python source to fix"},
+                "path": {
+                    "type": "string",
+                    "description": "file or folder to fix (alternative to text)",
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": 'restrict the active auto rules, e.g. ["R-SEC-103"]',
+                },
+            },
+            "required": [],
+        },
+    },
 ]
 
 
@@ -180,6 +208,8 @@ class ZykoMCPServer:
             text = self._rtl_check_text(arguments)
         elif name == "code_review":
             text = self._code_review_text(arguments)
+        elif name == "auto_fix":
+            text = self._auto_fix_text(arguments)
         else:
             return {
                 "content": [{"type": "text", "text": f"unknown tool '{name}'"}],
@@ -285,6 +315,39 @@ class ZykoMCPServer:
             "min_score": min_score,
             "fail_under": fail_under,
             "passed": min_score >= fail_under,
+            "results": [r.to_dict() for r in results],
+        }
+        return json.dumps(payload, ensure_ascii=False, indent=2)
+
+    @staticmethod
+    def _auto_fix_text(arguments: dict[str, Any]) -> str:
+        """`auto_fix` — إصلاح عربي حتمي آمن (تجريبي دائمًا: لا كتابة على القرص)."""
+        import json
+
+        from zyko.fixer import FixerEngine
+
+        text_arg = arguments.get("text")
+        path_arg = arguments.get("path")
+        rules_arg = arguments.get("rules")
+        rules = tuple(str(r) for r in rules_arg) if rules_arg else None
+        engine = FixerEngine(rules=rules)
+        if text_arg:
+            results = [engine.fix_source(str(text_arg), "<text>")]
+        elif path_arg:
+            from pathlib import Path
+
+            if not Path(path_arg).exists():
+                raise ZykoError(f"auto_fix: path does not exist: {path_arg}")
+            results = engine.fix_path(str(path_arg))
+        else:
+            raise ZykoError("auto_fix requires 'text' or 'path'")
+        if not results:
+            raise ZykoError("auto_fix: no python files found at the given path")
+        from zyko.fixer.engine import summarize_fix
+
+        payload = {
+            "tool": "auto_fix",
+            "summary": summarize_fix(results),
             "results": [r.to_dict() for r in results],
         }
         return json.dumps(payload, ensure_ascii=False, indent=2)

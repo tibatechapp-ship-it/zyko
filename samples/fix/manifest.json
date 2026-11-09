@@ -1,0 +1,83 @@
+{
+  "defective": [
+    {
+      "file": "bad_errors.py",
+      "expect_fixed": [
+        "R-ERR-001",
+        "R-ERR-003",
+        "R-ERR-004",
+        "R-ERR-006"
+      ],
+      "allow_open": [
+        "R-ERR-005"
+      ],
+      "expect_manual": [
+        "R-ERR-002",
+        "R-ERR-005",
+        "R-ERR-007",
+        "R-ERR-008",
+        "R-ERR-009",
+        "R-ERR-010"
+      ]
+    },
+    {
+      "file": "bad_security.py",
+      "expect_fixed": [
+        "R-SEC-103",
+        "R-SEC-106",
+        "R-SEC-107"
+      ],
+      "allow_open": [],
+      "expect_manual": [
+        "R-SEC-101",
+        "R-SEC-102",
+        "R-SEC-104",
+        "R-SEC-105",
+        "R-SEC-108"
+      ]
+    },
+    {
+      "file": "bad_quality.py",
+      "expect_fixed": [
+        "R-QLT-204",
+        "R-QLT-206",
+        "R-QLT-207",
+        "R-QLT-209"
+      ],
+      "allow_open": [],
+      "expect_manual": [
+        "R-QLT-201",
+        "R-QLT-202",
+        "R-QLT-203",
+        "R-QLT-205",
+        "R-QLT-208"
+      ]
+    },
+    {
+      "file": "fix_edges.py",
+      "expect_fixed": [
+        "R-ERR-001",
+        "R-ERR-003",
+        "R-ERR-005",
+        "R-ERR-006",
+        "R-SEC-103",
+        "R-SEC-106",
+        "R-SEC-107",
+        "R-QLT-204",
+        "R-QLT-206",
+        "R-QLT-207",
+        "R-QLT-209"
+      ],
+      "allow_open": [
+        "R-ERR-004"
+      ],
+      "expect_manual": [
+        "R-ERR-002",
+        "R-QLT-205"
+      ]
+    }
+  ],
+  "clean": [
+    "clean_good.py"
+  ]
+}
