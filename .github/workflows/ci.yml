@@ -253,5 +253,7 @@ jobs:
           "
           python -m zyko.workspace run --src /tmp/p5-ci/proj --out /tmp/p5-ci/fixed --fail-under 60 > /dev/null
           python -c "import ast,pathlib; [ast.parse(p.read_text(encoding='utf-8')) for p in pathlib.Path('/tmp/p5-ci/fixed').rglob('*.py')]; print('fixed copy parses OK')"
-          python -m zyko.workspace run --src /tmp/p5-ci/proj --in-place 2>/tmp/p5-ci/err.txt; code=$?
-          test $code -eq 2 && grep -q -- "--yes" /tmp/p5-ci/err.txt && echo "in-place without --yes refused OK"
+          if python -m zyko.workspace run --src /tmp/p5-ci/proj --in-place 2>/tmp/p5-ci/err.txt; then
+            echo "ERROR: in-place without --yes must fail"; exit 1
+          fi
+          grep -q -- "--yes" /tmp/p5-ci/err.txt && echo "in-place without --yes refused OK"
