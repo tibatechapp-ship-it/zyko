@@ -274,6 +274,18 @@ def build_parser() -> argparse.ArgumentParser:
     _register_factory(p.add_subparsers(dest="factory_cmd"))
     p.set_defaults(func=cmd.cmd_factory)
 
+    # py (المرحلة 3: بوابة ضاد — المترجم العربي المستقل، تفويض بعملية منفصلة)
+    p = sub.add_parser(
+        "py",
+        help="ترجم/نفّذ ملف .daad عبر مترجم ضاد المستقل (عملية منفصلة — لا استيراد داخلي)",
+    )
+    p.add_argument("file", help="مسار ملف .daad")
+    p.add_argument("--out", "-o", default=None, help="اكتب بايثون المُولَّد إلى مسار مخصص")
+    p.add_argument("--stdout", action="store_true", help="اطبع بايثون المُولَّد إلى الخرج القياسي")
+    p.add_argument("--run", action="store_true", help="نفّذ البرنامج بعد الترجمة")
+    p.add_argument("--check", action="store_true", help="فحص الصياغة فقط دون كتابة أو تنفيذ")
+    p.set_defaults(func=cmd.cmd_py)
+
     return parser
 
 

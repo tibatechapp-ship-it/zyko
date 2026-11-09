@@ -960,3 +960,55 @@ def cmd_factory(args: Any) -> int:
     from zyko.factory.cli import handle_factory
 
     return handle_factory(args)
+
+
+def cmd_py(args: Any) -> int:
+    """بوابة ضاد (المرحلة 3) — تفويض حرفي إلى مترجم ضاد المستقل بعملية منفصلة.
+
+    ضاد لغة برمجة كاملة قائمة بذاتها (tibatechapp-ship-it/daad): تُستدعى
+    هنا كعملية منفصلة (subprocess) ولا تُستورد داخل بوابة AI أبدًا —
+    نفس الحجج، نفس أكواد الخروج، نفس الحتمية البايتية. بلا أي اعتماد
+    جديد على zyko؛ وإن لم تكن ضاد مثبتة ظهرت رسالة تثبيت واضحة.
+    """
+    import subprocess
+
+    src = Path(args.file)
+    if not src.exists():
+        print(ui.fail(f"الملف غير موجود: {args.file}"), file=sys.stderr)
+        return 1
+
+    if args.run:
+        daad_args = ["run", str(src)]
+    elif args.check:
+        daad_args = ["check", str(src)]
+    elif args.out:
+        # ضاد يكتب بجانب المصدر افتراضيًا؛ للمسار المخصص نترجم إلى stdout ثم نكتب بأنفسنا.
+        proc = subprocess.run(  # nosec B603
+            [sys.executable, "-m", "daad", "transpile", str(src), "-"],
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode != 0:
+            sys.stdout.write(proc.stdout)
+            sys.stderr.write(proc.stderr)
+            return proc.returncode
+        out = Path(args.out)
+        out.write_text(proc.stdout, encoding="utf-8")
+        print(ui.ok(f"اكتُب {out}"))
+        return 0
+    elif args.stdout:
+        daad_args = ["transpile", str(src), "-"]
+    else:
+        daad_args = ["transpile", str(src)]
+
+    try:
+        return subprocess.call([sys.executable, "-m", "daad", *daad_args])  # nosec B603
+    except FileNotFoundError:
+        print(
+            ui.fail(
+                "مترجم ضاد غير مثبّت — ثبّته بـ: "
+                "pip install git+https://github.com/tibatechapp-ship-it/daad.git"
+            ),
+            file=sys.stderr,
+        )
+        return 1

@@ -5,7 +5,7 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — Universal AI Orchestration Platform" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-1406%20passing-22c55e)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-1416%20passing-22c55e)](.github/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-84cc16)](.github/workflows/ci.yml)
 [![Security](https://img.shields.io/badge/bandit-0%20findings-22c55e?logo=shield&logoColor=white)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
@@ -21,9 +21,38 @@
 
 # ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة
 
-**النسخة 0.15.0** · محرك برمجة عربي حتمي: **توليد ← مراجعة ← إصلاح ← حارس — من بوابة واحدة، وعلى أي مشروع قائم على قرصك** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** · **RAG** محلي بلا اعتماديات
+**النسخة 0.16.0** · محرك برمجة عربي حتمي: **توليد ← مراجعة ← إصلاح ← حارس — من بوابة واحدة، وعلى أي مشروع قائم على قرصك** · توجيه متعدد المزوّدين بقرارات **قابلة للتحقق** · حوكمة **Policy-as-Code** · وكلاء أصليون بـ **MCP** · تتبّع **مدمج** · **RAG** محلي بلا اعتماديات · بوابة **`zyko py`** إلى لغة **ضاد** المستقلة
 
 تعمل على: **Linux · Windows · macOS · Android · Termux** — بنية Python خالصة، لا شيء يُترجم إلزاميًا على أي منصة.
+
+---
+
+## ما الجديد في 0.16.0؟ (`zyko py`: بوابة ضاد — لغة بايثون العربية المستقلة)
+
+بوابة AI التقت بأول لغة تُبنى على نهجها: **ضاد** — مترجم بايثون عربي
+حتمي في مستودع مستقل (`tibatechapp-ship-it/daad`): محلّل صياغة نازل،
+مُصدر بايثون حتمي بايت-ببايت، **61 اختبارًا**، سبعة أمثلة تعمل،
+REPL تفاعلي، **صفر اعتماديات**. والقاعدة الذهبية صامدة: **لا لغة
+برمجة داخل بوابة AI** — `zyko py` يفوّض إلى مترجم ضاد **بعملة
+منفصلة** (subprocess): لا استيراد داخلي، لا اعتماد جديد على zyko،
+نفس الحجج ونفس أكواد الخروج، وإن لم تكن ضاد مثبتة ظهرت رسالة تثبيت
+واضحة.
+
+```bash
+zyko py hello.daad                 # ترجم → يكتب hello.py (حتمي بايت-ببايت)
+zyko py hello.daad --stdout        # اطبع بايثون المُولَّد على stdout
+zyko py hello.daad --run           # ترجم ثم نفّذ
+zyko py hello.daad --check         # فحص الصياغة فقط
+zyko py hello.daad -o أخرج.py      # مسار إخراج مخصص
+```
+
+- **عزل معماري مُختبَر**: 10 اختبارات جديدة في
+  `tests/test_cli_daad.py` (إجمالي المجموعة **1416 اختبارًا ناجحًا**)
+  تتخطى نفسها تلقائيًا إذا لم تكن ضاد مثبتة — CI يبقى أخضر بلا ضاد،
+  والحتمية البايتية للترجمة مُختبَرة.
+- **ضاد 0.2.0 نفسها**: REPL تفاعلي (`daad repl`)، إسناد الفهرس
+  `ص[0] = 99` وإسناد الخاصية، f-strings عربية `f"مرحبا {الاسم}"`،
+  وelif أصلي — كلها بقواعد المشروع نفسه: حتمية، صفر اعتماديات.
 
 ---
 

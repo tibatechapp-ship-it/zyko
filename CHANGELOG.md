@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.16.0 — `zyko py`: the daad gateway (Phase 3 of the daad plan)
+
+ZYKO met its first standalone language: **daad** (ضاد) — a byte-
+deterministic Arabic-Python transpiler in its own repository
+(`tibatechapp-ship-it/daad`): recursive-descent parser, 28 Arabic
+keywords, deterministic Python emission, 61 tests, seven working
+examples, an interactive REPL, and **zero dependencies**. The golden
+rule holds: **no programming language inside the AI gateway** —
+`zyko py` delegates to the daad transpiler as a **separate process**
+(subprocess): no internal import, no new zyko dependency, same
+arguments, same exit codes, same byte determinism. If daad is not
+installed, a clear Arabic install hint is printed instead of a
+traceback.
+
+### Added
+- **`zyko py FILE.daad`** — transpile to `FILE.py` next to the source
+  (byte-for-byte identical to `daad transpile`).
+- **`zyko py FILE.daad --stdout`** — print the generated Python
+  without writing anything.
+- **`zyko py FILE.daad --run`** — transpile then execute in the daad
+  subprocess (program output and exit code pass through untouched).
+- **`zyko py FILE.daad --check`** — syntax check only.
+- **`zyko py FILE.daad --out PATH`** — write the generated Python to a
+  custom path.
+- **`tests/test_cli_daad.py`** — 10 tests covering every flag, the
+  byte determinism of transpilation, exit-code propagation, and the
+  Arabic missing-file error. The module **self-skips when daad is not
+  installed**, so CI stays green without daad (the tests run in CI
+  environments that install it).
+
+### Design notes
+- **Separation of concerns**: daad remains a fully standalone project
+  with its own repository, releases, and zero dependencies; `zyko py`
+  is a *process boundary*, not a library dependency — the AI gateway
+  orchestrates the language but never embeds it.
+- **Exit-code fidelity**: daad's exit codes (0 ok, 1 transpile/parse
+  error, 2 usage) propagate unchanged through the gateway.
+
 ## 0.15.0 — The MIZAN wave: `zyko.reviewer` grows to 38 rules with dataflow taint analysis
 
 The reviewer engine (Phase 2) absorbed the field-proven security rules
