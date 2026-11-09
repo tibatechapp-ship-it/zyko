@@ -344,3 +344,32 @@ jobs:
           python -m zyko.baseline update --src /tmp/p7-ci/proj --format summary > /dev/null
           zyko factory baseline check --src /tmp/p7-ci/proj --format summary
           echo "factory baseline delegation OK"
+
+  phase-8-ai:
+    name: phase-8 zyko.ai (intelligence over the factory — gated proposals, evidence receipts, adversarial inputs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e .[dev] pytest-cov
+      - name: AI coverage gate (≥85%)
+        run: >
+          pytest tests/test_ai_brains.py tests/test_ai_receipt.py tests/test_ai_session.py
+          tests/test_ai_gate.py tests/test_ai_cli.py
+          --cov=zyko.ai --cov-report=term --cov-fail-under=85 -q
+      - name: Phase-8 gate — the AI layer passes the factory gates on clean/suspicious/adversarial anchors
+        run: python -m zyko.ai gate
+      - name: AI CLI — a real session signs its receipt, a PII goal is refused before any write
+        run: |
+          rm -rf /tmp/p8-ci && mkdir -p /tmp/p8-ci
+          python -m zyko.ai run --goal "قائمة مهام بسيطة" --out /tmp/p8-ci/proj --format summary
+          test -f /tmp/p8-ci/proj/.zyko/ai_receipt.json && test -f /tmp/p8-ci/proj/.zyko/AI_RECEIPT.md
+          echo "ai session receipt OK"
+          rc=0
+          python -m zyko.ai run --goal "قائمة مهام — اتصل على 0501234567" --out /tmp/p8-ci/bad --format summary || rc=$?
+          test $rc -eq 1
+          test ! -e /tmp/p8-ci/bad
+          echo "ai PII refusal OK — nothing written"
