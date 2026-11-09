@@ -719,10 +719,10 @@ def _check_tmp_value(node: ast.AST, value: ast.expr | str | None, out: list[Anch
     if isinstance(value, ast.Constant):
         value = value.value
     if isinstance(value, str) and (
-        value == "/tmp"
-        or value.startswith("/tmp/")
-        or value == "/var/tmp"
-        or value.startswith("/var/tmp/")
+        value == "/tmp"  # nosec B108 — هذا الكاشف نفسه لقاعدة R-SEC-117
+        or value.startswith("/tmp/")  # nosec B108 — كاشف لا كود إنتاجي
+        or value == "/var/tmp"  # nosec B108 — كاشف لا كود إنتاجي
+        or value.startswith("/var/tmp/")  # nosec B108 — كاشف لا كود إنتاجي
     ):
         out.append((node.lineno, node.col_offset, value[:40]))
     elif isinstance(value, (ast.Tuple, ast.List, ast.Set)):
