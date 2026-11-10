@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — `zyko.ai` plugs in a real local model: `OllamaBrain` behind the same gates
+## 0.18.0 — `zyko.ai` plugs in a real local model: `OllamaBrain` behind the same gates
 
 The golden rule did not change: **the brain adds, the gates decide**.
 `OllamaBrain` asks a locally-running Ollama model for an Arabic plan
