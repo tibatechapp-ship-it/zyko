@@ -11,6 +11,7 @@
     zyko factory workspace    # المرحلة 5 — نفس سلوك python -m zyko.workspace run
     zyko factory baseline     # المرحلة 6 — نفس سلوك python -m zyko.baseline
     zyko factory gates        # بوابات 3+4+5+6 كاملة (24 بوابه) وخلاصة واحدة
+    zyko factory dashboard    # لوحة تحكم عربية حتمية (HTML + Markdown) للبوابات
 
 التفويض حرفي: أوامر fix/pipeline/workspace/baseline تستدعي معالجات
 الوحدات نفسها (نفس الحجج، نفس أكواد الخروج، نفس الحتمية) — بلا إعادة
@@ -119,6 +120,8 @@ def _add_baseline_parser(sub: Any) -> None:
 def _add_gates_parser(sub: Any) -> None:
     p = sub.add_parser("gates", help="بوابات المراحل 3+4+5+6 كاملة (24 بوابه) وخلاصة واحدة")
     p.add_argument("--max-seconds", type=float, default=5.0, help="ميزانية الأداء لكل بوابة")
+    p.add_argument("--html", default=None, help="اكتب لوحة التحكم (HTML) إلى هذا الملف")
+    p.add_argument("--md", default=None, help="اكتب لوحة التحكم (Markdown) إلى هذا الملف")
 
 
 def register_to(factory_sub: Any) -> None:
@@ -129,6 +132,7 @@ def register_to(factory_sub: Any) -> None:
     _add_workspace_parser(factory_sub)
     _add_baseline_parser(factory_sub)
     _add_gates_parser(factory_sub)
+    _add_dashboard_parser(factory_sub)
 
 
 def _cmd_gates(args: argparse.Namespace) -> int:
@@ -136,7 +140,72 @@ def _cmd_gates(args: argparse.Namespace) -> int:
 
     gates = run_all_gates(max_seconds=args.max_seconds)
     print(combined_gates_text(gates))
-    return EXIT_OK if all(g.ok for _, g in gates) else EXIT_FINDINGS
+    code = EXIT_OK if all(g.ok for _, g in gates) else EXIT_FINDINGS
+    return _write_dashboard_outputs(args, gates, code)
+
+
+def _dashboard_input(gates: list[tuple[str, Any]]) -> Any:
+    """حوّل بوابات المراحل الأربع إلى مدخل لوحة التحكم — بلا توقيت (يكسر الحتمية)."""
+    from zyko.dashboard import DashboardInput, GateResult
+    from zyko.version import __version__
+
+    rows = tuple(
+        GateResult(
+            name=label,
+            passed=bool(g.ok),
+            reason_ar=f"{sum(1 for r in g.rows if r.passed)}/{len(g.rows)} بوابات",
+        )
+        for label, g in gates
+    )
+    return DashboardInput("ZYKO", __version__, rows)
+
+
+def _write_dashboard_outputs(
+    args: argparse.Namespace,
+    gates: list[tuple[str, Any]],
+    code: int,
+) -> int:
+    """اكتب لوحة HTML/Markdown عند طلب --html/--md — كود الخروج يعكس البوابات فقط."""
+    html_path = getattr(args, "html", None)
+    md_path = getattr(args, "md", None)
+    if not html_path and not md_path:
+        return code
+    from pathlib import Path
+
+    from zyko.dashboard import build_dashboard, build_markdown
+
+    data = _dashboard_input(gates)
+    if html_path:
+        Path(html_path).write_text(build_dashboard(data), encoding="utf-8")
+    if md_path:
+        Path(md_path).write_text(build_markdown(data), encoding="utf-8")
+    parts = [
+        f"HTML={html_path}" if html_path else "",
+        f"Markdown={md_path}" if md_path else "",
+    ]
+    print("كُتبت لوحة التحكم — " + " · ".join(p for p in parts if p))
+    return code
+
+
+def _add_dashboard_parser(sub: Any) -> None:
+    p = sub.add_parser(
+        "dashboard",
+        help="لوحة تحكم عربية حتمية (HTML + Markdown) لبوابات المراحل الأربع",
+    )
+    p.add_argument("--html", default=None, help="اكتب اللوحة (HTML) إلى هذا الملف")
+    p.add_argument("--md", default=None, help="اكتب اللوحة (Markdown) إلى هذا الملف")
+    p.add_argument("--max-seconds", type=float, default=5.0, help="ميزانية الأداء لكل بوابة")
+
+
+def _cmd_dashboard(args: argparse.Namespace) -> int:
+    if not getattr(args, "html", None) and not getattr(args, "md", None):
+        print("حدّد هدفًا واحدًا على الأقل: --html مسار أو --md مسار")
+        return EXIT_USAGE
+    from zyko.factory.gates import run_all_gates
+
+    gates = run_all_gates(max_seconds=args.max_seconds)
+    code = EXIT_OK if all(g.ok for _, g in gates) else EXIT_FINDINGS
+    return _write_dashboard_outputs(args, gates, code)
 
 
 def handle_factory(args: argparse.Namespace) -> int:
@@ -175,6 +244,8 @@ def handle_factory(args: argparse.Namespace) -> int:
         return EXIT_USAGE
     if command == "gates":
         return _cmd_gates(args)
+    if command == "dashboard":
+        return _cmd_dashboard(args)
     print(factory_map_text())
     return EXIT_OK
 

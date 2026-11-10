@@ -12,6 +12,11 @@ The README is rewritten (<300 lines, version-first, verified commands only)
 full 34-release story moves to `docs/HISTORY.md`. Docs-only; no code
 changes.
 
+The factory grows a deterministic Arabic dashboard (`zyko.dashboard`):
+`zyko factory gates --html/--md` and a new `zyko factory dashboard` render
+the four phase gates into byte-identical RTL HTML and Markdown — dark
+mode, zero JavaScript, sha256-fingerprinted, no external resources.
+
 ## 0.19.0 — `zyko.ai` lets brains compete: `BestOfBrain` — first accepted candidate wins
 
 The golden rule now arbitrates *between* brains, not just texts.

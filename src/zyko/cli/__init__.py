@@ -267,7 +267,7 @@ def build_parser() -> argparse.ArgumentParser:
     # factory (المرحلة 7: بوابة المصنع الموحدة — تفويض حرفي لوحدات المحرك)
     p = sub.add_parser(
         "factory",
-        help="بوابة المصنع الموحدة: map / fix / pipeline / workspace / gates",
+        help="بوابة المصنع الموحدة: map / fix / pipeline / workspace / gates / dashboard",
     )
     from zyko.factory.cli import register_to as _register_factory
 
