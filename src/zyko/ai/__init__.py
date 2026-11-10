@@ -11,6 +11,7 @@
     python -m zyko.ai map      # خريطة طبقة الذكاء
 """
 
+from zyko.ai.best_of_brain import BestOfBrain
 from zyko.ai.brains import (
     Brain,
     GatedBrain,
@@ -26,6 +27,7 @@ from zyko.ai.session import AISession
 __all__ = [
     "AIReceipt",
     "AISession",
+    "BestOfBrain",
     "Brain",
     "DEFAULT_HOST",
     "GateVerdict",

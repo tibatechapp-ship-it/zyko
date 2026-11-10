@@ -111,14 +111,17 @@ class AISession:
         # ---- 1) بوابة الخطة: اقتراح العقل لا يمر إلا عبر PII ثم RTL
         proposal = self.brain.propose(desc)
         if not proposal.accepted:
-            failed = next((v for v in proposal.verdicts if not v.passed), None)
+            # كل الأحكام الفاشلة تُوثَّق — قصة الرفض كاملة لا أول فشل فقط
+            evidence = "؛ ".join(
+                v.details_ar for v in proposal.verdicts if not v.passed and v.details_ar
+            )
             receipt.add(
                 StepRecord(
                     step="plan",
                     title_ar="بوابة الخطة (عقل ← PII ← RTL)",
                     ok=False,
                     exit_code=1,
-                    details_ar=failed.details_ar if failed else "اقتراح مرفوض",
+                    details_ar=evidence or "اقتراح مرفوض",
                 )
             )
             receipt.seconds_total = time.perf_counter() - started

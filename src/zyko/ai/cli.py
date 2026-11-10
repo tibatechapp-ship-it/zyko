@@ -31,6 +31,7 @@ def ai_map_text() -> str:
             "العقل/الأمر                                  ماذا يفعل",
             "planner      zyko ai run --goal «وصف»       مخطط حتمي مقيّد بالبوابات (بلا نموذج وبلا شبكة)",
             "ollama       zyko ai run --brain ollama …   نموذج محلي حقيقي خلف البوابات نفسها (يتطلب Ollama)",
+            "bestof       zyko ai run --brain bestof …   منافسة عقول: النموذج أولًا ثم المخطط — أول مقبول يفوز",
             "gated:<اسم>  —                              أي عقل آخر يُمرّ عبر بوابات المصنع نفسها",
             "-" * 62,
             "مسار الجلسة: اقتراح العقل ← بوابة PII ← بوابة RTL ← توليد (حلقة",
@@ -42,6 +43,7 @@ def ai_map_text() -> str:
             '  python -m zyko.ai run --goal "قائمة مهام" --out ./جديد',
             "  python -m zyko.ai run --goal «وصف» --out ./ج --dry-run   # بلا كتابة",
             "  python -m zyko.ai run --brain ollama --model qwen2.5:7b …  # عقل محلي حقيقي",
+            "  python -m zyko.ai run --brain bestof --model qwen2.5:7b …  # النموذج أولًا والمخطط يحتاط",
             "  python -m zyko.ai ollama                                 # فحص خادم Ollama",
             "  python -m zyko.ai gate                                   # بوابة المرحلة 8",
         ]
@@ -53,6 +55,9 @@ def _build_session(args: Any) -> Any:
 
     العقل المحلي يُغلَّف بـ ``GatedBrain`` دائمًا: نص النموذج لا يُقبل
     قبل بوابة PII وبوابة RTL — العقل يضيف، والبوابات تقرّر.
+    و``bestof`` يوسّع المنافسة: النموذج المحلي أولًا فالمخطط الحتمي
+    احتياطًا — كل مرشح خلف بواباته، وأول مقبول يفوز (البوابات تحكم
+    بين العقول لا بين النصوص فقط).
     """
     from zyko.ai.brains import GatedBrain, PlannerBrain
     from zyko.ai.session import AISession
@@ -62,6 +67,18 @@ def _build_session(args: Any) -> Any:
         from zyko.ai.ollama_brain import OllamaBrain
 
         brain = GatedBrain(OllamaBrain(model=args.model, host=getattr(args, "ollama_host", None)))
+    elif brain_choice == "bestof":
+        from zyko.ai.best_of_brain import BestOfBrain
+        from zyko.ai.ollama_brain import OllamaBrain
+
+        brain = GatedBrain(
+            BestOfBrain(
+                [
+                    OllamaBrain(model=args.model, host=getattr(args, "ollama_host", None)),
+                    PlannerBrain(),
+                ]
+            )
+        )
     else:
         brain = GatedBrain(PlannerBrain())
     return AISession(brain=brain, rounds=args.rounds, fail_under=args.fail_under)
@@ -75,9 +92,11 @@ def handle_ai(args: Any) -> int:
         return EXIT_OK
 
     if command == "run":
-        if getattr(args, "brain", "planner") == "ollama" and not getattr(args, "model", None):
+        if getattr(args, "brain", "planner") in ("ollama", "bestof") and not getattr(
+            args, "model", None
+        ):
             print(
-                "خطأ: --brain ollama يتطلب --model — مثال: --model qwen2.5:7b",
+                f"خطأ: --brain {getattr(args, 'brain', 'planner')} يتطلب --model — مثال: --model qwen2.5:7b",
                 file=sys.stderr,
             )
             return EXIT_USAGE
@@ -149,14 +168,14 @@ def register_to(sub: Any) -> None:
     )
     run_p.add_argument(
         "--brain",
-        choices=("planner", "ollama"),
+        choices=("planner", "ollama", "bestof"),
         default="planner",
-        help="العقل: planner الحتمي (افتراضي) أو ollama النموذج المحلي خلف البوابات نفسها",
+        help="العقل: planner الحتمي (افتراضي)، أو ollama النموذج المحلي، أو bestof منافسة عقول (النموذج ثم المخطط)",
     )
     run_p.add_argument(
         "--model",
         default=None,
-        help="اسم النموذج في Ollama (مطلوب مع --brain ollama) — مثال: qwen2.5:7b",
+        help="اسم النموذج في Ollama (مطلوب مع --brain ollama أو bestof) — مثال: qwen2.5:7b",
     )
     run_p.add_argument(
         "--ollama-host",
