@@ -1,5 +1,36 @@
 # Changelog
 
+## Unreleased — `zyko.ai` plugs in a real local model: `OllamaBrain` behind the same gates
+
+The golden rule did not change: **the brain adds, the gates decide**.
+`OllamaBrain` asks a locally-running Ollama model for an Arabic plan
+and returns the model's raw text as a proposal — accepted only through
+`GatedBrain` (PII then RTL, the fixed order), never touching the
+project directly. Zero new dependencies: the transport is stdlib
+`urllib`, injectable for tests, so the suite runs with no network at
+all — a local mock server plays Ollama instead. Every failure (server
+unreachable, HTTP error, timeout, malformed response) comes back as a
+rejected proposal with Arabic evidence in the receipt, never as an
+escaping exception.
+
+### Added
+- **`zyko.ai.ollama_brain`** — `OllamaBrain(model, host=…, timeout=…,
+  transport=…)`:
+  - `name = "ollama:<model>"` and `deterministic = False` — the
+    receipt records both, so a real-model session is never mistaken
+    for the deterministic planner.
+  - `propose(request)` builds a fixed Arabic planning prompt (the
+    no-PII and no-direction-control rules are written into the prompt
+    itself), calls `POST /api/chat` non-streaming, and returns the
+    model text as a proposal for the gates to judge.
+  - `list_models(host)` — `GET /api/tags` as a tuple of names.
+- **CLI** — `zyko ai run --brain ollama --model «model»
+  [--ollama-host …]` runs the documented session with the local model
+  behind `GatedBrain`; `zyko ai ollama` probes the local server and
+  lists installed models (`0` available / `1` unreachable); `zyko ai
+  map` documents the new brain. Host resolution: `--ollama-host` →
+  `ZYKO_OLLAMA_HOST` → `http://127.0.0.1:11434`.
+
 ## 0.17.0 — Phase 8 of the coding engine: `zyko.ai` — intelligence assembled over the factory
 
 The factory was one machine; this release assembles the first
