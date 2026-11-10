@@ -35,7 +35,11 @@ dependencies = [
 
 [project.optional-dependencies]
 ui = ["rich>=13.0"]
-structured = ["pydantic>=2.0"]
+# pydantic-core has no wheel for Python 3.14 on Termux/Android yet — the same
+# gate as the dev extra below. `zyko[structured]` must install (sans pydantic,
+# which the engine already treats as optional) on the platform ZYKO
+# advertises first-class.
+structured = ["pydantic>=2.0; python_version < '3.14'"]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",

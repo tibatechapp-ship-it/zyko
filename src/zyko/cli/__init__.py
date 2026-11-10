@@ -316,10 +316,14 @@ def _guard_output_encoding() -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
+    # The guard MUST run before parse_args(): `zyko --help` prints the epilog
+    # (which contains →) from inside parse_args, and on Windows pipes that
+    # output is cp1252 — the old post-parse placement left --help and usage
+    # errors as the one codepath that could still die with UnicodeEncodeError.
+    _guard_output_encoding()
     args: Any = parser.parse_args(argv)
     quiet = not (getattr(args, "log_level", "WARNING") != "DEBUG")
     setup_logging(args.log_level if hasattr(args, "log_level") else "WARNING", quiet=quiet)
-    _guard_output_encoding()
     try:
         result = args.func(args)
         return int(result or 0)
