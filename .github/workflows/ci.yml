@@ -57,8 +57,18 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
+      # Pin the interpreter pyo3 builds against: the job has no setup-python,
+      # so it used the runner image's default — which flipped to 3.14 mid-day
+      # and pyo3 0.22 refuses anything newer than 3.13. Pinning keeps the job
+      # deterministic; the forward-compat flag is a second belt against the
+      # next image drift.
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
       - name: Check the optional PyO3 accelerator compiles
         working-directory: rust/zyko-kernel
+        env:
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
         run: cargo check
 
   phase0-tools:
