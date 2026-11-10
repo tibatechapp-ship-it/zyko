@@ -1,11 +1,26 @@
 # Changelog
 
-## Unreleased — legal shield + first-impression round
+## 0.20.0 — the deterministic brain: `orchestrator` decides, `zyko do` executes
 
-Apache 2.0 has held since the first commit (2026-11-01); this round adds the
-missing legal artifacts: a root `NOTICE` file and `docs/INNOVATION.md` — a
-dated prior-art publication pinning each of the six core innovations to its
-introducing commit and first release.
+The centerpiece of this release is `zyko.orchestrator` — the deterministic
+brain that decides *which tool runs in which order* without any language
+model in the decision path. `classify` reads an Arabic (or English) task
+phrase and returns a typed decision with confidence, matched keywords and
+alternatives (36 tests). `route` compiles the decision into a `Plan` of
+frozen `Step`s from the routing table — REVIEW→review, FIX→review+fix,
+GENERATE→generate, TRANSPILE→transpile, VERIFY→verify, ANALYZE→baseline,
+UNKNOWN→an explicit Arabic apology, never a guess (26 tests). `run`
+executes the plan against the real engines, sends every step through the
+PII and RTL guardians, signs each step and the whole chain with sha256
+(`chain_hash`), stops at the first failure with a clear `error_ar`, and
+emits a receipt `zyko verify` accepts — dry-run by default, a write needs
+an explicit `dry_run=False` (38 tests). One command ties them together:
+`zyko do "راجع هذا الملف"` classifies, routes and runs — twice must be
+byte-identical.
+
+Also in this round: the legal shield (a root `NOTICE` and
+`docs/INNOVATION.md`, a dated prior-art publication pinning each of the six
+core innovations to its introducing commit and first release).
 
 The README is rewritten (<300 lines, version-first, verified commands only)
 — the home page now opens on 0.19.0 instead of a stale 0.16.0 — and the
