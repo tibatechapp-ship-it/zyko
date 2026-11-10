@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "zyko"
 version = "0.20.0"
 description = "ZYKO — the deterministic Arabic coding engine (generate, review, fix in one command) on a verifiable AI-orchestration platform. Runs on Linux, Windows, macOS, Android and Termux."
-readme = { file = "README.md", content-type = "text/markdown" }
+readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "ZYKO Contributors" }]
