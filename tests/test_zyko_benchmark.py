@@ -9,6 +9,7 @@ Unlike typical unit tests, this file:
 Every case is deterministic — no flakiness, no statistical noise.
 Run with: pytest tests/test_zyko_benchmark.py -v -s
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -16,9 +17,6 @@ import hashlib
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
-
-import pytest
-
 
 # ═══════════════════════════════════════════════════════════════════
 # Framework
@@ -60,13 +58,19 @@ PII_CASES: list[Case] = [
     Case("pii-email-01", "pii", "بريد x@y.com", {"email": 1}, tags=("email", "ar")),
     Case("pii-email-02", "pii", "from a@b.co to c@d.org", {"email": 2}, tags=("email", "multi")),
     # --- Mixed ---------------------------------------------------
-    Case("pii-mix-01", "pii", "call +966501234567 or email x@y.com",
-         {"phone": 1, "email": 1}, tags=("mixed",)),
+    Case(
+        "pii-mix-01",
+        "pii",
+        "call +966501234567 or email x@y.com",
+        {"phone": 1, "email": 1},
+        tags=("mixed",),
+    ),
 ]
 
 
 def _run_pii(payload: str) -> dict[str, int]:
     from zyko.tools.pii_ar import redact
+
     _, findings = redact(payload)
     counts: dict[str, int] = defaultdict(int)
     for f in findings:
@@ -96,8 +100,8 @@ def test_benchmark_pii(capsys):
                 print(f"  [PII FAIL] {c.id}: exp={c.expected} act={actual}")
     mean = sum(scores) / len(scores)
     with capsys.disabled():
-        print(f"\n[pii] {mean*100:5.1f}% over {len(PII_CASES)} cases")
-    assert mean >= 0.90, f"PII {mean*100:.1f}% < 90%"
+        print(f"\n[pii] {mean * 100:5.1f}% over {len(PII_CASES)} cases")
+    assert mean >= 0.90, f"PII {mean * 100:.1f}% < 90%"
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -140,8 +144,8 @@ def test_benchmark_guardian(capsys):
                 print(f"  [GUARD FAIL] {c.id}: exp={c.expected} act={actual}")
     mean = sum(scores) / len(scores)
     with capsys.disabled():
-        print(f"[guardian] {mean*100:5.1f}% over {len(GUARDIAN_CASES)} cases")
-    assert mean >= 0.95, f"Guardian {mean*100:.1f}% < 95%"
+        print(f"[guardian] {mean * 100:5.1f}% over {len(GUARDIAN_CASES)} cases")
+    assert mean >= 0.95, f"Guardian {mean * 100:.1f}% < 95%"
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -149,15 +153,15 @@ def test_benchmark_guardian(capsys):
 # ═══════════════════════════════════════════════════════════════════
 
 MOCK_CASES: list[Case] = [
-    Case("m-01", "mock", "clean",      {"guardian": "ALLOW"}, tags=("scenario",)),
-    Case("m-02", "mock", "suspicious", {"guardian": "DENY"},  tags=("scenario",)),
-    Case("m-03", "mock", "hostile",    {"guardian": "DENY"},  tags=("scenario",)),
+    Case("m-01", "mock", "clean", {"guardian": "ALLOW"}, tags=("scenario",)),
+    Case("m-02", "mock", "suspicious", {"guardian": "DENY"}, tags=("scenario",)),
+    Case("m-03", "mock", "hostile", {"guardian": "DENY"}, tags=("scenario",)),
 ]
 
 
 def _run_mock(scenario: str) -> dict:
-    from zyko.mock_llm import MockLLM
     from zyko.guardian import DefaultGuardian
+    from zyko.mock_llm import MockLLM
 
     async def _r():
         text = await MockLLM(scenario).propose("test prompt")
@@ -180,8 +184,8 @@ def test_benchmark_mock(capsys):
                 print(f"  [MOCK FAIL] {c.id}: exp={c.expected} act={actual}")
     mean = sum(scores) / len(scores)
     with capsys.disabled():
-        print(f"[mock_llm] {mean*100:5.1f}% over {len(MOCK_CASES)} cases")
-    assert mean == 1.0, f"MockLLM {mean*100:.1f}% — must be 100%"
+        print(f"[mock_llm] {mean * 100:5.1f}% over {len(MOCK_CASES)} cases")
+    assert mean == 1.0, f"MockLLM {mean * 100:.1f}% — must be 100%"
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -189,9 +193,9 @@ def test_benchmark_mock(capsys):
 # ═══════════════════════════════════════════════════════════════════
 
 LOOP_CASES: list[Case] = [
-    Case("l-01", "loop", ("clean", "test"),      True,  tags=("allow",)),
+    Case("l-01", "loop", ("clean", "test"), True, tags=("allow",)),
     Case("l-02", "loop", ("suspicious", "test"), False, tags=("deny",)),
-    Case("l-03", "loop", ("hostile", "test"),    False, tags=("deny",)),
+    Case("l-03", "loop", ("hostile", "test"), False, tags=("deny",)),
 ]
 
 
@@ -227,8 +231,8 @@ def test_benchmark_loop(capsys):
                 print(f"  [LOOP FAIL] {c.id}: exp={c.expected} act={actual}")
     mean = sum(scores) / len(scores)
     with capsys.disabled():
-        print(f"[guarded_loop] {mean*100:5.1f}% over {len(LOOP_CASES)} cases")
-    assert mean == 1.0, f"Loop {mean*100:.1f}% — must be 100%"
+        print(f"[guarded_loop] {mean * 100:5.1f}% over {len(LOOP_CASES)} cases")
+    assert mean == 1.0, f"Loop {mean * 100:.1f}% — must be 100%"
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -236,29 +240,34 @@ def test_benchmark_loop(capsys):
 # ═══════════════════════════════════════════════════════════════════
 
 DET_CASES: list[Case] = [
-    Case("d-guard-01", "det", ("guardian", "hello world"),      None, tags=("fingerprint",)),
-    Case("d-guard-02", "det", ("guardian", "+966501234567"),    None, tags=("fingerprint", "pii")),
-    Case("d-pii-01",   "det", ("pii",      "+966501234567"),    None, tags=("sha",)),
-    Case("d-pii-02",   "det", ("pii",      "x@y.com"),          None, tags=("sha",)),
-    Case("d-mock-01",  "det", ("mock",     "clean"),            None, tags=("sha",)),
-    Case("d-mock-02",  "det", ("mock",     "suspicious"),       None, tags=("sha",)),
+    Case("d-guard-01", "det", ("guardian", "hello world"), None, tags=("fingerprint",)),
+    Case("d-guard-02", "det", ("guardian", "+966501234567"), None, tags=("fingerprint", "pii")),
+    Case("d-pii-01", "det", ("pii", "+966501234567"), None, tags=("sha",)),
+    Case("d-pii-02", "det", ("pii", "x@y.com"), None, tags=("sha",)),
+    Case("d-mock-01", "det", ("mock", "clean"), None, tags=("sha",)),
+    Case("d-mock-02", "det", ("mock", "suspicious"), None, tags=("sha",)),
 ]
 
 
 def _run_det_capability(capability: str, payload: str) -> str:
     if capability == "guardian":
         from zyko.guardian import DefaultGuardian
+
         async def _r():
             return (await DefaultGuardian().check(payload)).fingerprint
+
         return asyncio.run(_r())
     if capability == "pii":
         from zyko.tools.pii_ar import redact
+
         text, _ = redact(payload)
         return _sha(text)
     if capability == "mock":
         from zyko.mock_llm import MockLLM
+
         async def _r():
             return _sha(await MockLLM(payload).propose("test"))
+
         return asyncio.run(_r())
     raise ValueError(capability)
 
@@ -277,13 +286,14 @@ def test_benchmark_determinism(capsys):
                 print(f"  [DET FAIL] {c.id}: {matches}/{RUNS} stable")
     mean = sum(scores) / len(scores)
     with capsys.disabled():
-        print(f"[determinism] {mean*100:5.1f}% over {len(DET_CASES)} functions x {RUNS} runs")
-    assert mean == 1.0, f"Determinism {mean*100:.1f}% — must be 100%"
+        print(f"[determinism] {mean * 100:5.1f}% over {len(DET_CASES)} functions x {RUNS} runs")
+    assert mean == 1.0, f"Determinism {mean * 100:.1f}% — must be 100%"
 
 
 # ═══════════════════════════════════════════════════════════════════
 # Aggregate — MMLU-style overall score (≥ 95%)
 # ═══════════════════════════════════════════════════════════════════
+
 
 def test_benchmark_overall(capsys):
     """Weighted mean over all non-determinism cases ≥ 95%."""
@@ -292,7 +302,9 @@ def test_benchmark_overall(capsys):
     for c in PII_CASES:
         all_scores.append(("pii", _score_pii(c.expected, _run_pii(c.payload)), c.weight))
     for c in GUARDIAN_CASES:
-        all_scores.append(("guardian", 1.0 if _run_guardian(c.payload) == c.expected else 0.0, c.weight))
+        all_scores.append(
+            ("guardian", 1.0 if _run_guardian(c.payload) == c.expected else 0.0, c.weight)
+        )
     for c in MOCK_CASES:
         actual = _run_mock(c.payload)
         ok = actual["non_empty"] and actual["guardian"] == c.expected["guardian"]
@@ -320,7 +332,9 @@ def test_benchmark_overall(capsys):
             avg = sum(by_cap[cap]) / len(by_cap[cap])
             thr = thresholds.get(cap, 0.95)
             status = "PASS" if avg >= thr else "FAIL"
-            print(f"{cap:15} {avg*100:7.1f}% {len(by_cap[cap]):>7} {thr*100:>9.0f}% {status:>8}")
+            print(
+                f"{cap:15} {avg * 100:7.1f}% {len(by_cap[cap]):>7} {thr * 100:>9.0f}% {status:>8}"
+            )
         print("-" * 64)
         det_scores = []
         for c in DET_CASES:
@@ -329,11 +343,15 @@ def test_benchmark_overall(capsys):
             matches = sum(1 for _ in range(100) if _run_det_capability(cap_name, payload) == first)
             det_scores.append(matches / 100)
         det_mean = sum(det_scores) / len(det_scores)
-        print(f"{'determinism':15} {det_mean*100:7.1f}% {len(DET_CASES):>7} {'100%':>10} "
-              f"{'PASS' if det_mean == 1.0 else 'FAIL':>8}")
+        print(
+            f"{'determinism':15} {det_mean * 100:7.1f}% {len(DET_CASES):>7} {'100%':>10} "
+            f"{'PASS' if det_mean == 1.0 else 'FAIL':>8}"
+        )
         print("=" * 64)
-        print(f"{'OVERALL (weighted)':15} {weighted*100:7.1f}% {len(all_scores):>7} {'95%':>10} "
-              f"{'PASS' if weighted >= 0.95 else 'FAIL':>8}")
+        print(
+            f"{'OVERALL (weighted)':15} {weighted * 100:7.1f}% {len(all_scores):>7} {'95%':>10} "
+            f"{'PASS' if weighted >= 0.95 else 'FAIL':>8}"
+        )
         print("=" * 64 + "\n")
 
-    assert weighted >= 0.95, f"Overall {weighted*100:.1f}% < 95%"
+    assert weighted >= 0.95, f"Overall {weighted * 100:.1f}% < 95%"
