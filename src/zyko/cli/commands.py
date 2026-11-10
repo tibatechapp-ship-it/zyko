@@ -543,25 +543,10 @@ def _verify_orchestrator_receipt(args: Any, receipt: dict) -> int:
 
 
 def _do_step_summary_ar(output: Any) -> str:
-    """سطر ملخص عربي حتمي لنتيجة خطوة — حقول ثابتة فقط، بلا أزمنة."""
-    if isinstance(output, dict):
-        if "score" in output:
-            return f"الدرجة {output.get('score')} — {output.get('verdict_ar', '')}"
-        if "would_fix" in output:
-            if output.get("applied"):
-                return f"أُصلح {output.get('fixed', 0)} ملاحظة — الدرجة {output.get('score_before')}→{output.get('score_after')}"
-            return f"سيُصلَح {output.get('would_fix')} ملاحظة"
-        if "files" in output and "count" in output:
-            return f"رُوجع {output.get('count')} ملفاً"
-        if "total_bytes" in output:
-            return f"شجرة {len(output.get('files', {}))} ملفاً ({output.get('total_bytes')} بايت)"
-        if "code" in output:
-            return f"ترجمة تمت ({output.get('bytes')} بايت)"
-        if "verdict_ar" in output:
-            return str(output.get("verdict_ar"))
-        if "ok" in output:
-            return "الإيصال صالح" if output.get("ok") else "الإيصال غير صالح"
-    return "أُنجزت"
+    """سطر ملخص عربي حتمي — مفوض للمصدر الواحد في orchestrator.run."""
+    from zyko.orchestrator.run import step_summary_ar
+
+    return step_summary_ar(output)
 
 
 def cmd_do(args: Any) -> int:

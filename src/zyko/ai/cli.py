@@ -33,10 +33,11 @@ def ai_map_text() -> str:
             "ollama       zyko ai run --brain ollama …   نموذج محلي حقيقي خلف البوابات نفسها (يتطلب Ollama)",
             "qwen         zyko ai run --brain qwen …     نموذج Qwen عبر واجهة متوافقة مع OpenAI خلف البوابات نفسها (يتطلب ZYKO_QWEN_API_KEY)",
             "bestof       zyko ai run --brain bestof …   منافسة عقول: النموذج أولًا ثم المخطط — أول مقبول يفوز",
+            "existing     zyko ai run --mode existing …  عقل `zyko do` كاملاً على ملف قائم حقيقي خلف البوابات نفسها",
             "gated:<اسم>  —                              أي عقل آخر يُمرّ عبر بوابات المصنع نفسها",
             "-" * 62,
-            "مسار الجلسة: اقتراح العقل ← بوابة PII ← بوابة RTL ← توليد (حلقة",
-            "مراجعة←إصلاح) ← خط أساس (تسجيل←فحص) ← إيصال موقّع بالبصمات",
+            "مسار الجلسة: اقتراح العقل ← بوابة PII ← بوابة RTL ← العمل ← إيصال موقّع بالبصمات",
+            "العمل: factory توليد ← خط أساس · existing عقل `zyko do` على الكود القائم",
             "البوابات: PII رفض قاطع · RTL رفض الأخطاء · الدرجة ≥ الحد · لا تراجع",
             "-" * 62,
             "أكواد الخروج: 0 مقبول · 1 مرفوض عند بوابة · 2 فشل هيكلي آمن",
@@ -46,6 +47,7 @@ def ai_map_text() -> str:
             "  python -m zyko.ai run --brain ollama --model qwen2.5:7b …  # عقل محلي حقيقي",
             "  python -m zyko.ai run --brain qwen --model qwen-plus …     # عقل Qwen السحابي خلف البوابات نفسها",
             "  python -m zyko.ai run --brain bestof --model qwen2.5:7b …  # النموذج أولًا والمخطط يحتاط",
+            '  python -m zyko.ai run --mode existing --goal "راجع وأصلح src/app.py" --out ./ج  # كود قائم',
             "  python -m zyko.ai ollama                                 # فحص خادم Ollama",
             "  python -m zyko.ai gate                                   # بوابة المرحلة 8",
         ]
@@ -87,7 +89,12 @@ def _build_session(args: Any) -> Any:
         )
     else:
         brain = GatedBrain(PlannerBrain())
-    return AISession(brain=brain, rounds=args.rounds, fail_under=args.fail_under)
+    return AISession(
+        brain=brain,
+        rounds=args.rounds,
+        fail_under=args.fail_under,
+        mode=getattr(args, "mode", "factory") or "factory",
+    )
 
 
 def handle_ai(args: Any) -> int:
@@ -192,6 +199,12 @@ def register_to(sub: Any) -> None:
         "--qwen-host",
         default=None,
         help="عنوان نقطة نهاية Qwen المتوافقة مع OpenAI (افتراضي DashScope أو ZYKO_QWEN_HOST)؛ المفتاح من ZYKO_QWEN_API_KEY",
+    )
+    run_p.add_argument(
+        "--mode",
+        choices=("factory", "existing"),
+        default="factory",
+        help="نمط الجلسة: factory توليد مشروع جديد من وصف عربي (افتراضي) — existing تنفيذ عقل `zyko do` كاملاً على ملف قائم يحمله الهدف (راجع/أصلح/تحقق)، مع الإيصال والبوابات نفسها",
     )
     run_p.add_argument("--dry-run", action="store_true", help="لا تكتب شيئًا على القرص")
     run_p.add_argument("--format", choices=("json", "text", "summary"), default="text")

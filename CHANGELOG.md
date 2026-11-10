@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased — the loop closes on real code: `--mode existing` wires the brain to `zyko do`
+
+The real-world test on psf/requests (`docs/REAL_WORLD_TEST.md`) proved the
+deterministic chain (`classify → route → run → Guardian → signed receipt`)
+works on a real 1184-line file and exposed one genuine integration gap:
+the AI session was wired to the project factory only, so a goal like
+"راجع وأصلح <existing file>" generated a new demo project instead of
+touching the referenced file. `zyko ai run --mode existing` closes it:
+the session now runs the full `zyko do` brain (classify → route → run)
+behind the same session gates (plan → PII → RTL), on the real file, with
+the unified signed receipt embedded in the session evidence. Write mode
+fixes the file in place (the `zyko do --write` contract) and enforces
+`fail_under` on the post-fix score; dry-run documents the current score
+honestly and touches nothing. Factory behavior is unchanged by default.
+A shared `step_summary_ar` in `zyko.orchestrator.run` is now the single
+summary source for both `zyko do` and the session gate, fixing the blind
+"أُنجزت" summary for applied fixes (now "أُصلح N ملاحظة — الدرجة X→Y").
+11 new tests (1922 total), coverage 95%.
+
 ## 0.21.0 — the brain digests and swarms: `compress` and `swarm` complete the orchestrator
 
 The deterministic brain gains its final two components, and
