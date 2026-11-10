@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — `zyko.ai` lets brains compete: `BestOfBrain` — first accepted candidate wins
+## 0.19.0 — `zyko.ai` lets brains compete: `BestOfBrain` — first accepted candidate wins
 
 The golden rule now arbitrates *between* brains, not just texts.
 `BestOfBrain` consults several candidate brains **in order** on the
