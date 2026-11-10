@@ -147,12 +147,15 @@ def test_review_file_invalid_utf8(tmp_path):
 
 
 def test_review_file_oversized(tmp_path, monkeypatch):
+    """الملف فوق سقف الحجم يُراجع مقطّعًا حتميًا — لا رفض كامل (عقد largefile)."""
     monkeypatch.setattr(engine_mod, "MAX_SOURCE_BYTES", 16)
     p = tmp_path / "big.py"
     p.write_text("# " + "a" * 64 + "\n", encoding="utf-8")
     result = ENGINE.review_file(p)
-    assert result.parse_error is not None
-    assert "الحد" in result.parse_error
+    assert result.mode == "chunked"
+    assert result.parse_error is None
+    assert result.score == 100  # تعليق نظيف — لا شيء ليُخالف
+    assert "mode" in result.to_dict() and result.to_dict()["chunk_count"] >= 1
 
 
 def test_review_path_single_file(tmp_path):

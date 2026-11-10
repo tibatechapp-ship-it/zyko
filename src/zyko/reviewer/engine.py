@@ -4,7 +4,8 @@
   - ملف بترميز غير مدعوم ⇒ نتيجة مهيكلة (parse_error) لا استثناء
   - ملف بترميز صيغة خاطئة (SyntaxError/RecursionError/…) ⇒ نتيجة مهيكلة
   - ملف فارغ ⇒ درجة 100 (لا شيء ليُخالف)
-  - ملف أكبر من الحد ⇒ نتيجة مهيكلة تشرح السبب عربيًا
+  - ملف أكبر من الحد ⇒ **مراجعة مقطّعة حتمية** (zyko.reviewer.largefile)
+    بنوافذ على حدود التعريفات ودمج موثّق — لا رفض كامل بعد اليوم
 المحرك لا يلمس الشبكة أبدًا ولا يستورد أي شيء خارج المكتبة القياسية.
 """
 
@@ -69,7 +70,12 @@ def verdict_for_score(score: int) -> str:
 
 @dataclass
 class ReviewResult:
-    """نتيجة مراجعة ملف واحد: ملاحظات + درجة + حكم — كلها قابلة للتسلسل."""
+    """نتيجة مراجعة ملف واحد: ملاحظات + درجة + حكم — كلها قابلة للتسلسل.
+
+    حقول الوضع المقطّع تُملأ فقط عند مراجعة ملف ضخم (فوق سقف الحجم) —
+    وتدخل ``to_dict`` في هذا الحالة فقط، فتبقى مخرجات المراجعة العادية
+    متطابقة بالبايت مع عقدها السابق.
+    """
 
     path: str
     score: int
@@ -79,6 +85,11 @@ class ReviewResult:
     parse_error: str | None = None
     source_sha256: str = ""
     seconds: float = 0.0
+    mode: str = "single"
+    chunk_count: int = 0
+    chunk_chain_hash: str = ""
+    findings_truncated: bool = False
+    reviewed_chunks: int = 0
 
     def to_dict(self, *, include_timing: bool = False) -> dict[str, Any]:
         payload: dict[str, Any] = {
@@ -94,6 +105,13 @@ class ReviewResult:
             payload["parse_error_ar"] = self.parse_error
         if include_timing:
             payload["seconds"] = round(self.seconds, 4)
+        if self.mode != "single":  # توثيق الوضع المقطّع عند وجوده فقط
+            payload["mode"] = self.mode
+            payload["chunk_count"] = self.chunk_count
+            payload["reviewed_chunks"] = self.reviewed_chunks
+            payload["findings_truncated"] = self.findings_truncated
+            if self.chunk_chain_hash:
+                payload["chunk_chain_hash"] = self.chunk_chain_hash
         return payload
 
 
@@ -154,9 +172,11 @@ class ReviewEngine:
         except OSError as exc:
             return _error_result(str(p), f"تعذرت قراءة الملف: {exc}")
         if len(raw) > MAX_SOURCE_BYTES:
-            return _error_result(
-                str(p), f"حجم الملف يتجاوز الحد ({len(raw)} بايت > {MAX_SOURCE_BYTES})"
-            )
+            # ملف ضخم: المراجعة المقطّعة الحتمية بدل الرفض الكامل —
+            # الاستيراد كسول لتبقى دورة الاستيراد نظيفة (largefile يستورد هذا المورد).
+            from zyko.reviewer.largefile import review_large_file
+
+            return review_large_file(p)
         try:
             source = raw.decode("utf-8")
         except UnicodeDecodeError:
