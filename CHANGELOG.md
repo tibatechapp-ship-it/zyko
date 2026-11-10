@@ -1,11 +1,16 @@
 # Changelog
 
-## Unreleased — legal shield: `NOTICE` + defensive publication of the innovations
+## Unreleased — legal shield + first-impression round
 
 Apache 2.0 has held since the first commit (2026-11-01); this round adds the
 missing legal artifacts: a root `NOTICE` file and `docs/INNOVATION.md` — a
 dated prior-art publication pinning each of the six core innovations to its
-introducing commit and first release. Docs-only; no code changes.
+introducing commit and first release.
+
+The README is rewritten (<300 lines, version-first, verified commands only)
+— the home page now opens on 0.19.0 instead of a stale 0.16.0 — and the
+full 34-release story moves to `docs/HISTORY.md`. Docs-only; no code
+changes.
 
 ## 0.19.0 — `zyko.ai` lets brains compete: `BestOfBrain` — first accepted candidate wins
 
