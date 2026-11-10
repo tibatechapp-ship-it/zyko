@@ -31,6 +31,7 @@ def ai_map_text() -> str:
             "العقل/الأمر                                  ماذا يفعل",
             "planner      zyko ai run --goal «وصف»       مخطط حتمي مقيّد بالبوابات (بلا نموذج وبلا شبكة)",
             "ollama       zyko ai run --brain ollama …   نموذج محلي حقيقي خلف البوابات نفسها (يتطلب Ollama)",
+            "qwen         zyko ai run --brain qwen …     نموذج Qwen عبر واجهة متوافقة مع OpenAI خلف البوابات نفسها (يتطلب ZYKO_QWEN_API_KEY)",
             "bestof       zyko ai run --brain bestof …   منافسة عقول: النموذج أولًا ثم المخطط — أول مقبول يفوز",
             "gated:<اسم>  —                              أي عقل آخر يُمرّ عبر بوابات المصنع نفسها",
             "-" * 62,
@@ -43,6 +44,7 @@ def ai_map_text() -> str:
             '  python -m zyko.ai run --goal "قائمة مهام" --out ./جديد',
             "  python -m zyko.ai run --goal «وصف» --out ./ج --dry-run   # بلا كتابة",
             "  python -m zyko.ai run --brain ollama --model qwen2.5:7b …  # عقل محلي حقيقي",
+            "  python -m zyko.ai run --brain qwen --model qwen-plus …     # عقل Qwen السحابي خلف البوابات نفسها",
             "  python -m zyko.ai run --brain bestof --model qwen2.5:7b …  # النموذج أولًا والمخطط يحتاط",
             "  python -m zyko.ai ollama                                 # فحص خادم Ollama",
             "  python -m zyko.ai gate                                   # بوابة المرحلة 8",
@@ -67,6 +69,10 @@ def _build_session(args: Any) -> Any:
         from zyko.ai.ollama_brain import OllamaBrain
 
         brain = GatedBrain(OllamaBrain(model=args.model, host=getattr(args, "ollama_host", None)))
+    elif brain_choice == "qwen":
+        from zyko.ai.qwen_brain import QwenBrain
+
+        brain = GatedBrain(QwenBrain(model=args.model, host=getattr(args, "qwen_host", None)))
     elif brain_choice == "bestof":
         from zyko.ai.best_of_brain import BestOfBrain
         from zyko.ai.ollama_brain import OllamaBrain
@@ -92,11 +98,11 @@ def handle_ai(args: Any) -> int:
         return EXIT_OK
 
     if command == "run":
-        if getattr(args, "brain", "planner") in ("ollama", "bestof") and not getattr(
+        if getattr(args, "brain", "planner") in ("ollama", "bestof", "qwen") and not getattr(
             args, "model", None
         ):
             print(
-                f"خطأ: --brain {getattr(args, 'brain', 'planner')} يتطلب --model — مثال: --model qwen2.5:7b",
+                f"خطأ: --brain {getattr(args, 'brain', 'planner')} يتطلب --model — مثال: --model qwen2.5:7b أو qwen-plus",
                 file=sys.stderr,
             )
             return EXIT_USAGE
@@ -168,19 +174,24 @@ def register_to(sub: Any) -> None:
     )
     run_p.add_argument(
         "--brain",
-        choices=("planner", "ollama", "bestof"),
+        choices=("planner", "ollama", "qwen", "bestof"),
         default="planner",
-        help="العقل: planner الحتمي (افتراضي)، أو ollama النموذج المحلي، أو bestof منافسة عقول (النموذج ثم المخطط)",
+        help="العقل: planner الحتمي (افتراضي)، أو ollama النموذج المحلي، أو qwen السحابي المتوافق مع OpenAI، أو bestof منافسة عقول (النموذج ثم المخطط)",
     )
     run_p.add_argument(
         "--model",
         default=None,
-        help="اسم النموذج في Ollama (مطلوب مع --brain ollama أو bestof) — مثال: qwen2.5:7b",
+        help="اسم النموذج (مطلوب مع --brain ollama أو qwen أو bestof) — مثال: qwen2.5:7b أو qwen-plus",
     )
     run_p.add_argument(
         "--ollama-host",
         default=None,
         help="عنوان خادم Ollama (افتراضي http://127.0.0.1:11434 أو ZYKO_OLLAMA_HOST)",
+    )
+    run_p.add_argument(
+        "--qwen-host",
+        default=None,
+        help="عنوان نقطة نهاية Qwen المتوافقة مع OpenAI (افتراضي DashScope أو ZYKO_QWEN_HOST)؛ المفتاح من ZYKO_QWEN_API_KEY",
     )
     run_p.add_argument("--dry-run", action="store_true", help="لا تكتب شيئًا على القرص")
     run_p.add_argument("--format", choices=("json", "text", "summary"), default="text")

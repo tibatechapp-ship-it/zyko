@@ -21,6 +21,7 @@ from zyko.ai.brains import (
     check_proposal_gates,
 )
 from zyko.ai.ollama_brain import DEFAULT_HOST, HOST_ENV, OllamaBrain, list_models
+from zyko.ai.qwen_brain import QwenBrain
 from zyko.ai.receipt import AIReceipt, StepRecord, hash_file, hash_text
 from zyko.ai.session import AISession
 
@@ -36,6 +37,7 @@ __all__ = [
     "OllamaBrain",
     "PlannerBrain",
     "Proposal",
+    "QwenBrain",
     "StepRecord",
     "check_proposal_gates",
     "hash_file",
