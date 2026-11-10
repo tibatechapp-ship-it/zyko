@@ -328,8 +328,8 @@ def test_reviewer_to_fixer_contract(tmp_path):
 
 
 def test_pii_redaction_output_passes_guardian():
-    from zyko.tools.pii_ar import redact
     from zyko.guardian import DefaultGuardian
+    from zyko.tools.pii_ar import redact
 
     original = "call +966501234567 or email x@y.com"
     redacted, _ = redact(original)
@@ -348,10 +348,10 @@ def test_pii_redaction_output_passes_guardian():
 
 
 def test_guardian_loop_dashboard_chain_is_stable():
-    from zyko.guardian import DefaultGuardian
-    from zyko.guarded import GuardedLoop
-    from zyko.mock_llm import MockLLM
     from zyko.dashboard import build_from_gates
+    from zyko.guarded import GuardedLoop
+    from zyko.guardian import DefaultGuardian
+    from zyko.mock_llm import MockLLM
 
     async def _once():
         loop = GuardedLoop(DefaultGuardian(), MockLLM("clean"))
@@ -381,7 +381,7 @@ def test_malformed_receipt_raises_structured_error(tmp_path):
 
 
 def test_guardian_returns_decision_object():
-    from zyko.guardian import DefaultGuardian, Decision
+    from zyko.guardian import Decision, DefaultGuardian
 
     d = _run_async(DefaultGuardian().check("hello"))
     assert isinstance(d, Decision)
