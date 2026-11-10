@@ -9,6 +9,7 @@
     classify — ما نوع المهمة؟ (REVIEW/FIX/GENERATE/TRANSPILE/VERIFY/ANALYZE/UNKNOWN)
     route    — أي أداة بأي ترتيب؟ (Plan من خطوات محسوسة)
     run      — تنفيذ الخطة عبر الأدوات الفعلية مع إيصال sha256 موحّد
+    compress — هضم المستودع إلى سياق ضمن ميزانية رموز، بلا كتابة وبلا حذف صامت
 """
 
 from zyko.orchestrator.classify import (
@@ -16,18 +17,22 @@ from zyko.orchestrator.classify import (
     TaskType,
     classify,
 )
+from zyko.orchestrator.compress import CompressedContext, FileSlice, compress
 from zyko.orchestrator.context import extract_context
 from zyko.orchestrator.route import Plan, Step, route
 from zyko.orchestrator.run import RunResult, StepResult, run
 
 __all__ = [
     "Classification",
+    "CompressedContext",
+    "FileSlice",
     "Plan",
     "RunResult",
     "Step",
     "StepResult",
     "TaskType",
     "classify",
+    "compress",
     "extract_context",
     "route",
     "run",
