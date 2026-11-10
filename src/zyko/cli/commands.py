@@ -467,6 +467,27 @@ def cmd_gauntlet(args: Any) -> int:
             file=sys.stderr,
         )
         return 2
+
+    # طبقة الشدّ: حتمية متكررة + حارس سرعة + مراجعة ذاتية — عند طلبها صراحةً
+    repeats = int(getattr(args, "repeats", 1) or 1)
+    review_sample = int(getattr(args, "review_sample", 0) or 0)
+    if repeats > 1 or review_sample > 0:
+        from zyko.benchmarks.gauntlet_plus import run_stress_gauntlet
+
+        if repeats < 1:
+            print("خطأ: --repeats يجب أن يكون 1 على الأقل", file=sys.stderr)
+            return 2
+        stress = run_stress_gauntlet(per_intent, repeats=repeats, review_sample=review_sample)
+        if getattr(args, "json_out", None):
+            out_path = Path(getattr(args, "json_out"))
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(
+                stress.to_json(include_timing=bool(getattr(args, "include_timing", False))),
+                encoding="utf-8",
+            )
+        print(stress.table_ar())
+        return 0 if stress.ok else 1
+
     report = run_gauntlet(per_intent, execute=execute)
     if getattr(args, "json_out", None):
         out_path = Path(getattr(args, "json_out"))

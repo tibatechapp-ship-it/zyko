@@ -289,6 +289,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--json-out", default=None, help="اكتب الإيصال الحتمي JSON هنا")
     p.add_argument(
+        "--repeats",
+        type=int,
+        default=1,
+        help="طبقة الشدّ: كرر بناء المصفوفة كاملة N مرة وتحقق من تطابق البصمة بالبايت (‎>1 يفعّل طبقة الشدّ)",
+    )
+    p.add_argument(
+        "--review-sample",
+        type=int,
+        default=0,
+        help="طبقة الشدّ: راجع عينة حتمية من البرامج المولَّدة بمحرك المراجعة نفسه وتحقق من عتبة الجودة (‎>0 يفعّل طبقة الشدّ)",
+    )
+    p.add_argument(
         "--include-timing",
         action="store_true",
         help="أضف الزمن للإيصال (يكسر الحتمية البايتية)",
