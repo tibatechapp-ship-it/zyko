@@ -286,6 +286,28 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--check", action="store_true", help="فحص الصياغة فقط دون كتابة أو تنفيذ")
     p.set_defaults(func=cmd.cmd_py)
 
+    # do (العقل: classify → route → run — الهدف النهائي: أمر واحد)
+    p = sub.add_parser(
+        "do",
+        help="العقل يقرر: صنّف هدفك، خطّط، نفّذ — وضع تجريبي افتراضياً بلا أي كتابة",
+    )
+    p.add_argument("goal", help="الهدف بالعربية أو الإنجليزية — مثال: «راجع وأصلح src/main.py»")
+    p.add_argument(
+        "--dry-run", action="store_true", help="وضع تجريبي (افتراضي أصلاً — يظهر هنا للتوثيق)"
+    )
+    p.add_argument(
+        "--write",
+        action="store_true",
+        help="طبّق الكتابة فعلياً (بدونه لا يُكتب أي ملف — قاعدة R9)",
+    )
+    p.add_argument("--path", default=None, help="فرض مسار الهدف بدل الاستخراج من النص")
+    p.add_argument("--file", default=None, help="فرض ملف ضاد")
+    p.add_argument("--src", default=None, help="فرض جذر التحليل لخط الأساس")
+    p.add_argument("--description", default=None, help="فرض وصف المشروع المولَّد")
+    p.add_argument("--receipt", default=None, help="اكتب الإيصال الموحّد إلى ملف JSON")
+    p.add_argument("--json", action="store_true", help="اطبع الإيصال JSON فقط بلا سرد")
+    p.set_defaults(func=cmd.cmd_do)
+
     # ai (المرحلة 8: طبقة الذكاء فوق المصنع — جلسات موثّقة عبر البوابات)
     p = sub.add_parser(
         "ai",

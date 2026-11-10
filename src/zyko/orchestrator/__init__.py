@@ -16,13 +16,19 @@ from zyko.orchestrator.classify import (
     TaskType,
     classify,
 )
+from zyko.orchestrator.context import extract_context
 from zyko.orchestrator.route import Plan, Step, route
+from zyko.orchestrator.run import RunResult, StepResult, run
 
 __all__ = [
     "Classification",
     "Plan",
+    "RunResult",
     "Step",
+    "StepResult",
     "TaskType",
     "classify",
+    "extract_context",
     "route",
+    "run",
 ]
