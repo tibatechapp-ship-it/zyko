@@ -337,6 +337,27 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--description", default=None, help="فرض وصف المشروع المولَّد")
     p.add_argument("--receipt", default=None, help="اكتب الإيصال الموحّد إلى ملف JSON")
     p.add_argument("--json", action="store_true", help="اطبع الإيصال JSON فقط بلا سرد")
+    p.add_argument(
+        "--brain",
+        choices=("ollama", "qwen"),
+        default=None,
+        help="اختياري: خطِّط بدماغ حقيقي خلف البوابات نفسها — الاقتراح يُتحقق حتميًا وأي فشل يرجع للمخطط الحتمي (بدونه: المخطط الحتمي فقط، بلا شبكة)",
+    )
+    p.add_argument(
+        "--model",
+        default=None,
+        help="اسم النموذج (مطلوب مع --brain) — مثال: qwen2.5:7b أو qwen-plus",
+    )
+    p.add_argument(
+        "--ollama-host",
+        default=None,
+        help="عنوان خادم Ollama مع --brain ollama (افتراضي ZYKO_OLLAMA_HOST أو 127.0.0.1:11434)",
+    )
+    p.add_argument(
+        "--qwen-host",
+        default=None,
+        help="عنوان نقطة نهاية متوافقة مع OpenAI مع --brain qwen (افتراضي ZYKO_QWEN_HOST)؛ المفتاح من ZYKO_QWEN_API_KEY",
+    )
     p.set_defaults(func=cmd.cmd_do)
 
     # ai (المرحلة 8: طبقة الذكاء فوق المصنع — جلسات موثّقة عبر البوابات)

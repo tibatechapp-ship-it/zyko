@@ -81,21 +81,31 @@ class Step:
 
 @dataclass(frozen=True)
 class Plan:
-    """الخطة الكاملة: التصنيف + الخطوات + التكلفة المقدرة + ملاحظات عربية."""
+    """الخطة الكاملة: التصنيف + الخطوات + التكلفة المقدرة + ملاحظات عربية.
+
+    ``planner`` يوثّق مصدر الخطة: ``"deterministic"`` (الافتراضي — جدول
+    القرار الحتمي) أو ``"brain:<اسم>"`` (خطة دماغ حقيقية اجتازت التحقق
+    الحتمي الصارم). الحقل يدخل ``to_dict`` فقط عند تخطيط دماغ — فتبقى
+    إيصالات المسار الحتمي متطابقة بالبايت مع عقدها السابق.
+    """
 
     classification: Classification
     steps: tuple[Step, ...]
     estimated_cost: float | None
     notes_ar: tuple[str, ...]
+    planner: str = "deterministic"
 
     def to_dict(self) -> dict[str, Any]:
         """ممثل JSON كامل للخطة — قابل للتسلسل والتحقق دون ثقة."""
-        return {
+        payload = {
             "classification": self.classification.to_dict(),
             "steps": [step.to_dict() for step in self.steps],
             "estimated_cost": self.estimated_cost,
             "notes_ar": list(self.notes_ar),
         }
+        if self.planner != "deterministic":  # توثيق صادق لمصدر الخطة عند وجوده
+            payload["planner"] = self.planner
+        return payload
 
 
 def route(classification: Classification, *, context: dict[str, Any] | None = None) -> Plan:

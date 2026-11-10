@@ -566,8 +566,22 @@ def cmd_do(args: Any) -> int:
         if flag_value:
             context[key] = flag_value
 
+    brain_choice = getattr(args, "brain", None)
+    if brain_choice and not getattr(args, "model", None):
+        print(f"خطأ: --brain {brain_choice} يتطلب --model — مثال: --model qwen2.5:7b", file=sys.stderr)
+        return 2
+
     classification = classify(goal)
-    plan = route(classification, context=context)
+    if brain_choice:
+        # تخطيط دماغ حقيقي خلف البوابات والتحقق الحتمي — الرجوع آمن دائماً.
+        from zyko.ai.cli import build_brain
+        from zyko.orchestrator import plan_with_brain
+
+        plan, planner_note = plan_with_brain(goal, build_brain(args), context=context)
+        classification = plan.classification
+        print(ui.warn(planner_note) if plan.planner == "deterministic" else ui.info(planner_note))
+    else:
+        plan = route(classification, context=context)
 
     if getattr(args, "json", False):
         result = run(plan, dry_run=not args.write)

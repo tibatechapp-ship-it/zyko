@@ -54,32 +54,29 @@ def ai_map_text() -> str:
     )
 
 
-def _build_session(args: Any) -> Any:
-    """ابنِ الجلسة حسب اختيار العقل — ``planner`` الافتراضي، و``ollama`` العقل المحلي.
+def build_brain(args: Any):
+    """ابنِ العقل من أعلام المفسّر — دالة بناء واحدة يعيد استخدامها كل المداخل.
 
-    العقل المحلي يُغلَّف بـ ``GatedBrain`` دائمًا: نص النموذج لا يُقبل
-    قبل بوابة PII وبوابة RTL — العقل يضيف، والبوابات تقرّر.
-    و``bestof`` يوسّع المنافسة: النموذج المحلي أولًا فالمخطط الحتمي
-    احتياطًا — كل مرشح خلف بواباته، وأول مقبول يفوز (البوابات تحكم
-    بين العقول لا بين النصوص فقط).
+    ``zyko ai run`` و``zyko do --brain`` كلاهما يمرّ هنا: النموذج المحلي
+    والسحابي يُغلَّفان بـ ``GatedBrain`` دائمًا — نص النموذج لا يُقبل قبل
+    بوابة PII وبوابة RTL — و``bestof`` يوسّع المنافسة بين العقول.
     """
     from zyko.ai.brains import GatedBrain, PlannerBrain
-    from zyko.ai.session import AISession
 
     brain_choice = getattr(args, "brain", "planner") or "planner"
     if brain_choice == "ollama":
         from zyko.ai.ollama_brain import OllamaBrain
 
-        brain = GatedBrain(OllamaBrain(model=args.model, host=getattr(args, "ollama_host", None)))
-    elif brain_choice == "qwen":
+        return GatedBrain(OllamaBrain(model=args.model, host=getattr(args, "ollama_host", None)))
+    if brain_choice == "qwen":
         from zyko.ai.qwen_brain import QwenBrain
 
-        brain = GatedBrain(QwenBrain(model=args.model, host=getattr(args, "qwen_host", None)))
-    elif brain_choice == "bestof":
+        return GatedBrain(QwenBrain(model=args.model, host=getattr(args, "qwen_host", None)))
+    if brain_choice == "bestof":
         from zyko.ai.best_of_brain import BestOfBrain
         from zyko.ai.ollama_brain import OllamaBrain
 
-        brain = GatedBrain(
+        return GatedBrain(
             BestOfBrain(
                 [
                     OllamaBrain(model=args.model, host=getattr(args, "ollama_host", None)),
@@ -87,10 +84,18 @@ def _build_session(args: Any) -> Any:
                 ]
             )
         )
-    else:
-        brain = GatedBrain(PlannerBrain())
+    return GatedBrain(PlannerBrain())
+
+
+def _build_session(args: Any) -> Any:
+    """ابنِ الجلسة حسب اختيار العقل — ``planner`` الافتراضي، و``ollama`` العقل المحلي.
+
+    بناء العقل مفوَّض لـ ``build_brain`` — المصدر الواحد لكل المداخل.
+    """
+    from zyko.ai.session import AISession
+
     return AISession(
-        brain=brain,
+        brain=build_brain(args),
         rounds=args.rounds,
         fail_under=args.fail_under,
         mode=getattr(args, "mode", "factory") or "factory",

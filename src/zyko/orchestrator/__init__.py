@@ -13,6 +13,13 @@
     swarm    — مهام متوازية بحد أعلى، نتائج بترتيب المدخل وإيصال سرب موقّع
 """
 
+from zyko.orchestrator.brain_route import (
+    ALLOWED_TASKS,
+    BRAIN_TOOLS,
+    parse_brain_plan,
+    plan_with_brain,
+    planner_prompt,
+)
 from zyko.orchestrator.classify import (
     Classification,
     TaskType,
@@ -25,6 +32,8 @@ from zyko.orchestrator.run import RunResult, StepResult, run
 from zyko.orchestrator.swarm import SwarmResult, TaskResult, swarm
 
 __all__ = [
+    "ALLOWED_TASKS",
+    "BRAIN_TOOLS",
     "Classification",
     "CompressedContext",
     "FileSlice",
@@ -38,6 +47,9 @@ __all__ = [
     "classify",
     "compress",
     "extract_context",
+    "parse_brain_plan",
+    "plan_with_brain",
+    "planner_prompt",
     "route",
     "run",
     "swarm",
