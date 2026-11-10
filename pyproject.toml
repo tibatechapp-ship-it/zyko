@@ -73,6 +73,14 @@ zyko = ["py.typed"]
 testpaths = ["tests"]
 addopts = "-q"
 asyncio_mode = "auto"
+# Pin the async-fixture loop scope: without this, pytest-asyncio emits a
+# PytestDeprecationWarning on EVERY run (CI matrix, Termux, local), training
+# developers to ignore warnings. "function" is the documented default and
+# what the suite was implicitly using.
+asyncio_default_fixture_loop_scope = "function"
+# A deprecation warning from pytest itself is a future breakage of this
+# suite — fail loudly now instead of silently rotting.
+filterwarnings = ["error::pytest.PytestDeprecationWarning"]
 
 [tool.ruff]
 line-length = 100
