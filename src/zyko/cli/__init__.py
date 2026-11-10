@@ -307,6 +307,31 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd.cmd_gauntlet)
 
+    # compare (منصة المقارنة الحتمية: قياس zyko على جهازك + منافس اختياري صادق)
+    p = sub.add_parser(
+        "compare",
+        help="المقارنة الحتمية: دقة التصنيف + سرعة المراجعة + الحتمية على هدف حقيقي، ومنافس اختياري بأمر تمرره أنت",
+    )
+    p.add_argument("target", help="الملف الحقيقي الذي تُقاس عليه السرعة والحتمية")
+    p.add_argument(
+        "--competitor-cmd",
+        default=None,
+        help="قالب أمر المنافس فيه {path} — مثال: «ruff check {path}» أو «pylint {path}» (اختياري: بدونه يوثَّق «لم يُشغَّل» بصدق)",
+    )
+    p.add_argument(
+        "--runs",
+        type=int,
+        default=3,
+        help="عدد التشغيلات لكل قياس (الحتمية تحتاج 2 على الأقل — الافتراضي 3)",
+    )
+    p.add_argument("--json-out", default=None, help="اكتب الإيصال الحتمي JSON هنا")
+    p.add_argument(
+        "--include-timing",
+        action="store_true",
+        help="أضف الأزمنة للإيصال (يكسر الحتمية البايتية)",
+    )
+    p.set_defaults(func=cmd.cmd_compare)
+
     # factory (المرحلة 7: بوابة المصنع الموحدة — تفويض حرفي لوحدات المحرك)
     p = sub.add_parser(
         "factory",

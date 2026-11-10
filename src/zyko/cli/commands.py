@@ -500,6 +500,36 @@ def cmd_gauntlet(args: Any) -> int:
     return 0 if report.ok else 1
 
 
+def cmd_compare(args: Any) -> int:
+    """`zyko compare` — المقارنة الحتمية: قياسات zyko حقيقية + منافس اختياري صادق.
+
+    دقة التصنيف على جدول المسبارات، سرعة المراجعة، الحتمية البايتية، ودوران
+    الإيصال — كلها على الهدف الذي تمرره. جانب المنافس بالأمر الذي تكتبه
+    أنت؛ وإن لم يُشغَّل يوثَّق ذلك بصدق — لا رقم مفبرك أبدًا.
+    أكواد الخروج: 0 نجاح · 1 فشل صادق · 2 خطأ استخدام.
+    """
+    from zyko.benchmarks.compare import run_compare
+
+    runs = int(getattr(args, "runs", 3))
+    if runs < 2:
+        print("خطأ: --runs يجب أن يكون 2 على الأقل — الحتمية تحتاج تشغيلين للمقارنة", file=sys.stderr)
+        return 2
+    report = run_compare(
+        args.target,
+        competitor_cmd=getattr(args, "competitor_cmd", None),
+        runs=runs,
+    )
+    if getattr(args, "json_out", None):
+        out_path = Path(args.json_out)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(
+            report.to_json(include_timing=bool(getattr(args, "include_timing", False))),
+            encoding="utf-8",
+        )
+    print(report.table_ar())
+    return 0 if report.ok else 1
+
+
 def cmd_verify(args: Any) -> int:
     """`zyko verify` — recompute a receipt offline; exit 1 on any drift.
 
