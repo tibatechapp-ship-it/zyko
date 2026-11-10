@@ -231,22 +231,23 @@ class TestDeterminism:
         assert before != after
 
     def test_real_repo_self_digest_within_budget(self):
-        """اختبار ذاتي: هضم مستودع zyko نفسه — شجرته أكبر من الميزانية،
-        فتُقتطع الشجرة بإعلان حتمي وتبقى الميزانية صادقة بالبايت."""
+        """اختبار ذاتي على مستودع zyko نفسه — بلا افتراضات عن حجم الـ checkout:
+        README أول ملف، والميزانية صادقة بالبايت أياً كان عدد الملفات حولها."""
         root = Path(__file__).resolve().parents[2]
         ctx = compress(root, max_tokens=10_000)
         assert ctx.files and ctx.files[0].path.lower().startswith("readme")
-        assert ctx.tree_dropped > 0 and ctx.tree_marker_rendered
         assert _estimate_tokens(ctx.to_text()) <= ctx.tokens_used <= 10_000
-        assert "اقتُطعت من الشجرة" in ctx.summary_ar
 
     def test_tree_truncation_announced(self, tmp_path: Path):
-        """شجرة أكبر من ميزانيتها (نصفها) تُقتطع من النهاية مع إعلان."""
+        """شجرة أكبر من ميزانيتها (نصفها) تُقتطع من النهاية مع إعلان كامل:
+        علامة مصيّرة، عدّاد مسارات محذوفة، وذكر في الملخص العربي."""
         for i in range(60):
             (tmp_path / f"zz_file_{i:02d}.py").write_text(f"x{i} = {i}\n", encoding="utf-8")
         (tmp_path / "README.md").write_text("# بداية\n", encoding="utf-8")
         ctx = compress(tmp_path, max_tokens=120)
         assert ctx.tree_dropped > 0
+        assert ctx.tree_marker_rendered
+        assert "اقتُطعت من الشجرة" in ctx.summary_ar
         assert ctx.tree  # README وملفات الأولوية الأولى بقيت
         assert ctx.tree[-1].startswith("zz_file_")  # القصّ من النهاية
         assert _estimate_tokens(ctx.to_text()) <= ctx.tokens_used <= 120
