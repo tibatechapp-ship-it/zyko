@@ -306,6 +306,38 @@ _RUNNERS: dict[str, Callable[[Step, bool], tuple[bool, Any, str | None]]] = {
 }
 
 
+def step_summary_ar(output: Any) -> str:
+    """سطر ملخص عربي حتمي لنتيجة خطوة — حقول ثابتة فقط، بلا أزمنة.
+
+    المصدر الواحد للسرد: يستخدمه سرد `zyko do` وسرد بوابة التنفيذ في
+    جلسة الذكاء (`zyko ai run --mode existing`) — نفس الحقول نفس النص،
+    فلا يصير للتلخيص نسختان تختلفان بين واجهتين.
+    """
+    if isinstance(output, dict):
+        if "score" in output:
+            return f"الدرجة {output.get('score')} — {output.get('verdict_ar', '')}"
+        if "applied" in output and "fixed" in output:
+            return (
+                f"أُصلح {output.get('fixed', 0)} ملاحظة — "
+                f"الدرجة {output.get('score_before')}→{output.get('score_after')}"
+            )
+        if "would_fix" in output:
+            if output.get("applied"):
+                return f"أُصلح {output.get('fixed', 0)} ملاحظة — الدرجة {output.get('score_before')}→{output.get('score_after')}"
+            return f"سيُصلَح {output.get('would_fix')} ملاحظة"
+        if "files" in output and "count" in output:
+            return f"رُوجع {output.get('count')} ملفاً"
+        if "total_bytes" in output:
+            return f"شجرة {len(output.get('files', {}))} ملفاً ({output.get('total_bytes')} بايت)"
+        if "code" in output:
+            return f"ترجمة تمت ({output.get('bytes')} بايت)"
+        if "verdict_ar" in output:
+            return str(output.get("verdict_ar"))
+        if "ok" in output:
+            return "الإيصال صالح" if output.get("ok") else "الإيصال غير صالح"
+    return "أُنجزت"
+
+
 def run(plan: Plan, *, dry_run: bool = True) -> RunResult:
     """نفّذ الخطة عبر الأدوات الفعلية — حتمية، موقَّعة، وتتوقف عند أول فشل.
 
