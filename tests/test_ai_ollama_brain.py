@@ -80,9 +80,10 @@ def test_chat_payload_shape_non_streaming() -> None:
 
 # ============================================================ وحدات العقل
 def test_happy_path_clean_output_accepted_through_gates() -> None:
-    brain = OllamaBrain(model="qwen2.5:7b", transport=_fake_transport(
-        {"message": {"role": "assistant", "content": PLAN_CLEAN}}
-    ))
+    brain = OllamaBrain(
+        model="qwen2.5:7b",
+        transport=_fake_transport({"message": {"role": "assistant", "content": PLAN_CLEAN}}),
+    )
     assert brain.name == "ollama:qwen2.5:7b"
     assert brain.deterministic is False
     gated = GatedBrain(brain)
@@ -96,9 +97,7 @@ def test_happy_path_clean_output_accepted_through_gates() -> None:
 
 def test_brain_is_runtime_checkable_and_records_payload() -> None:
     _fake_transport.payloads.clear()
-    brain = OllamaBrain(model="m1", transport=_fake_transport(
-        {"message": {"content": PLAN_CLEAN}}
-    ))
+    brain = OllamaBrain(model="m1", transport=_fake_transport({"message": {"content": PLAN_CLEAN}}))
     assert isinstance(brain, Brain)  # type: ignore[arg-type]
     brain.propose(CLEAN_GOAL)
     payload = _fake_transport.payloads[0]
@@ -147,7 +146,9 @@ def test_bad_responses_become_arabic_rejections(response: object, needle: str) -
     [
         (urllib.error.URLError("refused"), "تعذّر الوصول إلى Ollama"),
         (
-            urllib.error.HTTPError("http://127.0.0.1:1/api/chat", 500, "boom", None, io.BytesIO(b"")),
+            urllib.error.HTTPError(
+                "http://127.0.0.1:1/api/chat", 500, "boom", None, io.BytesIO(b"")
+            ),
             "HTTP 500",
         ),
         (TimeoutError(), "مهلة"),
@@ -200,9 +201,9 @@ class _FakeOllamaHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:  # noqa: N802
         if self.path == "/api/tags":
-            body = json.dumps(
-                {"models": [{"name": "qwen2.5:7b"}, {"name": "phi3:mini"}]}
-            ).encode("utf-8")
+            body = json.dumps({"models": [{"name": "qwen2.5:7b"}, {"name": "phi3:mini"}]}).encode(
+                "utf-8"
+            )
             self._send(200, body)
         else:
             self._send(404, b"{}")
@@ -269,9 +270,9 @@ def test_connection_refused_becomes_arabic_verdict() -> None:
 
 # ============================================================ الجلسة الكاملة
 def test_session_with_ollama_brain_clean_accepted(tmp_path: Path) -> None:
-    brain = GatedBrain(OllamaBrain(model="m2", transport=_fake_transport(
-        {"message": {"content": PLAN_CLEAN}}
-    )))
+    brain = GatedBrain(
+        OllamaBrain(model="m2", transport=_fake_transport({"message": {"content": PLAN_CLEAN}}))
+    )
     receipt = AISession(brain=brain).run(CLEAN_GOAL, tmp_path / "proj")
     assert receipt.ok
     assert receipt.brain == "gated:ollama:m2"
@@ -282,9 +283,9 @@ def test_session_with_ollama_brain_clean_accepted(tmp_path: Path) -> None:
 
 def test_session_with_ollama_brain_suspicious_rejected_before_any_write(tmp_path: Path) -> None:
     dirty = get_scenario("suspicious").render(CLEAN_GOAL)
-    brain = GatedBrain(OllamaBrain(model="m", transport=_fake_transport(
-        {"message": {"content": dirty}}
-    )))
+    brain = GatedBrain(
+        OllamaBrain(model="m", transport=_fake_transport({"message": {"content": dirty}}))
+    )
     receipt = AISession(brain=brain).run(CLEAN_GOAL, tmp_path / "proj")
     assert not receipt.ok
     assert receipt.failed_step == "plan"
@@ -293,9 +294,9 @@ def test_session_with_ollama_brain_suspicious_rejected_before_any_write(tmp_path
 
 
 def test_session_ollama_receipt_is_byte_deterministic(tmp_path: Path) -> None:
-    brain = GatedBrain(OllamaBrain(model="m3", transport=_fake_transport(
-        {"message": {"content": PLAN_CLEAN}}
-    )))
+    brain = GatedBrain(
+        OllamaBrain(model="m3", transport=_fake_transport({"message": {"content": PLAN_CLEAN}}))
+    )
     r1 = AISession(brain=brain).run(CLEAN_GOAL, tmp_path / "a" / "proj")
     r2 = AISession(brain=brain).run(CLEAN_GOAL, tmp_path / "b" / "proj")
     assert r1.to_json() == r2.to_json()
@@ -313,9 +314,11 @@ def test_cli_run_brain_ollama_end_to_end(
 ) -> None:
     from zyko.ai import ollama_brain as ob
 
-    monkeypatch.setattr(ob, "_http_transport", lambda host, timeout: _fake_transport(
-        {"message": {"content": PLAN_CLEAN}}
-    ))
+    monkeypatch.setattr(
+        ob,
+        "_http_transport",
+        lambda host, timeout: _fake_transport({"message": {"content": PLAN_CLEAN}}),
+    )
     rc = ai_main(
         [
             "run",

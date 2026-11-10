@@ -358,7 +358,7 @@ jobs:
       - name: AI coverage gate (≥85%)
         run: >
           pytest tests/test_ai_brains.py tests/test_ai_receipt.py tests/test_ai_session.py
-          tests/test_ai_gate.py tests/test_ai_cli.py
+          tests/test_ai_gate.py tests/test_ai_cli.py tests/test_ai_ollama_brain.py
           --cov=zyko.ai --cov-report=term --cov-fail-under=85 -q
       - name: Phase-8 gate — the AI layer passes the factory gates on clean/suspicious/adversarial anchors
         run: python -m zyko.ai gate

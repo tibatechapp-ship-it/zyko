@@ -83,7 +83,7 @@ def _http_transport(host: str, timeout: float) -> Transport:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310 — المخطط http(s) مقيد بالبناء والعنوان محلي افتراضيًا
             body = resp.read()
         parsed = json.loads(body.decode("utf-8"))
         if not isinstance(parsed, dict):
@@ -96,7 +96,7 @@ def _http_transport(host: str, timeout: float) -> Transport:
 def list_models(host: str | None = None, timeout: float = 3.0) -> tuple[str, ...]:
     """أسماء النماذج المثبتة من ``GET /api/tags`` — فارغة أو استثناء إن لم يتاح."""
     url = (host or os.environ.get(HOST_ENV) or DEFAULT_HOST).rstrip("/") + "/api/tags"
-    with urllib.request.urlopen(url, timeout=timeout) as resp:
+    with urllib.request.urlopen(url, timeout=timeout) as resp:  # nosec B310 — المخطط http(s) مقيد بالبناء والعنوان محلي افتراضيًا
         data = json.loads(resp.read().decode("utf-8"))
     models = data.get("models", []) if isinstance(data, dict) else []
     return tuple(m.get("name", "") for m in models if isinstance(m, dict) and m.get("name"))

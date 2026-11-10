@@ -104,9 +104,7 @@ def handle_ai(args: Any) -> int:
         from zyko.ai.ollama_brain import DEFAULT_HOST, HOST_ENV, list_models
 
         host = (
-            getattr(args, "ollama_host", None)
-            or os.environ.get(HOST_ENV)
-            or DEFAULT_HOST
+            getattr(args, "ollama_host", None) or os.environ.get(HOST_ENV) or DEFAULT_HOST
         ).rstrip("/")
         try:
             models = list_models(host)
