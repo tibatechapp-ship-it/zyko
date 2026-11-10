@@ -20,8 +20,10 @@ SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 MCP_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
-def _cli(*argv: str) -> subprocess.CompletedProcess[str]:
+def _cli(*argv: str, env_extra: dict[str, str] | None = None):
     env = {**os.environ, "PYTHONPATH": str(SRC)}
+    if env_extra:
+        env.update(env_extra)
     return subprocess.run(
         [sys.executable, "-m", "zyko", *argv],
         capture_output=True,
@@ -89,6 +91,14 @@ def test_cli_help_lists_core_verbs():
     assert proc.returncode == 0
     for verb in ("ask", "route", "verify", "serve", "mcp", "factory"):
         assert verb in proc.stdout, f"core verb {verb!r} missing from --help"
+    # Regression (caught on windows-latest CI): the epilog contains →, and
+    # `--help` prints from inside parse_args — before the old post-parse
+    # encoding guard ran. A cp1252 pipe used to kill help with
+    # UnicodeEncodeError. The guard now runs first; force the legacy codec
+    # here so every platform exercises the crash window permanently.
+    cp1252 = _cli("--help", env_extra={"PYTHONIOENCODING": "cp1252"})
+    assert cp1252.returncode == 0, cp1252.stderr
+    assert "route" in cp1252.stdout
 
 
 def test_cli_dash_version_reports_runtime_version():
