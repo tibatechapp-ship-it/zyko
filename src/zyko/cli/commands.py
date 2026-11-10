@@ -456,10 +456,17 @@ def cmd_verify(args: Any) -> int:
     is checked against its own arithmetic, the published strategy weights and
     (optionally) the quality ledger that produced it. No network, no trust in
     the process that wrote the file.
+
+    Orchestrator receipts ("kind": "orchestrator") dispatch to the mind's own
+    verifier: every step sha256 and the chain_hash are recomputed from the
+    recorded fields — same no-trust guarantee, same exit codes.
     """
     from zyko.router.verify import load_receipt, verify_receipt
 
     receipt = load_receipt(args.receipt)
+    if isinstance(receipt, dict) and receipt.get("kind") == "orchestrator":
+        return _verify_orchestrator_receipt(args, receipt)
+
     ledger = None
     if getattr(args, "ledger", None):
         ledger = QualityLedger.load(Path(args.ledger))
@@ -481,6 +488,128 @@ def cmd_verify(args: Any) -> int:
     if report.created is not None:
         ui.kv("created", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(report.created)))
     return 0 if report.ok else 1
+
+
+def _verify_orchestrator_receipt(args: Any, receipt: dict) -> int:
+    """مسار التحقق الخاص بإيصالات العقل — نفس العقد: 0 سليم، 1 معدَّل."""
+    from zyko.orchestrator.verify import verify_orchestration_receipt
+
+    report = verify_orchestration_receipt(receipt)
+    if getattr(args, "json", False):
+        print(json.dumps(report.as_dict(), indent=2, ensure_ascii=False))
+        return 0 if report.ok else 1
+    if report.ok:
+        print(ui.ok(f"orchestrator receipt verified — {report.checks} checks passed"))
+    else:
+        print(
+            ui.fail(
+                f"orchestrator receipt INVALID — {len(report.issues)} issue(s) in {report.checks} checks"
+            )
+        )
+        ui.bullets(f"{issue.code}: {issue.message_ar}" for issue in report.issues)
+    ui.kv("kind", "orchestrator")
+    ui.kv("chain_hash", report.chain_hash or "-")
+    return 0 if report.ok else 1
+
+
+def _do_step_summary_ar(output: Any) -> str:
+    """سطر ملخص عربي حتمي لنتيجة خطوة — حقول ثابتة فقط، بلا أزمنة."""
+    if isinstance(output, dict):
+        if "score" in output:
+            return f"الدرجة {output.get('score')} — {output.get('verdict_ar', '')}"
+        if "would_fix" in output:
+            if output.get("applied"):
+                return f"أُصلح {output.get('fixed', 0)} ملاحظة — الدرجة {output.get('score_before')}→{output.get('score_after')}"
+            return f"سيُصلَح {output.get('would_fix')} ملاحظة"
+        if "files" in output and "count" in output:
+            return f"رُوجع {output.get('count')} ملفاً"
+        if "total_bytes" in output:
+            return f"شجرة {len(output.get('files', {}))} ملفاً ({output.get('total_bytes')} بايت)"
+        if "code" in output:
+            return f"ترجمة تمت ({output.get('bytes')} بايت)"
+        if "verdict_ar" in output:
+            return str(output.get("verdict_ar"))
+        if "ok" in output:
+            return "الإيصال صالح" if output.get("ok") else "الإيصال غير صالح"
+    return "أُنجزت"
+
+
+def cmd_do(args: Any) -> int:
+    """`zyko do` — العقل كاملاً: classify → route → run (تجريبي افتراضياً).
+
+    المستخدم يكتب هدفه فقط؛ العقل يقرر الأداة والترتيب، Guardian يحكم كل
+    خطوة، والإيصال الموحّد يوثق كل قرار ويتحقق منه `zyko verify`.
+    أكواد الخروج: 0 نجاح / 1 ملاحظات (لم تُفهم) / 2 فشل خطوة.
+    """
+    from zyko.orchestrator import classify, extract_context, route, run
+
+    goal = str(args.goal or "")
+    context = extract_context(goal)
+    # الأعلام الصريحة تتغلب على المستخرج الحتمي من النص.
+    for key in ("path", "file", "src", "description"):
+        flag_value = getattr(args, key, None)
+        if flag_value:
+            context[key] = flag_value
+
+    classification = classify(goal)
+    plan = route(classification, context=context)
+
+    if getattr(args, "json", False):
+        result = run(plan, dry_run=not args.write)
+        print(json.dumps(result.receipt, indent=2, ensure_ascii=False, sort_keys=True))
+        return _do_exit_code(classification, result)
+
+    print(ui.info(f"المهمة: {classification.task.value} — ثقة {classification.confidence:.2f}"))
+    if plan.steps:
+        print(f"الخطة ({len(plan.steps)} خطوة):")
+        for index, step in enumerate(plan.steps, start=1):
+            args_str = json.dumps(step.args, ensure_ascii=False, sort_keys=True)
+            print(f"  {index}. [{step.tool}] {step.reason_ar} — args: {args_str}")
+    else:
+        print("الخطة: (لا خطوات)")
+    if plan.notes_ar:
+        ui.bullets(plan.notes_ar, marker="  ! ")
+    if classification.task.value == "UNKNOWN":
+        return 1
+
+    dry_run = not args.write
+    print(
+        ui.warn("الوضع: تجريبي — لن يُكتب أي ملف (استخدم --write للتطبيق)")
+        if dry_run
+        else ui.warn("الوضع: تطبيق فعلي — سيُكتب على القرص")
+    )
+    result = run(plan, dry_run=dry_run)
+    print("التنفيذ:")
+    for index, step_result in enumerate(result.steps, start=1):
+        mark = "✓" if step_result.ok else "✗"
+        summary = (
+            _do_step_summary_ar(step_result.output)
+            if step_result.ok
+            else (step_result.error_ar or "فشل")
+        )
+        print(
+            f"  {mark} [{step_result.step.tool}] {summary} (guardian: {step_result.guardian_verdict})"
+        )
+
+    if getattr(args, "receipt", None):
+        receipt_path = Path(args.receipt)
+        receipt_path.parent.mkdir(parents=True, exist_ok=True)
+        receipt_path.write_text(
+            json.dumps(result.receipt, indent=2, ensure_ascii=False, sort_keys=True),
+            encoding="utf-8",
+        )
+        print(ui.ok(f"الإيصال اكتُب: {receipt_path} — تحقق منه بـ: zyko verify {receipt_path}"))
+    ui.kv("chain_hash", result.receipt["chain_hash"])
+    return _do_exit_code(classification, result)
+
+
+def _do_exit_code(classification: Any, result: Any) -> int:
+    """0 نجاح / 1 ملاحظات (مهمة غير مفهومة) / 2 فشل خطوة."""
+    if result.steps and not result.ok:
+        return 2
+    if classification.task.value == "UNKNOWN":
+        return 1
+    return 0
 
 
 def cmd_sessions(args: Any) -> int:
