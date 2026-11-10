@@ -113,9 +113,7 @@ class AISession:
         if not proposal.accepted:
             # كل الأحكام الفاشلة تُوثَّق — قصة الرفض كاملة لا أول فشل فقط
             evidence = "؛ ".join(
-                v.details_ar
-                for v in proposal.verdicts
-                if not v.passed and v.details_ar
+                v.details_ar for v in proposal.verdicts if not v.passed and v.details_ar
             )
             receipt.add(
                 StepRecord(

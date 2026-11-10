@@ -92,9 +92,8 @@ def handle_ai(args: Any) -> int:
         return EXIT_OK
 
     if command == "run":
-        if (
-            getattr(args, "brain", "planner") in ("ollama", "bestof")
-            and not getattr(args, "model", None)
+        if getattr(args, "brain", "planner") in ("ollama", "bestof") and not getattr(
+            args, "model", None
         ):
             print(
                 f"خطأ: --brain {getattr(args, 'brain', 'planner')} يتطلب --model — مثال: --model qwen2.5:7b",

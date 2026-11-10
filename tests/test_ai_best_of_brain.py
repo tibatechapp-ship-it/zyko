@@ -131,7 +131,9 @@ def test_fallback_to_planner_after_model_unreachable() -> None:
 
 def test_hostile_model_text_rejected_by_its_own_gates() -> None:
     dirty = get_scenario("suspicious").render(CLEAN_GOAL)  # نص فيه هاتف — PII
-    brain = BestOfBrain([_ollama(transport=_fake_transport({"message": {"content": dirty}})), PlannerBrain()])
+    brain = BestOfBrain(
+        [_ollama(transport=_fake_transport({"message": {"content": dirty}})), PlannerBrain()]
+    )
     proposal = brain.propose(CLEAN_GOAL)
     assert proposal.accepted  # المخطط أنقذ الجلسة
     assert proposal.text == PLANNER_TEXT
@@ -162,7 +164,9 @@ def test_all_candidates_fail_yields_arabic_rejection() -> None:
 
 def test_empty_goal_short_circuits_without_consulting_anyone() -> None:
     _fake_transport.payloads.clear()
-    brain = BestOfBrain([PlannerBrain(), _ollama(transport=_fake_transport({"message": {"content": PLAN_CLEAN}}))])
+    brain = BestOfBrain(
+        [PlannerBrain(), _ollama(transport=_fake_transport({"message": {"content": PLAN_CLEAN}}))]
+    )
     proposal = brain.propose("   ")
     assert not proposal.accepted
     assert proposal.text == ""

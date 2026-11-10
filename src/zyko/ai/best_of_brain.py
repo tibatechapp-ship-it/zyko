@@ -90,8 +90,7 @@ class BestOfBrain:
                     gate=GATE_NAME,
                     passed=True,
                     details_ar=(
-                        f"فاز المرشح {rank} من {len(self._candidates)} "
-                        f"«{proposal.brain}»{story}"
+                        f"فاز المرشح {rank} من {len(self._candidates)} «{proposal.brain}»{story}"
                     ),
                 )
                 return Proposal(
@@ -123,7 +122,9 @@ class BestOfBrain:
         return tuple(candidate.name for candidate in self._candidates)
 
     # ------------------------------------------------------------ داخلي
-    def _rejected(self, summary_parts: tuple[str, ...], verdicts: tuple[GateVerdict, ...]) -> Proposal:
+    def _rejected(
+        self, summary_parts: tuple[str, ...], verdicts: tuple[GateVerdict, ...]
+    ) -> Proposal:
         """اقتراح مرفوض: نص فارغ، وأحكام المرشحين ثم خلاصة المنافسة."""
         summary = GateVerdict(gate=GATE_NAME, passed=False, details_ar="؛ ".join(summary_parts))
         return Proposal(
