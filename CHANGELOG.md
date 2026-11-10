@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.21.0 — the brain digests and swarms: `compress` and `swarm` complete the orchestrator
+
+The deterministic brain gains its final two components, and
+`zyko.orchestrator` is whole: `classify → route → run → compress → swarm`.
+`compress(repo_path, *, max_tokens=10_000)` digests a repository into a
+token-budgeted context a brain can later read — a declared priority order
+(README, then pyproject/CITATION, then `src`, `docs`, `tests`, config, the
+rest, ties broken alphabetically), an honest budget contract
+(`estimate(to_text()) <= tokens_used <= max_tokens`, proven over six
+budgets with every block counted at its true rendered size), a file tree
+capped at half the budget with the surplus cut from the lowest-priority
+tail, explicit `omitted` / `skipped_binary` / `TRUNCATION_MARKER` markers
+instead of silent drops, one Arabic `summary_ar` that tells the whole
+story, a sha256 fingerprint for change detection, a JSON-serializable
+`to_dict`, and byte-determinism proven over 100 runs — including a
+self-test on the zyko repository itself (53 tests).
+
+`swarm(tasks, *, max_parallel=3)` runs text goals or ready-made plans
+through the deterministic brain with at most `max_parallel` workers, and
+parallelism changes only the wall clock: results always come back in
+input order with byte-identical task fingerprints across 1, 2, 3 and 8
+workers. The swarm observes and never writes — `run` is always called
+with `dry_run=True` and every task receipt says so. A failing task is
+documented in its own receipt (`error_ar` on the step or the task) and
+never burns the swarm; `ok` is true only when every task passed. One
+`kind: "swarm"` receipt chains the task fingerprints in input order under
+the same `chain_hash` contract as `run`, and `MAX_PARALLEL_CAP = 16`
+protects weak platforms like Termux (≈35 tests).
+
+Riding on swarm: a companion fix in `extract_context` — it used to shave
+the leading slash off absolute paths (`/tmp/x.py` became `tmp/x.py`, so
+real tools failed on valid targets) and never matched Windows absolute
+prefixes (`C:\`, `\\unc`) at all; absolute paths now match first with
+either separator, with 18 dedicated tests. Total orchestrator suite:
+127 tests (classify 36 + route 26 + run 38 + compress 53 + context 18 +
+swarm).
+
 ## 0.20.0 — the deterministic brain: `orchestrator` decides, `zyko do` executes
 
 The centerpiece of this release is `zyko.orchestrator` — the deterministic
