@@ -174,4 +174,15 @@ def known_intents() -> list[str]:
     return [str(i["id"]) for i in _INTENTS]
 
 
-__all__ = ["draft_plan", "known_intents"]
+def intent_specs() -> tuple[dict[str, object], ...]:
+    """إسقاط عام للنوايا المدعومة — للبناش والاختبارات (بلا مفاتيح خاصة).
+
+    كل بند: ``id`` و``name`` و``display`` و``template`` و``modules``
+    و``deps`` و``run`` و``keywords`` — نفس جدول الجدولة الحتمي نفسه،
+    مقروء فقط: ما يبنيه الفحص الكبير يمر عبر المخطط الصارم نفسه.
+    """
+    public_keys = ("id", "name", "display", "template", "modules", "deps", "run", "keywords")
+    return tuple({k: i[k] for k in public_keys} for i in _INTENTS)
+
+
+__all__ = ["draft_plan", "intent_specs", "known_intents"]

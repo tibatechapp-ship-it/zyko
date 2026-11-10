@@ -449,6 +449,36 @@ def cmd_bench(args: Any) -> int:
     return run_bench(args)
 
 
+def cmd_gauntlet(args: Any) -> int:
+    """`zyko gauntlet` — الفحص الكبير: برامج حقيقية تُبنى وتُختبر، إيصال حتمي.
+
+    أكواد الخروج — اصطلاح المصنع نفسه: 0 نجاح 100% · 1 فشل صادق · 2 خطأ استخدام.
+    """
+    from zyko.benchmarks.gauntlet import run_gauntlet
+    from zyko.coder.heuristics import intent_specs
+
+    per_intent = int(getattr(args, "per_intent", 100))
+    execute = int(getattr(args, "execute", 0))
+    if getattr(args, "execute_all", False):
+        execute = per_intent * len(intent_specs())
+    if per_intent < 1 or execute < 0:
+        print(
+            "خطأ: --per-intent يجب أن يكون 1 على الأقل و--execute ليس سالبًا",
+            file=sys.stderr,
+        )
+        return 2
+    report = run_gauntlet(per_intent, execute=execute)
+    if getattr(args, "json_out", None):
+        out_path = Path(getattr(args, "json_out"))
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(
+            report.to_json(include_timing=bool(getattr(args, "include_timing", False))),
+            encoding="utf-8",
+        )
+    print(report.table_ar())
+    return 0 if report.ok else 1
+
+
 def cmd_verify(args: Any) -> int:
     """`zyko verify` — recompute a receipt offline; exit 1 on any drift.
 

@@ -264,6 +264,37 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--run-tests", action="store_true", help="شغّل اختبارات المشروع بعد التوليد")
     p.set_defaults(func=cmd.cmd_new)
 
+    # gauntlet (البناش: 1000 برنامج حقيقي تُبنى وتُختبر — إثبات القدرة)
+    p = sub.add_parser(
+        "gauntlet",
+        help="الفحص الكبير: يبني 1000 مشروعًا حقيقيًا وينفّذ عينة حتمية باختباراتها الخاصة",
+    )
+    p.add_argument(
+        "--per-intent",
+        type=int,
+        default=100,
+        help="مخططات لكل نية (افتراضي 100 ⇒ 1000 برنامجًا على 10 نوايا)",
+    )
+    p.add_argument(
+        "--execute",
+        type=int,
+        default=0,
+        help="عدد البرامج التي تُنفّذ اختباراتها الحقيقية، موزعة حتميًا على النوايا (0 = فحص المصفوفة فقط)",
+    )
+    p.add_argument(
+        "--all",
+        dest="execute_all",
+        action="store_true",
+        help="نفّذ كل البرامج باختباراتها (مكلف: ‎~2 ثانية لكل برنامج)",
+    )
+    p.add_argument("--json-out", default=None, help="اكتب الإيصال الحتمي JSON هنا")
+    p.add_argument(
+        "--include-timing",
+        action="store_true",
+        help="أضف الزمن للإيصال (يكسر الحتمية البايتية)",
+    )
+    p.set_defaults(func=cmd.cmd_gauntlet)
+
     # factory (المرحلة 7: بوابة المصنع الموحدة — تفويض حرفي لوحدات المحرك)
     p = sub.add_parser(
         "factory",
