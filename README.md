@@ -76,6 +76,27 @@ zyko py hello.daad --run
 
 ---
 
+## شاهدها يعمل — على كود حقيقي
+
+تشغيل موثّق على ملف واقعي من مكتبة [psf/requests](https://github.com/psf/requests): `src/requests/models.py` — **1184 سطراً** (التجربة الكاملة والمنهجية في [docs/REAL_WORLD_TEST.md](docs/REAL_WORLD_TEST.md)):
+
+```text
+$ zyko do "راجع src/requests/models.py" --dry-run
+[INFO] المهمة: REVIEW — ثقة 0.70
+الخطة (1 خطوة):
+  1. [review] مراجعة حتمية بقواعد AST — بلا نموذج وبلا شبكة — args: {"path": "src/requests/models.py"}
+[WARN] الوضع: تجريبي — لن يُكتب أي ملف (استخدم --write للتطبيق)
+التنفيذ:
+  ✓ [review] الدرجة 10 — مرفوض (guardian: ALLOW)
+  chain_hash             d0e52368…f42485
+
+real    0m0.828s
+```
+
+ما جرى في 0.83 ثانية بلا شبكة وبلا مفاتيح: تصنيف الهدف (REVIEW) ← استخراج المسار الحقيقي من النص العربي ← مراجعة AST وجدت **24 ملاحظة حقيقية** (1 عالية، 18 متوسطة، 5 منخفضة) ← درجة حتمية 10/100 وحكم «مرفوض» بمزايدة موثقة ← Guardian يسمح ← إيصال موقّع بـ `chain_hash` قابل للتحقق. ودماغ سحابي (Qwen/OpenAI-compatible) يعمل خلف البوابات نفسها: `zyko ai run --brain qwen --model <model> --goal "راجع وأصلح <ملف>"`.
+
+---
+
 ## الأوامر الأساسية
 
 | الأمر | الوظيفة |
