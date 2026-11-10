@@ -1,5 +1,50 @@
 # Changelog
 
+## Unreleased — `zyko.ai` lets brains compete: `BestOfBrain` — first accepted candidate wins
+
+The golden rule now arbitrates *between* brains, not just texts.
+`BestOfBrain` consults several candidate brains **in order** on the
+same goal; every candidate is wrapped in `GatedBrain` automatically,
+so no candidate's text is ever accepted before the PII gate and the
+RTL gate. The first candidate whose proposal passes its own gates
+wins, and the competition stops there — brains that come later are
+never consulted. The receipt tells the whole story: one verdict per
+tried candidate (why it failed, or what it produced), then the
+verdict naming the winner and its rank (`فاز المرشح 2 من 2 …`).
+
+No new dependencies and no new exceptions: the composite is a plain
+`Brain` (`name = "bestof:<brain1>+<brain2>"`) that plugs into the
+same `AISession` socket, and `deterministic` is the honest union of
+its candidates — one non-deterministic model makes the whole session
+documented as non-deterministic. Every candidate failure is evidence,
+not an error: an unreachable Ollama server is recorded in Arabic and
+the competition simply moves to the next candidate; if all fail, the
+proposal is rejected and the session stops at the plan gate before a
+single byte is written. One session-level sharpening accompanies
+this: a rejected plan step now records **all** failed gate verdicts
+in its Arabic evidence (previously only the first), so the full
+competition story is preserved in the receipt.
+
+### Added
+- **`zyko.ai.best_of_brain`** — `BestOfBrain(brains, *, name=…)`:
+  - candidates are wrapped in `GatedBrain` at construction time —
+    pass raw brains (`PlannerBrain()`, `OllamaBrain(…)`), never
+    pre-gated ones;
+  - `name = "bestof:<brain1>+<brain2>"` (overridable), `candidates`
+    property exposes the wrapped candidate names in competition order;
+  - `propose(request)` runs the ordered competition, stops at the
+    first accepted proposal, and documents every verdict in order —
+    an empty goal is rejected in Arabic before any candidate is
+    consulted;
+  - all candidates failing ⇒ one rejected proposal whose verdicts
+    carry each candidate's Arabic failure evidence plus the summary
+    `فشل جميع المرشحين (N)`.
+- **CLI** — `zyko ai run --brain bestof --model «model»` runs the
+  documented session with the local model first and the deterministic
+  planner as the fallback candidate (`gated:bestof:ollama:<model>+planner`);
+  `--brain bestof` requires `--model`; `zyko ai map` documents the
+  composite brain.
+
 ## 0.18.0 — `zyko.ai` plugs in a real local model: `OllamaBrain` behind the same gates
 
 The golden rule did not change: **the brain adds, the gates decide**.
