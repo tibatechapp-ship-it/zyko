@@ -35,6 +35,11 @@ _MAP_ROWS: tuple[tuple[str, str, str], ...] = (
         "المرحلة 6 — حارس الجودة: خط أساس حتمي وكشف تراجع بالأرقام",
     ),
     ("gates", "zyko factory gates", "بوابات المراحل 3+4+5+6 كاملة في أمر واحد"),
+    (
+        "dashboard",
+        "zyko factory dashboard --html لوحة.html --md لوحة.md",
+        "لوحة تحكم عربية حتمية (HTML + Markdown) لبوابات المراحل",
+    ),
 )
 
 

@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-0.19.0-6366f1)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-1549%20passing-22c55e)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-1581%20passing-22c55e)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Termux-10b981)](.github/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
@@ -60,8 +60,8 @@ zyko ask 'مرحبا' --demo --receipt r.json && zyko verify r.json
 # 2) الحلقة كاملة: توليد ← مراجعة ← إصلاح من وصف عربي واحد
 zyko factory pipeline --description "قائمة مهام للفريق" --out ./مشروعي
 
-# 3) بوابات المراحل الأربع (24 بوابة كمية) وخلاصة واحدة
-zyko factory gates
+# 3) بوابات المراحل الأربع (24 بوابة كمية) ولوحة تحكم HTML حتمية
+zyko factory gates --html /tmp/لوحة.html
 
 # 4) حارس الجودة عبر الزمن — بلا طوابع زمنية
 zyko factory baseline update --src ./مشروعي
@@ -84,7 +84,8 @@ zyko py hello.daad --run
 | `zyko factory workspace` | المحرك على مشروع قائم (تجربة جافة افتراضيًا) |
 | `zyko factory fix --path <p>` | إصلاح ملف أو مجلد مع تحقق AST |
 | `zyko factory baseline update/check` | حارس الجودة عبر الزمن |
-| `zyko factory gates` | بوابات المراحل 3+4+5+6 وخلاصة واحدة موقَّعة |
+| `zyko factory gates --html <p>` | بوابات المراحل 3+4+5+6 ولوحة HTML حتمية |
+| `zyko factory dashboard` | لوحة تحكم عربية (HTML + Markdown) موقعة ببصمة |
 | `zyko factory map` | خريطة المصنع: الوحدات والعقود وأكواد الخروج |
 | `zyko verify <receipt>` | تحقق دون اتصال من أي إيصال توجيه |
 | `zyko py <file.daad>` | ترجمة/تنفيذ بايثون عربية (ضاد) |
@@ -101,7 +102,7 @@ Linux · Windows · macOS · Android/Termux — مصفوفة CI خضراء عل�
 
 ```bash
 pytest -q
-# 1549 passed, 10 skipped
+# 1581 passed, 10 skipped
 ```
 
 ---
