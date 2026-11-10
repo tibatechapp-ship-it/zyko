@@ -4,6 +4,7 @@ Uses real APIs discovered by introspection. Where an API surface is
 ambiguous, we invoke the CLI (the documented public interface) rather
 than guess internal method names.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -25,7 +26,10 @@ def _run_async(coro):
 def _cli(*args, timeout: int = 60):
     return subprocess.run(
         [sys.executable, "-m", "zyko", *args],
-        capture_output=True, text=True, timeout=timeout,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=timeout,
     )
 
 
@@ -47,10 +51,20 @@ def test_pipeline_end_to_end_produces_working_project(tmp_path):
     """
     out = tmp_path / "proj"
     r = subprocess.run(
-        [sys.executable, "-m", "zyko.pipeline", "run",
-         "--description", "قائمة مهام يومية بسيطة أضيف فيها المهام وأشطبها",
-         "--out", str(out)],
-        capture_output=True, text=True, timeout=180,
+        [
+            sys.executable,
+            "-m",
+            "zyko.pipeline",
+            "run",
+            "--description",
+            "قائمة مهام يومية بسيطة أضيف فيها المهام وأشطبها",
+            "--out",
+            str(out),
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=180,
     )
     assert r.returncode != 2, f"pipeline fatal error (rc=2): {r.stderr[-400:]}"
     assert "Traceback" not in r.stderr, f"pipeline crashed:\n{r.stderr[-400:]}"
@@ -67,9 +81,20 @@ def test_pipeline_deterministic_across_two_runs(tmp_path):
     rcs = []
     for d in (a, b):
         r = subprocess.run(
-            [sys.executable, "-m", "zyko.pipeline", "run",
-             "--description", "قائمة مهام", "--out", str(d)],
-            capture_output=True, text=True, timeout=180,
+            [
+                sys.executable,
+                "-m",
+                "zyko.pipeline",
+                "run",
+                "--description",
+                "قائمة مهام",
+                "--out",
+                str(d),
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=180,
         )
         assert r.returncode != 2, f"fatal: {r.stderr[-300:]}"
         rcs.append(r.returncode)
@@ -85,9 +110,7 @@ def test_pipeline_deterministic_across_two_runs(tmp_path):
 
     a_files = list(a.rglob("*.py"))
     b_files = list(b.rglob("*.py"))
-    assert len(a_files) == len(b_files), (
-        f"file counts differ: {len(a_files)} vs {len(b_files)}"
-    )
+    assert len(a_files) == len(b_files), f"file counts differ: {len(a_files)} vs {len(b_files)}"
     if a_files:
         assert _tree_hash(a) == _tree_hash(b), "pipeline not byte-deterministic"
 
@@ -143,7 +166,9 @@ def test_best_of_brain_returns_proposal():
     # Try common constructor shapes
     for attempt in (
         lambda: BestOfBrain([MockLLM("suspicious"), MockLLM("clean")], guardian=DefaultGuardian()),
-        lambda: BestOfBrain(brains=[MockLLM("suspicious"), MockLLM("clean")], guardian=DefaultGuardian()),
+        lambda: BestOfBrain(
+            brains=[MockLLM("suspicious"), MockLLM("clean")], guardian=DefaultGuardian()
+        ),
         lambda: BestOfBrain(brains=[MockLLM("suspicious"), MockLLM("clean")]),
     ):
         try:
@@ -170,7 +195,10 @@ def test_baseline_update_via_module_cli(tmp_path):
 
     r = subprocess.run(
         [sys.executable, "-m", "zyko.baseline", "update", "--src", str(src)],
-        capture_output=True, text=True, timeout=60,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=60,
     )
     if r.returncode != 0:
         pytest.skip(f"baseline update CLI unavailable: {r.stderr[-200:]}")
