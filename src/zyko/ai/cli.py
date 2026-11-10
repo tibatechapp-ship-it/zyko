@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 from typing import Any, Sequence
@@ -29,6 +30,7 @@ def ai_map_text() -> str:
             "=" * 62,
             "العقل/الأمر                                  ماذا يفعل",
             "planner      zyko ai run --goal «وصف»       مخطط حتمي مقيّد بالبوابات (بلا نموذج وبلا شبكة)",
+            "ollama       zyko ai run --brain ollama …   نموذج محلي حقيقي خلف البوابات نفسها (يتطلب Ollama)",
             "gated:<اسم>  —                              أي عقل آخر يُمرّ عبر بوابات المصنع نفسها",
             "-" * 62,
             "مسار الجلسة: اقتراح العقل ← بوابة PII ← بوابة RTL ← توليد (حلقة",
@@ -39,24 +41,49 @@ def ai_map_text() -> str:
             "أمثلة:",
             '  python -m zyko.ai run --goal "قائمة مهام" --out ./جديد',
             "  python -m zyko.ai run --goal «وصف» --out ./ج --dry-run   # بلا كتابة",
+            "  python -m zyko.ai run --brain ollama --model qwen2.5:7b …  # عقل محلي حقيقي",
+            "  python -m zyko.ai ollama                                 # فحص خادم Ollama",
             "  python -m zyko.ai gate                                   # بوابة المرحلة 8",
         ]
     )
 
 
-def handle_ai(args: Any) -> int:
-    """وجّه أوامر طبقة الذكاء — نفس عقد أكواد الخروج."""
+def _build_session(args: Any) -> Any:
+    """ابنِ الجلسة حسب اختيار العقل — ``planner`` الافتراضي، و``ollama`` العقل المحلي.
+
+    العقل المحلي يُغلَّف بـ ``GatedBrain`` دائمًا: نص النموذج لا يُقبل
+    قبل بوابة PII وبوابة RTL — العقل يضيف، والبوابات تقرّر.
+    """
+    from zyko.ai.brains import GatedBrain, PlannerBrain
     from zyko.ai.session import AISession
 
+    brain_choice = getattr(args, "brain", "planner") or "planner"
+    if brain_choice == "ollama":
+        from zyko.ai.ollama_brain import OllamaBrain
+
+        brain = GatedBrain(OllamaBrain(model=args.model, host=getattr(args, "ollama_host", None)))
+    else:
+        brain = GatedBrain(PlannerBrain())
+    return AISession(brain=brain, rounds=args.rounds, fail_under=args.fail_under)
+
+
+def handle_ai(args: Any) -> int:
+    """وجّه أوامر طبقة الذكاء — نفس عقد أكواد الخروج."""
     command = getattr(args, "ai_cmd", None) or "map"
     if command == "map":
         print(ai_map_text())
         return EXIT_OK
 
     if command == "run":
+        if getattr(args, "brain", "planner") == "ollama" and not getattr(args, "model", None):
+            print(
+                "خطأ: --brain ollama يتطلب --model — مثال: --model qwen2.5:7b",
+                file=sys.stderr,
+            )
+            return EXIT_USAGE
         out = Path(args.out)
         write = not getattr(args, "dry_run", False)
-        session = AISession(rounds=args.rounds, fail_under=args.fail_under)
+        session = _build_session(args)
         receipt = session.run(args.goal, out, write=write)
         if out.exists():
             session.write_receipt(receipt, out)
@@ -72,6 +99,27 @@ def handle_ai(args: Any) -> int:
         if receipt.ok:
             return EXIT_OK
         return EXIT_USAGE if receipt.failed_step in ("goal", "out") else EXIT_FINDINGS
+
+    if command == "ollama":
+        from zyko.ai.ollama_brain import DEFAULT_HOST, HOST_ENV, list_models
+
+        host = (
+            getattr(args, "ollama_host", None)
+            or os.environ.get(HOST_ENV)
+            or DEFAULT_HOST
+        ).rstrip("/")
+        try:
+            models = list_models(host)
+        except Exception:
+            print(f"Ollama على {host} — غير متاح ❌")
+            print("ثبّت Ollama وشغّل الخادم (ollama serve) ثم أعد المحاولة.")
+            return EXIT_FINDINGS
+        print(f"Ollama على {host} — متاح ✅")
+        if models:
+            print(f"النماذج ({len(models)}): " + "، ".join(models))
+        else:
+            print("لا نماذج مثبتة بعد — اسحب نموذجًا مثل: ollama pull qwen2.5:7b")
+        return EXIT_OK
 
     if command == "gate":
         gates = run_phase8_gate(max_seconds=args.max_seconds)
@@ -101,10 +149,34 @@ def register_to(sub: Any) -> None:
         default=75,
         help="حد القبول: أدنى درجة بعد الإصلاح ≥ هذا الحد (الافتراضي 75)",
     )
+    run_p.add_argument(
+        "--brain",
+        choices=("planner", "ollama"),
+        default="planner",
+        help="العقل: planner الحتمي (افتراضي) أو ollama النموذج المحلي خلف البوابات نفسها",
+    )
+    run_p.add_argument(
+        "--model",
+        default=None,
+        help="اسم النموذج في Ollama (مطلوب مع --brain ollama) — مثال: qwen2.5:7b",
+    )
+    run_p.add_argument(
+        "--ollama-host",
+        default=None,
+        help="عنوان خادم Ollama (افتراضي http://127.0.0.1:11434 أو ZYKO_OLLAMA_HOST)",
+    )
     run_p.add_argument("--dry-run", action="store_true", help="لا تكتب شيئًا على القرص")
     run_p.add_argument("--format", choices=("json", "text", "summary"), default="text")
     run_p.add_argument(
         "--include-timing", action="store_true", help="أضف الزمن (يكسر الحتمية البايتية)"
+    )
+    ollama_p = sub.add_parser(
+        "ollama", help="فحص خادم Ollama المحلي: هل يعمل؟ وما النماذج المتاحة؟"
+    )
+    ollama_p.add_argument(
+        "--ollama-host",
+        default=None,
+        help="عنوان الخادم (افتراضي http://127.0.0.1:11434 أو ZYKO_OLLAMA_HOST)",
     )
     gate_p = sub.add_parser("gate", help="بوابة المرحلة 8 — 12 بوابة على 3 مراسئ")
     gate_p.add_argument("--max-seconds", type=float, default=5.0, help="سقف زمن كل جلسة دليل")
