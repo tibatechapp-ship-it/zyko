@@ -21,7 +21,13 @@
 حد الصدقة المعلن: Landlock هنا يحصر **الكتابة** فقط — القراءة مفتوحة
 عمدًا (تشغيل اختبارات مشروع يتطلب قراءة ذلك المشروع وكود المشغّل)،
 والشبكة لا تُمس تحت landlock ABI v1–v3 — وكلاهما فجوة موثقة لا ثغرة
-مخفية. وفشل تقييد النواة داخل الابن **فشل مغلق**: وسم عربي على
+مخفية. نصف القراءة محسوم اليوم بحرس الاعتماد الحساس (المستعار من
+nexus-core): يد zyko نفسها لا تقرأ مخازن الأسرار (``.env``/المفاتيح)
+حتى داخل الجذور، وتحت bwrap تُعمى المخازن نفسها في الابن بتراكب mount
+— وبقي تحت landlock قراءة الابن للجذور مفتوحة، فجوة أصغر موثقة حتى
+يتيح نواة CI حصر القراءة الانتقائي.
+
+وفشل تقييد النواة داخل الابن **فشل مغلق**: وسم عربي على
 stderr وخروج 126 — لا تشغيل بلا عزل على مضاربة الهدوء.
 """
 
@@ -36,6 +42,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import Callable
+
+from zyko.sandbox.contracts import sensitive_paths_in_roots
 
 # ------------------------------------------------------------ المستويات
 JAIL_LEVEL_NONE = "none"
@@ -320,6 +328,28 @@ def jail_preexec(roots: object) -> Callable[[], None] | None:
 
 
 # ------------------------------------------------------------ bwrap
+# -------------------------------------------------- تعمية المخازن الحساسة
+def sensitive_overlays(roots: object) -> list[str]:
+    """أوسمة تراكب تعمّى مخازن الاعتماد داخل الابن تحت bwrap — حتمية.
+
+    المستعار من nexus-core: حصر الجذر لا يكفي لأن ``.env`` في الجذر
+    مخزن أسرار. المجلد الحساس (``.ssh``) يُستبدل tmpfs فارغًا، والملف
+    السري يُربط ``/dev/null`` فوقه للقراءة فقط — فكود الاختبارات يقرأ
+    المشروع كله إلا الأسرار. لا شيء هنا تحت landlock: بلا mount
+    namespace لا تراكب — والفجوة تُعلن لا تُخفى.
+    """
+    overlays: list[str] = []
+    try:
+        for store in sensitive_paths_in_roots(roots):
+            if Path(store).is_dir():
+                overlays += ["--tmpfs", store]
+            else:
+                overlays += ["--ro-bind", "/dev/null", store]
+    except Exception:  # noqa: BLE001 — فشل الكشف = لا تراكب، والمستوى معلن أصلًا
+        return []
+    return overlays
+
+
 def wrap_argv(argv: object, roots: object) -> list[str] | None:
     """غلِّف argv تحت bubblewrap — فقط عندما يكون bwrap هو المستوى النشط.
 
@@ -361,6 +391,7 @@ def wrap_argv(argv: object, roots: object) -> list[str] | None:
         "/tmp",
         "--unshare-net",
         *binds,
+        *sensitive_overlays(roots),
         "--",
         *tokens,
     ]
@@ -374,6 +405,7 @@ __all__ = [
     "jail_preexec",
     "landlock_abi",
     "reset_detection_cache",
+    "sensitive_overlays",
     "wrap_argv",
     "write_roots",
 ]

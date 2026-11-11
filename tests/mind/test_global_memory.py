@@ -21,6 +21,8 @@ from zyko.mind.global_memory import (
     MAX_GLOBAL_LESSONS,
     MAX_LESSON_CHARS,
     GlobalMemory,
+    lesson_polarity,
+    topics_conflict,
 )
 from zyko.mind.loop import MindLoop
 
@@ -507,3 +509,79 @@ class TestAdversarial:
         mem.ledger_path.write_text(lines[1] + "\n", encoding="utf-8")
         report = mem.verify()
         assert not report.ok  # seq=2 يبدأ السجل → ترقيم مكسور فورًا
+
+# =================================================== مضاد النسيان
+# المستعار من nexus-core: «دائمًا» مقابل «أبدًا» على الموضوع نفسه
+# ليس اتفاقًا يُدمج بل تناقض يُعلن ويُخزن جنبًا إلى جنب بلا قمع.
+class TestAntiForgetting:
+    def test_polarity_positive_negative_neutral(self):
+        assert lesson_polarity("دائمًا استخدم الأوامر المبيّحة") == 1
+        assert lesson_polarity("أبدًا لا تكتب خارج الجذور") == -1
+        assert lesson_polarity("الإيصال يحمل بصمة sha256") == 0  # محايد لا يتناقض
+
+    def test_polarity_negative_wins_inside_one_lesson(self):
+        # «لا تثق ودائمًا تحقق» — السلبي يفوز كما في منهج nexus-core
+        assert lesson_polarity("لا تثق ودائمًا تحقق قبل الدفع") == -1
+
+    def test_topics_conflict_detects_opposite_polarity_arabic(self):
+        assert topics_conflict(
+            "دائمًا شغّل الاختبارات قبل الدفع",
+            "أبدًا لا تشغّل الاختبارات قبل الدفع",
+        )
+
+    def test_topics_conflict_detects_opposite_polarity_english(self):
+        assert topics_conflict(
+            "always run the full suite before pushing",
+            "never run the full suite before pushing",
+        )
+
+    def test_same_polarity_is_not_conflict(self):
+        assert not topics_conflict("always run the suite", "should run the suite")
+
+    def test_neutral_polarity_never_conflicts(self):
+        assert not topics_conflict("run the suite", "never run the suite")
+
+    def test_distant_topics_are_not_conflict(self):
+        # قطبيتان متعاكستان لكن موضوعان مختلفان — لا تناقض
+        assert not topics_conflict(
+            "دائمًا وثّق الإيصالات في التدقيق",
+            "أبدًا لا تربط الطابعات اللاسلكية بالشبكة",
+        )
+
+    def test_learn_records_conflict_alongside_not_instead(self, tmp_path):
+        mem = GlobalMemory(tmp_path / "mind")
+        mem.learn(("دائمًا شغّل الاختبارات قبل الدفع",))
+        fresh = mem.learn(("أبدًا لا تشغّل الاختبارات قبل الدفع",))
+        assert fresh == ("أبدًا لا تشغّل الاختبارات قبل الدفع",)  # يُخزن لا يُقمع
+        confs = mem.conflicts()
+        assert len(confs) == 1
+        assert confs[0]["existing_seq"] == 1
+        assert confs[0]["incoming_seq"] == 2
+        assert "دائمًا" in confs[0]["existing_text"]
+        assert mem.load_lessons() == (
+            "دائمًا شغّل الاختبارات قبل الدفع",
+            "أبدًا لا تشغّل الاختبارات قبل الدفع",
+        )
+
+    def test_agreeing_lessons_leave_no_conflict(self, tmp_path):
+        mem = GlobalMemory(tmp_path / "mind")
+        mem.learn(("دائمًا شغّل الاختبارات قبل الدفع",))
+        mem.learn(("يجب شغّل الاختبارات قبل الدفع",))  # قطبية واحدة
+        assert mem.conflicts() == ()
+
+    def test_conflicts_survive_reload_and_dedupe(self, tmp_path):
+        mem = GlobalMemory(tmp_path / "mind")
+        mem.learn(("دائمًا شغّل الاختبارات قبل الدفع",))
+        text = "أبدًا لا تشغّل الاختبارات قبل الدفع"
+        mem.learn((text,))
+        mem.learn((text,))  # تكرار: لا درس جديد ولا تناقض مزدوج
+        assert len(mem.conflicts()) == 1
+        mem2 = GlobalMemory(tmp_path / "mind")
+        assert len(mem2.conflicts()) == 1  # في الملف لا الذاكرة الحية
+
+    def test_summary_discloses_conflict_count(self, tmp_path):
+        mem = GlobalMemory(tmp_path / "mind")
+        assert mem.summary()["conflicts"] == 0
+        mem.learn(("دائمًا شغّل الاختبارات قبل الدفع",))
+        mem.learn(("أبدًا لا تشغّل الاختبارات قبل الدفع",))
+        assert mem.summary()["conflicts"] == 1

@@ -60,6 +60,107 @@ ENV_DENY_TOKENS = (
 # الأوامر المبيّحة الافتراضية لتشغيل الاختبارات — argv[0] فقط من هنا
 DEFAULT_ALLOWED_COMMANDS = ("python", "python3", "pytest", "py")
 
+# ------------------------------------------------------------- الأسرار الملفية
+# مخازن الاعتماد الحساسة — المستعار من مبدأ nexus-core الأمني: حصر
+# الجذر لا يكفي، فـ ``.env`` داخل الجذر مخزن أسرار لا ملف مشروع
+# (قائمة أسمية مكتشفة لا اجتهادية، وكل ``.env.*`` حساسة فلا باب
+# جانبي عبر ``.env.bak`` — إلا ``.env.example`` الوثيقة الاستثنائية:
+# أسماء متغيرات لا قيم حية).
+SENSITIVE_FILE_NAMES = frozenset({
+    ".env",
+    ".env.local",
+    ".env.production",
+    ".env.prod",
+    ".env.dev",
+    ".env.development",
+    "credentials",
+    "credentials.json",
+    "secrets.json",
+    "secrets.yaml",
+    "secrets.yml",
+    "id_rsa",
+    "id_dsa",
+    "id_ecdsa",
+    "id_ed25519",
+    ".netrc",
+    ".pgpass",
+    ".git-credentials",
+})
+SENSITIVE_FILE_SUFFIXES = (".pem", ".key", ".p12", ".pfx", ".keystore")
+# مجلدات مخازن كاملة — تُعمى دفعة واحدة لا ملفًا ملفًا
+SENSITIVE_DIR_NAMES = frozenset({".ssh", ".aws", ".kube", ".gnupg"})
+ENV_EXAMPLE_NAME = ".env.example"  # الوثيقة الاستثنائية — أسماء لا قيم
+# كشف المخازن داخل الجذور: عمق محدود (المخازن تعيش قرب الجذر) وسقف
+# مرشحين معلن — أشجار ضخمة لا تنفجر والحتمية بالبايت محفوظة
+SENSITIVE_SCAN_DEPTH = 2
+SENSITIVE_SCAN_MAX = 64
+_SENSITIVE_SCAN_CANDIDATES_CAP = 512
+
+
+def is_sensitive_file(path: object) -> bool:
+    """هل المسار مخزن اعتماد/أسرار؟ — حساس حتى لو كان داخل الجذور المسموحة.
+
+    أي اسم من ``SENSITIVE_FILE_NAMES`` أو لاحقة من
+    ``SENSITIVE_FILE_SUFFIXES`` سرٌّ محتمل، وكل ``.env.*`` حساسة
+    (``.env.bak``/``.env.staging`` لا تمر بابًا جانبيًا) إلا
+    ``.env.example`` — وثيقة أسماء متغيرات لا قيم حية.
+    """
+    try:
+        name = Path(str(path or "")).name.lower()
+    except (OSError, ValueError):
+        return False
+    if name == ENV_EXAMPLE_NAME:
+        return False
+    if name in SENSITIVE_FILE_NAMES or name.startswith(".env."):
+        return True
+    return name.endswith(SENSITIVE_FILE_SUFFIXES)
+
+
+def is_sensitive_dir(path: object) -> bool:
+    """هل المسار مجلد مخازن حساسة (``.ssh``/``.aws``/…)؟ — يُعمى كله."""
+    try:
+        name = Path(str(path or "")).name.lower()
+    except (OSError, ValueError):
+        return False
+    return name in SENSITIVE_DIR_NAMES
+
+
+def sensitive_paths_in_roots(roots: object) -> tuple[str, ...]:
+    """اكتشف مخازن الاعتماد داخل الجذور — حتمي بالترتيب وسقوف معلنة.
+
+    للمسار التنفيذي (تعمية المخازن تحت bwrap في ``jail``): فحص حول
+    كل جذر قائم بعمق ``SENSITIVE_SCAN_DEPTH``، سقف مرشحين
+    ``_SENSITIVE_SCAN_CANDIDATES_CAP`` وسقف نتائج ``SENSITIVE_SCAN_MAX`` —
+    الترتيب معجمي فالناتج نفسه بالبايت في أي جهاز.
+    """
+    found: set[str] = set()
+    for root in tuple(roots or ()):
+        try:
+            base = Path(str(root or "")).resolve()
+            if not base.is_dir():
+                continue
+            level1 = sorted(base.iterdir())
+            candidates: list[Path] = list(level1)
+            for entry in level1:
+                if len(candidates) >= _SENSITIVE_SCAN_CANDIDATES_CAP:
+                    break
+                if entry.is_dir():
+                    candidates.extend(sorted(entry.iterdir()))
+            for path in candidates[:_SENSITIVE_SCAN_CANDIDATES_CAP]:
+                if len(found) >= SENSITIVE_SCAN_MAX:
+                    break
+                try:
+                    if path.is_dir():
+                        if is_sensitive_dir(path):
+                            found.add(str(path))
+                    elif is_sensitive_file(path):
+                        found.add(str(path))
+                except OSError:
+                    continue  # مدخل غير مقروء — يُتخطى لا يفجّر
+        except OSError:
+            continue  # جذر غير موجود/غير مقروء — يُتخطى موثقًا
+    return tuple(sorted(found))
+
 
 def _clamp_int(value: object, default: int, cap: int) -> int:
     """قيّد عددًا إلى نطاق آمن — العدوي يعطي الافتراضي لا استثناء."""
@@ -175,6 +276,23 @@ class PermissionContract:
                 return candidate, None
         return None, f"المسار خارج الجذور المسموحة ({len(self.roots)} جذرًا)"
 
+    def check_read_path(self, path: object) -> tuple[Path | None, str | None]:
+        """افحص مسارًا للقراءة — عقد المسار ثم حرس الاعتماد الحساس.
+
+        نصف فجوة القراءة الموثقة محسوم هنا: القراءة مفتوحة للجذور
+        ضرورة تشغيل الاختبارات، لكن مخازن الاعتماد (``.env``، مفاتيح
+        SSH، شهادات) لا تُقرأ بيد zyko حتى داخل الجذور المسموحة —
+        حصر الجذر لا يكفي لأن ``.env`` في الجذر مخزن أسرار لا كود مشروع.
+        """
+        target, reason = self.check_path(path)
+        if target is None:
+            return None, reason
+        if is_sensitive_file(target):
+            return None, (
+                f"الهدف مخزن اعتماد حساس ({target.name}) — لا قراءة بيد zyko حتى داخل الجذور"
+            )
+        return target, None
+
     # ------------------------------------------------------------ الأوامر
     def check_command(self, argv: object) -> tuple[tuple[str, ...] | None, str | None]:
         """افحص argv ضد القائمة البيضاء ومحارف الصدفة — قائمة أو سبب عربي.
@@ -263,9 +381,18 @@ __all__ = [
     "DEFAULT_TIMEOUT_S",
     "DENY_ARGV_CHARS",
     "ENV_DENY_TOKENS",
+    "ENV_EXAMPLE_NAME",
     "ENV_KEEP_KEYS",
     "MAX_FILE_BYTES_LIMIT",
     "MAX_ROOTS",
     "MAX_TIMEOUT_S",
+    "SENSITIVE_DIR_NAMES",
+    "SENSITIVE_FILE_NAMES",
+    "SENSITIVE_FILE_SUFFIXES",
+    "SENSITIVE_SCAN_DEPTH",
+    "SENSITIVE_SCAN_MAX",
     "PermissionContract",
+    "is_sensitive_dir",
+    "is_sensitive_file",
+    "sensitive_paths_in_roots",
 ]

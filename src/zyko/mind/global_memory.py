@@ -61,6 +61,22 @@ _SECRET_PATTERNS = (
 _DIACRITICS = re.compile(r"[\u064B-\u0652\u0640]")
 _TOKEN = re.compile(r"[0-9A-Za-z\u0600-\u06FF]+")
 
+# قطبية الدروس — المستعار من «مضاد النسيان» في nexus-core: «دائمًا»
+# مقابل «أبدًا» على الموضوع نفسه ليس اتفاقًا يُدمج بل تناقض يُعلن
+# ويُخزن جنبًا إلى جنب — القمع الصامت يهدم معنى الدرسين معًا.
+# الرموز بصيغتها المطبوعة (التشكيل أزيله normalize_text) وباللغتين
+# معًا — المستودع عربي أولًا لكن الدروس تعبر اللغات.
+_POLARITY_NEGATIVE = frozenset({
+    "never", "avoid", "dont", "not", "no", "without",
+    "لا", "أبدًا", "أبدا", "ابداً", "ابدا", "تجنب", "تجنّب",
+    "تجنبا", "بلا", "بدون", "لن", "ممنوع", "يُمنع", "يمنع",
+})
+_POLARITY_POSITIVE = frozenset({
+    "always", "should", "must", "prefer", "recommended",
+    "دائمًا", "دائما", "دوماً", "دوما", "يجب", "ينبغي", "يفضل", "نوصي",
+})
+_TOPIC_SIMILAR_THRESHOLD = 0.5  # تشابه الموضوع فوقه مع قطبية معاكسة = تناقض موثق
+
 
 def _scrub(text: str) -> str:
     """اقنَع كل ما يشبه سرًا — قبل التدوين لا بعده."""
@@ -96,6 +112,68 @@ def recall_score(query: str, lesson: str) -> int:
         return 0
     lesson_text = normalize_text(lesson)
     return sum(1 for token in query_tokens if token in lesson_text)
+
+
+def lesson_polarity(principle: str) -> int:
+    """قطبية الدرس: +1 إيجابي (دائم/يجب) · -1 سلبي (أبدًا/تجنب) · 0 محايد.
+
+    على منهج nexus-core نفسه: السلبي يفوز عند التضارب داخل الدرس
+    الواحد («لا تثق ودائمًا تحقق» درس سلبي)، والمحايد لا يتناقض أبدًا.
+    """
+    tokens = set(_TOKEN.findall(normalize_text(str(principle or ""))))
+    if tokens & _POLARITY_NEGATIVE:
+        return -1
+    if tokens & _POLARITY_POSITIVE:
+        return 1
+    return 0
+
+
+def _topic_tokens(principle: str) -> frozenset[str]:
+    """رموز الموضوع — كلمات القطبية المنهية تُسقط قبل قياس التشابه."""
+    return (
+        frozenset(_TOKEN.findall(normalize_text(str(principle or ""))))
+        - _POLARITY_NEGATIVE
+        - _POLARITY_POSITIVE
+    )
+
+
+def topics_conflict(left: str, right: str, threshold: float = _TOPIC_SIMILAR_THRESHOLD) -> bool:
+    """هل الدرسان موضوع واحد بقطبيتين متعاكستين؟ — تناقض معلن لا دمج خادع.
+
+    التشابه Jaccard على رموز الموضوع بعد إسقاط كلمات القطبية — تحت
+    العتبة أو إحداهما محايدة أو القطبية متطابقة: لا تناقض، وإن وُجد
+    فالجواب حتمي بالبايت لا اجتهاد نماذج.
+    """
+    left_polarity, right_polarity = lesson_polarity(left), lesson_polarity(right)
+    if left_polarity == 0 or right_polarity == 0 or left_polarity == right_polarity:
+        return False
+    left_topic, right_topic = _topic_tokens(left), _topic_tokens(right)
+    if not left_topic or not right_topic:
+        return False
+    union = left_topic | right_topic
+    return len(left_topic & right_topic) / len(union) >= threshold
+
+
+def _normalize_conflicts(raw: object) -> list[dict]:
+    """طبّع قائمة التناقضات من الملف — التالف يُسقط صامتًا لا يفجّر.
+
+    الملف يُكتب آليًا لكنه ملف — تالف أو مدبس يدويًا يعود قائمة فارغة
+    آمنة، والازدواج يُكتم، والذات تناقض لذاتها رفض منطقي لا حالة.
+    """
+    if not isinstance(raw, list):
+        return []
+    out: list[dict] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        try:
+            existing_seq, incoming_seq = int(item["existing_seq"]), int(item["incoming_seq"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if existing_seq < 1 or incoming_seq < 1 or existing_seq == incoming_seq:
+            continue
+        out.append({"existing_seq": existing_seq, "incoming_seq": incoming_seq})
+    return out
 
 
 def entry_hash(seq: int, prev_hash: str, fields: dict) -> str:
@@ -359,6 +437,26 @@ class GlobalMemory:
         data = self._read_lessons()
         return tuple(str(lesson["text"]) for lesson in data.get("lessons", []))
 
+    def conflicts(self) -> tuple[dict, ...]:
+        """التناقضات الموثقة بين الدروس — موضوع واحد وقطبيتان متعاكستان.
+
+        عرض صادق للجدل لا قمع له: كل تناقض يحمل نصّي طرفيه الحاليين
+        إن كانا حيّين، والترتيب حتمي بالبايت (مفرز بالمفاتيح).
+        """
+        data = self._read_lessons()
+        seq_text = {int(l["seq"]): str(l["text"]) for l in data.get("lessons", [])}
+        out: list[dict] = []
+        for c in data.get("conflicts", []):
+            existing_seq, incoming_seq = int(c["existing_seq"]), int(c["incoming_seq"])
+            out.append({
+                "existing_seq": existing_seq,
+                "existing_text": seq_text.get(existing_seq, ""),
+                "incoming_seq": incoming_seq,
+                "incoming_text": seq_text.get(incoming_seq, ""),
+            })
+        out.sort(key=lambda item: (item["existing_seq"], item["incoming_seq"]))
+        return tuple(out)
+
     def learn(self, lessons) -> tuple[str, ...]:
         """علِّم دروسًا عابرة للمشاريع — إزالة تكرار وسقف حتمي واكتب فورًا.
 
@@ -383,14 +481,38 @@ class GlobalMemory:
             for lesson in data.get("lessons", [])
         ]
         next_seq = int(data.get("next_seq") or (len(merged) + 1))
+        conflicts = _normalize_conflicts(data.get("conflicts"))
+        seen_pairs = {(c["existing_seq"], c["incoming_seq"]) for c in conflicts}
         for text in fresh:
             merged.append({"seq": next_seq, "text": text})
+            # مضاد النسيان: الدرس الجديد يُقاس على المخزن كله (شاملاً
+            # الجديد قبله في الدفعة نفسها) — التناقض يُعلن ويُخزن جنبًا
+            # إلى جنب لا يُقمع ولا يُدمج، والازدواج لا يتكرر.
+            for item in merged[:-1]:
+                other_text = str(item.get("text", ""))
+                if other_text and topics_conflict(other_text, text):
+                    pair = (int(item["seq"]), next_seq)
+                    if pair not in seen_pairs:
+                        conflicts.append({"existing_seq": pair[0], "incoming_seq": pair[1]})
+                        seen_pairs.add(pair)
             next_seq += 1
         if len(merged) > MAX_GLOBAL_LESSONS:
             merged.sort(key=lambda item: int(item["seq"]), reverse=True)
             merged = merged[:MAX_GLOBAL_LESSONS]
             merged.sort(key=lambda item: int(item["seq"]))
-        payload = {"schema": LESSONS_SCHEMA, "next_seq": next_seq, "lessons": merged}
+            # الإخلاء الحتمي قد يرحّل طرف تناقض — تناقض بلا طرفيه وثيقة
+            # ميتة، فلا يبقى إلا ما يحيل إلى دروس حية بالفعل.
+            surviving = {int(item["seq"]) for item in merged}
+            conflicts = [
+                c for c in conflicts
+                if c["existing_seq"] in surviving and c["incoming_seq"] in surviving
+            ]
+        payload = {
+            "schema": LESSONS_SCHEMA,
+            "next_seq": next_seq,
+            "lessons": merged,
+            "conflicts": conflicts,
+        }
         self.home.mkdir(parents=True, exist_ok=True)
         self.lessons_path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -404,12 +526,12 @@ class GlobalMemory:
         try:
             data = json.loads(self.lessons_path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
-            return {"schema": LESSONS_SCHEMA, "next_seq": 1, "lessons": []}
+            return {"schema": LESSONS_SCHEMA, "next_seq": 1, "lessons": [], "conflicts": []}
         if not isinstance(data, dict) or data.get("schema") != LESSONS_SCHEMA:
-            return {"schema": LESSONS_SCHEMA, "next_seq": 1, "lessons": []}
+            return {"schema": LESSONS_SCHEMA, "next_seq": 1, "lessons": [], "conflicts": []}
         lessons = data.get("lessons")
         if not isinstance(lessons, list):
-            return {"schema": LESSONS_SCHEMA, "next_seq": 1, "lessons": []}
+            return {"schema": LESSONS_SCHEMA, "next_seq": 1, "lessons": [], "conflicts": []}
         cleaned: list[dict] = []
         for item in lessons:
             if isinstance(item, dict) and "seq" in item and str(item.get("text", "")).strip():
@@ -419,7 +541,7 @@ class GlobalMemory:
         # لا يعاد استخدام تسلسل ولا يقفز فجوات بلا داعٍ.
         max_seq = max((int(item["seq"]) for item in cleaned), default=0)
         next_seq = max(max_seq + 1, int(data.get("next_seq") or 1))
-        return {"schema": LESSONS_SCHEMA, "next_seq": next_seq, "lessons": cleaned}
+        return {"schema": LESSONS_SCHEMA, "next_seq": next_seq, "lessons": cleaned, "conflicts": _normalize_conflicts(data.get("conflicts"))}
 
     # ------------------------------------------------------------ الاسترجاع
     def recall(self, query: object, limit: int = MAX_QUERY_RESULTS) -> tuple[str, ...]:
@@ -459,6 +581,7 @@ class GlobalMemory:
             "sessions": len(entries),
             "sessions_ok": sum(1 for entry in entries if entry.ok),
             "lessons": len(self.load_lessons()),
+            "conflicts": len(self.conflicts()),
             "verify_ok": report.ok,
             "verify_reason_ar": report.reason_ar,
             "last_seq": entries[-1].seq if entries else 0,
@@ -504,6 +627,8 @@ __all__ = [
     "canonical_json",
     "entry_hash",
     "goal_digest",
+    "lesson_polarity",
     "normalize_text",
     "recall_score",
+    "topics_conflict",
 ]

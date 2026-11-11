@@ -215,3 +215,25 @@ def test_symlink_inside_root_resolved_not_replaced(tmp_path):
     result = patch_file(_write_contract(proj), path=link, old_text="أصل", new_text="معدّل")
     assert result.ok
     assert real.read_text(encoding="utf-8") == "معدّل"
+
+
+# ------------------------------------------------- حرس الاعتماد الحساس
+# الرقعة تقرأ الهدف قبل أن تكتبه — فلا قراءة ولا رقعة على مخازن الأسرار.
+def test_patch_denied_on_secret_store_replace(tmp_path):
+    secret = tmp_path / ".env"
+    secret.write_text("TOKEN=x\n", encoding="utf-8")
+    result = patch_file(_write_contract(tmp_path), path=secret, old_text="TOKEN=x", new_text="TOKEN=y")
+    assert not result.ok
+    assert "حساس" in result.reason_ar
+    assert secret.read_text(encoding="utf-8") == "TOKEN=x\n"  # لم تُقرأ ولا تُرقَّع
+
+
+def test_patch_denied_on_secret_store_write(tmp_path):
+    result = patch_file(_write_contract(tmp_path), path=tmp_path / "id_rsa", content="private-key")
+    assert not result.ok
+    assert not (tmp_path / "id_rsa").exists()  # لم يُنشأ ملف سرّ عبر الرقعة
+
+
+def test_patch_key_suffix_denied(tmp_path):
+    result = patch_file(_write_contract(tmp_path), path=tmp_path / "server.pem", content="cert")
+    assert not result.ok and "server.pem" in result.reason_ar

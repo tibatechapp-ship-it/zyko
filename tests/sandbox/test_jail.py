@@ -195,3 +195,34 @@ def test_summary_discloses_jail_level(tmp_path):
     contract = PermissionContract.for_roots(tmp_path)
     session = ToolSession(contract)
     assert session.summary()["jail"] == jail.jail_level()
+
+
+# ---------------------------------------------- تعمية المخازن الحساسة
+# المستعار من nexus-core تحت bwrap: ملف السر يُربط /dev/null للقراءة،
+# ومجلد المخزن يُستبدل tmpfs فارغًا — المشروع كله مقروء إلا الأسرار.
+def test_sensitive_overlays_blank_file_and_dir(tmp_path):
+    (tmp_path / ".env").write_text("TOKEN=x", encoding="utf-8")
+    ssh = tmp_path / ".ssh"
+    ssh.mkdir()
+    overlays = jail.sensitive_overlays((str(tmp_path),))
+    i = overlays.index("--ro-bind")
+    assert overlays[i + 1] == "/dev/null"
+    assert overlays[i + 2] == str((tmp_path / ".env").resolve())
+    j = overlays.index("--tmpfs")
+    assert overlays[j + 1] == str(ssh.resolve())
+
+
+def test_sensitive_overlays_empty_for_clean_tree(tmp_path):
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "a.py").write_text("x=1", encoding="utf-8")
+    assert jail.sensitive_overlays((str(tmp_path),)) == []
+
+
+def test_wrap_argv_carries_overlays_after_root_binds(tmp_path):
+    """التراكب بعد ربط الجذر — البعد الذي يفوز عليه في التركيب."""
+    if jail.jail_level() != jail.JAIL_LEVEL_BWRAP:
+        pytest.skip("bwrap ليس المستوى النشط هنا — التراكب موثق في sensitive_overlays")
+    (tmp_path / ".env").write_text("TOKEN=x", encoding="utf-8")
+    wrapped = jail.wrap_argv(["python", "-c", "pass"], (str(tmp_path),))
+    assert wrapped is not None
+    assert wrapped.index("--ro-bind", wrapped.index("/dev/null")) < wrapped.index("--")

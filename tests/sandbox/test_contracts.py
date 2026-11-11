@@ -10,8 +10,13 @@ from zyko.sandbox.contracts import (
     DEFAULT_MAX_FILE_BYTES,
     DEFAULT_TIMEOUT_S,
     ENV_DENY_TOKENS,
+    ENV_EXAMPLE_NAME,
     MAX_TIMEOUT_S,
+    SENSITIVE_DIR_NAMES,
     PermissionContract,
+    is_sensitive_dir,
+    is_sensitive_file,
+    sensitive_paths_in_roots,
 )
 
 
@@ -253,3 +258,74 @@ def test_contract_is_frozen(tmp_path):
 def test_allowed_commands_deduped_and_stripped():
     contract = PermissionContract.for_roots(".", allowed_commands=("pytest", " pytest ", "pytest", ""))
     assert contract.allowed_commands == ("pytest",)
+
+
+# ------------------------------------------------- حرس الاعتماد الحساس
+# المستعار من nexus-core: حصر الجذر لا يكفي لأن ``.env`` في الجذر
+# مخزن أسرار لا ملف مشروع — والقراءة الحساسة تُرفض حتى داخل الجذور.
+def test_is_sensitive_file_catches_named_stores(tmp_path):
+    for name in (
+        ".env", ".env.bak", ".env.staging", ".env.local",
+        "id_rsa", "id_ed25519", "credentials.json",
+        "secrets.yaml", ".netrc", ".pgpass", ".git-credentials",
+        "server.pem", "privkey.key", "bundle.p12",
+    ):
+        assert is_sensitive_file(tmp_path / name), name
+
+
+def test_is_sensitive_file_allows_example_and_code(tmp_path):
+    assert not is_sensitive_file(tmp_path / ENV_EXAMPLE_NAME)  # وثيقة أسماء لا قيم
+    assert not is_sensitive_file(tmp_path / "app.py")
+    assert not is_sensitive_file(tmp_path / "keyring.py")  # اللاحقة داخل الاسم لا تُحسب
+
+
+def test_is_sensitive_dir_names_store_directories():
+    assert is_sensitive_dir("/home/u/.ssh")
+    assert is_sensitive_dir("/home/u/.aws")
+    assert not is_sensitive_dir("/home/u/src")
+
+
+def test_check_read_path_denies_secret_inside_root(tmp_path):
+    secret = tmp_path / ".env"
+    secret.write_text("TOKEN=x", encoding="utf-8")
+    contract = PermissionContract.for_roots(tmp_path)
+    target, reason = contract.check_read_path(secret)
+    assert target is None
+    assert "حساس" in (reason or "") and ".env" in (reason or "")
+
+
+def test_check_read_path_allows_regular_file_inside_root(tmp_path):
+    f = tmp_path / "app.py"
+    f.write_text("x = 1", encoding="utf-8")
+    target, reason = PermissionContract.for_roots(tmp_path).check_read_path(f)
+    assert target == f.resolve() and reason is None
+
+
+def test_check_read_path_still_enforces_roots(tmp_path, tmp_path_factory):
+    outside = tmp_path_factory.mktemp("outside") / "app.py"
+    outside.write_text("x = 1", encoding="utf-8")
+    contract = PermissionContract.for_roots(tmp_path)
+    target, reason = contract.check_read_path(outside)
+    assert target is None and "خارج" in (reason or "")
+
+
+def test_sensitive_paths_in_roots_finds_files_and_dirs_sorted(tmp_path):
+    (tmp_path / ".env").write_text("X=1", encoding="utf-8")
+    (tmp_path / ".ssh").mkdir()
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "app.py").write_text("x=1", encoding="utf-8")
+    found = sensitive_paths_in_roots((str(tmp_path),))
+    assert str((tmp_path / ".env").resolve()) in found
+    assert str((tmp_path / ".ssh").resolve()) in found
+    assert found == tuple(sorted(found))  # حتمي بالترتيب
+
+
+def test_sensitive_paths_in_roots_empty_for_clean_tree(tmp_path):
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "a.py").write_text("x=1", encoding="utf-8")
+    (tmp_path / ".env.example").write_text("X=", encoding="utf-8")  # الاستثناء موثق
+    assert sensitive_paths_in_roots((str(tmp_path),)) == ()
+
+
+def test_sensitive_paths_in_roots_skips_missing_root(tmp_path):
+    assert sensitive_paths_in_roots((str(tmp_path / "not-there"),)) == ()

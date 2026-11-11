@@ -1,3 +1,46 @@
+## 0.30.0 — what was borrowed from nexus-core: credential-store blinding, anti-forgetting conflict disclosure, and a documented-claims truth gate
+
+### Wave 6: take only what is needed from the sibling project, and make it stronger here
+
+nexus-core — the sibling agents repository — was audited end to end, and exactly
+three techniques were worth porting into ZYKO's stricter contracts. Everything else
+was already covered here by stronger mechanisms: the quality ledger already plays
+the role of its agent genome, and verifiable receipts already play the role of its
+snapshot contracts.
+
+- **Credential-store blinding (`sandbox/contracts.py`, `sandbox/patcher.py`,
+  `sandbox/jail.py`)** — ported from nexus-core's `is_sensitive_file` with the same
+  threat model: confining to a root is not enough, because a `.env` inside the root
+  is a secret store, not project code.
+  * `is_sensitive_file` / `is_sensitive_dir` and a deterministic bounded scanner
+    (`sensitive_paths_in_roots`): named stores (`.env*`, `id_rsa*`, `credentials`,
+    `secrets.*`, `.netrc`, `.pgpass`, `.git-credentials`), key/cert suffixes
+    (`.pem/.key/.p12/.pfx/.keystore`), and whole store directories
+    (`.ssh/.aws/.kube/.gnupg`) — `.env.example` is the documented exception:
+    a document of variable names, never live values.
+  * `PermissionContract.check_read_path`: the read half of the documented read gap
+    is closed for ZYKO's own hands — secrets inside granted roots are refused.
+  * `patch_file` refuses to touch a credential store: a patch reads before it
+    writes, so there is no read-around-the-write loophole on secrets.
+  * Under bwrap the child is blinded too: sensitive files are ro-bound to
+    `/dev/null` (reads give EOF) and store directories are tmpfs-overlaid — the
+    test code reads the whole project except its secrets. Under Landlock the
+    child's reads stay open — a smaller documented gap, disclosed in the jail
+    docstring, until selective read restriction lands.
+- **Anti-forgetting conflict disclosure (`mind/global_memory.py`)** — ported from
+  nexus-core's `anti_forgetting`: a lesson whose topic matches an existing one but
+  whose polarity is opposite ("always X" vs "never X", Arabic and English markers,
+  negative wins inside one lesson) is recorded as an explicit conflict stored
+  *alongside* both lessons — never silently merged, never dropped. Conflicts
+  survive reload and dedupe, deduplicate themselves, and follow the deterministic
+  eviction: a conflict whose parties were evicted is a dead letter and is dropped.
+  `summary()` discloses the conflict count.
+- **Documented-claims truth gate (`tests/test_documented_truth.py`)** — ported from
+  nexus-core's `test_known_limitations_truth`: EVAL's structural claims (exactly two
+  runtime dependencies, the jail-levels trio, the five layers, the version header,
+  the baseline artifact) are asserted against code reality — when a claim rots, a
+  test fails in the same PR, not weeks later.
+
 ## 0.29.0 — the kernel confines what tool code does: Landlock write-confinement with an honest isolation disclosure
 
 ### Priority 5 of the autonomy roadmap: OS-level isolation under the permission contracts

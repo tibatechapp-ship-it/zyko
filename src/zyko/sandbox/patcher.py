@@ -20,7 +20,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from zyko.sandbox.contracts import PermissionContract
+from zyko.sandbox.contracts import PermissionContract, is_sensitive_file
 
 _TMP_SUFFIX = ".zyko-rq3.tmp"
 
@@ -98,6 +98,15 @@ def patch_file(
     target, reason = contract.check_path(path_text)
     if target is None:
         return _deny(path_text, f"حارس المسار رفض — {reason}")
+    # 3.5) حرس الاعتماد الحساس — الرقعة تقرأ الهدف قبل أن تكتبه، فلا
+    # قراءة ولا رقعة على مخازن الأسرار حتى داخل الجذور (المستعار من
+    # nexus-core: حصر الجذر لا يكفي لأن ``.env`` مخزن أسرار لا كود).
+    if is_sensitive_file(target):
+        return _deny(
+            str(target),
+            f"الهدف مخزن اعتماد حساس ({target.name}) — لا قراءة ولا رقعة على الأسرار حتى داخل الجذور",
+            mode=mode,
+        )
     # 4) وضع الاستبدال يحتاج ملفًا قائمًا مقروءًا تحت السقف
     sha_before = ""
     if mode == "replace":
