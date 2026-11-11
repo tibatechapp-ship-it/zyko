@@ -1,3 +1,34 @@
+## 0.31.0 — the repair lab: foreign broken code is detected, repaired, and measured — the local SWE-bench-style strength test
+
+### Wave 7: know our programming level honestly, then treat what the numbers expose
+
+- **`benchmarks/repair.py` — معمل الإصلاح المحلي**: 14 وحدة بايثون أجنبية
+  واقعية (ليست من قوالب المصنع) بُذرت فيها أعطال موثقة بتصنيف القواعد
+  الـ38 نفسه، على ثلاث فئات صادقة:
+  * **5 سلوكية** — اختبارات النية *تفشل* على الكود المعطوب و*تمر* بعد
+    الإصلاح (تسريب الوسيط الافتراضي، ابتلاع BaseException، قطع سلسلة
+    الأسباب، فخ `== None` مع قيمة ترفض المقارنة، yaml.load بلا Loader
+    آمن) — مقياس SWE-bench المحلي الحرفي.
+  * **5 جودة** — الاختبارات تمر قبل وبعد، والقاعدة المبذورة تختفي دون
+    كسر السلوك، والإصلاح معتدل (تشغيل ثانٍ = صفر تغيير).
+  * **4 يدوية** — eval، حقن SQL بالدمج، سر مصمت، return في finally:
+    العقد هنا **الكشف** لا الإصلاح — المحرك يعترف بحدوده ويعيد
+    الإصلاح المقترح العربي بدل تظاهر بقطعة نص تكسر المعنى.
+- **الاختبارات الخفية تُشغَّل عبر صندوق الرمل**: argv قائمة، بيئة بيضاء
+  بلا أسرار، مهلة مسقوفة، وحصر كتابة نواتي حيث تتيح النواة — ومستوى
+  العزل الفعلي (`landlock`/`bwrap`/`none`) يُعلن في كل إيصال لا يُفترض.
+- **النتيجة على هذا الكوربوس**: كشف البذور 16/16 (100%)، سلوكي 5/5،
+  جودة 5/5 معتدلة، يدوي 4/4 كشفاً — السلوك محفوظ في كل الحالات
+  الـ14، وإيصالات حتمية بالبايت (سلسلة sha256) والفشل صادق لا مُجمَّل.
+- **تصحيح صدق**: توثيق المصلح كان يدّعي 15 قاعدة يدوية والسجل يحمل
+  26 — المعلن يُقاس لا يُفترض، والانفلات فشل اختبار لا اكتشاف متأخر.
+- 48 اختباراً جديداً (2,685 إجمالاً: 2,663 ناجحاً / 22 تخطياً بيئياً
+  موثقاً / صفر إخفاق).
+
+pyproject/CITATION/version.py/README/EVAL/baseline: 0.30.0 → 0.31.0 and
+2615 → 2663 passing — the contract (test_repo_health / test_documented_truth)
+enforces the sync.
+
 ## 0.30.0 — what was borrowed from nexus-core: credential-store blinding, anti-forgetting conflict disclosure, and a documented-claims truth gate
 
 ### Wave 6: take only what is needed from the sibling project, and make it stronger here
