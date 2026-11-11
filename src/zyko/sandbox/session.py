@@ -19,6 +19,7 @@ from dataclasses import dataclass
 
 from zyko.sandbox.audit import AuditLog
 from zyko.sandbox.contracts import PermissionContract
+from zyko.sandbox.jail import jail_level
 from zyko.sandbox.patcher import PatchResult, patch_file
 from zyko.sandbox.runner import TestRunResult, run_tests
 
@@ -163,15 +164,17 @@ class ToolSession:
         decision = DECISION_ALLOW if result.ok else DECISION_DENY
         self._audit(
             "run_tests", decision, result.reason_ar,
-            {"argv": result.command[:120], "exit_code": result.exit_code},
+            {"argv": result.command[:120], "exit_code": result.exit_code,
+             "jail": jail_level()},
         )
         return result
 
     # ------------------------------------------------------------ التوثيق
     def summary(self) -> dict:
-        """ملخص الجلسة: العقد والاستهلاك والسلسلة — حتمي بلا أي زمن."""
+        """ملخص الجلسة: العقد والاستهلاك والسلسلة ومستوى العزل — حتمي بلا أي زمن."""
         summary: dict = {
             "contract": self.contract.to_dict(),
+            "jail": jail_level(),
             "usage": self.usage.to_dict(),
         }
         if self.audit is not None:

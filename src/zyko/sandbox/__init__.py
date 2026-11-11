@@ -6,7 +6,7 @@
 من قائمة بيضاء وبيئة منقّاة من الأسرار ومهلة صارمة — وكل محاولة (مسموحة
 أو مرفوضة) تُوقَّع في سجل تدقيق JSONL بسلسلة sha256 لا تُخترق صامتًا.
 
-ركائز الطبقة الأربع، كلها حتمية بالبايت وبلا اعتمادية:
+ركائز الطبقة الخمس، كلها حتمية بالبايت وبلا اعتمادية:
 
   1. **العقود** (``contracts``): صلاحيات معلنة لا حدس — جذور مسموحة،
      أدوات مفعّلة، أوامر مبيّحة، سقوف أحجام ومهل — والمدخل العدوي
@@ -17,10 +17,16 @@
      بملف مؤقت واستبدال — لا نص مبتور ولا ملف نصف مكتوب.
   4. **التشغيل** (``runner``): argv قائمة بلا صدفة، بيئة بيضاء دنيا،
      ومخرجات مسقوفة — فلا سر يعبر ولا حلقة لا نهائية.
+  5. **العزل النواتي** (``jail``، الأولوية 5): على Linux ≥ 5.13 حصر
+     كتابة كود الابن بـ Landlock قبل ``exec`` — بلا اعتمادية جديدة؛
+     bwrap إن وُجد وعمل، ومستوى العزل يُعلن في التدقيق والإيصال
+     دائماً — القوة تُكتشف لا تُدَّعى.
 
-حد الصدقة المعلن: هذه عزل حد-العملية والحتمية، ليست حاوية نظام تشغيل —
-تشغيل اختبارات مجلد ينفّذ كود ذلك المجلد بعقده هو، والعقد يقيّد ما
-**يعبر** من البيئة إليه (أسرار، جذور كتابة، زمن) لا ما يفعل داخله.
+حد الصدقة المعلن: العقود تقيّد ما **يعبر** من البيئة إلى الابن
+(أسرار، جذور، زمن)، والعزل النواتي يقيّد ما يفعله الابن *داخله*
+كتابةً — لكن القراءة مفتوحة عمدًا (تشغيل اختبارات مشروع يتطلب قراءته
+وكود المشغّل) والشبكة لا تُمس تحت Landlock ABI v1–v3 — فجوتان
+موثقتان لا ثغرتان مخفيتان.
 """
 
 from __future__ import annotations
@@ -36,6 +42,7 @@ from zyko.sandbox.contracts import (
     MAX_TIMEOUT_S,
     PermissionContract,
 )
+from zyko.sandbox.jail import JAIL_LEVEL_BWRAP, JAIL_LEVEL_LANDLOCK, JAIL_LEVEL_NONE, jail_level, landlock_abi
 from zyko.sandbox.patcher import PatchResult, patch_file
 from zyko.sandbox.runner import TestRunResult, run_tests
 from zyko.sandbox.session import ToolSession
@@ -51,11 +58,16 @@ __all__ = [
     "DENY_ARGV_CHARS",
     "ENV_DENY_TOKENS",
     "ENV_KEEP_KEYS",
+    "JAIL_LEVEL_BWRAP",
+    "JAIL_LEVEL_LANDLOCK",
+    "JAIL_LEVEL_NONE",
     "MAX_TIMEOUT_S",
     "PatchResult",
     "PermissionContract",
     "TestRunResult",
     "ToolSession",
+    "jail_level",
+    "landlock_abi",
     "patch_file",
     "run_tests",
 ]

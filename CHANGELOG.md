@@ -1,3 +1,53 @@
+## 0.29.0 — the kernel confines what tool code does: Landlock write-confinement with an honest isolation disclosure
+
+### Priority 5 of the autonomy roadmap: OS-level isolation under the permission contracts
+
+The 0.27.0 contract was honest about its limit: the permission contract
+constrains what crosses *from* ZYKO to the child process (secrets, roots,
+time), not what the child does *inside* — running a folder's tests executes
+that folder's code under its own rules. This release closes the write half
+of that gap at the kernel level, not the promise level: tool-spawned test
+code is **born confined**, not born free and restricted later.
+
+- **`sandbox/jail.py` — kernel-level confinement, zero dependencies**:
+  * **landlock** (Linux ≥ 5.13) via direct `ctypes` syscalls 444/445/446:
+    write access (v1 rights, + REFER on ABI v2, + TRUNCATE on ABI v3)
+    restricted to the contract roots plus the system temp dir, applied in
+    `preexec_fn` *before* `exec` — no window exists where the child runs
+    unconstrained. Works inside containers (no user namespaces needed)
+    where bubblewrap usually fails.
+  * **bwrap** fallback when Landlock is unavailable but bubblewrap exists
+    *and actually works* (a self-test runs the full profile once): the
+    root mounts read-only, contract roots mount writable, `/tmp` becomes
+    a private tmpfs, and the network is unshared — stricter on the
+    network, weaker on availability.
+  * **none** when neither mechanism is available: the level is disclosed
+    in every audit entry and session summary, never hidden — detection
+    over assertion, the same honesty pattern as `zyko.kernel.backend()`.
+  * Fail-closed: if kernel restriction fails inside the child, the child
+    writes a documented Arabic marker to stderr and exits 126 — the tool
+    never runs unconfined on the strength of silence.
+- **Runner integration (the fifth contract)**: `run_tests` now carries
+  argv-list, sanitized env, capped timeout, honest counts — and kernel
+  write-confinement. A child trying to write outside the granted roots
+  fails with `EPERM` from the kernel itself; adversarial tests prove the
+  block even under the system temp tree when only the contract root is
+  granted, and that zero granted roots means a full write lock.
+- **Audit disclosure**: every `run_tests` audit entry and every session
+  summary records the active isolation level (`landlock`/`bwrap`/`none`).
+- **Documented honest gaps**: reads stay open by design (running a
+  project's tests requires reading that project and the runner's own
+  code); the network is untouched under Landlock ABI v1–v3 — a candidate
+  for a future ABI v4 round with TCP connect handling.
+- **12 new adversarial tests** (deny outside root, zero-roots full write
+  lock, fail-closed exit 126, bwrap argv shape, audit disclosure,
+  detection determinism) — 2585 passing / 21 documented environment
+  skips; the two new skips are the kernel-dependent tests on kernels
+  without Landlock, documented rather than faked.
+
+pyproject/CITATION/version.py/README/baseline: 0.28.0 → 0.29.0 and
+2575 → 2585 — the contract (test_repo_health) enforces the sync.
+
 ## 0.28.0 — the mind remembers across sessions: a sha256-signed session ledger and cross-project lessons with deterministic recall
 
 ### Priority 4 of the autonomy roadmap: memory that outlives the process

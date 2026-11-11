@@ -17,8 +17,18 @@
      نفس العملية تعطي نفس التمثيل، والعدّادات تُستخلص نصيًا من
      مخرجات pytest/unittest بأمانة (بلا عدّاد = بلا ادعاء).
 
+  5. **حصر النواة** — ``jail``: على Linux ≥ 5.13 تُقيَّد كتابة الابن
+     بـ Landlock في ``preexec_fn`` قبل ``exec`` — كود الاختبارات يُولد
+     مقيداً لا يُولد حرًا ثم يُقيَّد؛ محاولته الكتابة خارج جذور العقد
+     ومجلد الحرارة تفشل بـ ``EPERM`` من النواة نفسها، وفشل تقييد
+     النواة إغلاق موثق (exit 126) لا تشغيل بلا عزل. المستوى الفعلي
+     (landlock/bwrap/none) يُعلن في سجل التدقيق كما يُعلن — الصدق
+     قبل التفاؤل.
+
 حد الصدقة: تشغيل اختبارات مجلد ينفّذ كود ذلك المجلد (conftest.py مثلاً)
-بعقده هو — العقد يقيّد ما يعبر من zyko إليه، لا ما يفعله داخله؛
+بعقده هو — العقد يقيّد ما يعبر من zyko إليه، وحصر النواة يقيّد ما يفعله
+*داخله* كتابةً؛ القراءة مفتوحة عمدًا (تشغيل اختبارات مشروع يتطلب قراءته)
+والشبكة لا تُمس تحت ABI v1–v3 — فجوتان موثقتان لا ثغرتان مخفيتان؛
 وملف ``pytest.py`` في جذر المجلد يظلل المشغّل نفسه فيُرفض قبل
 التشغيل — خطف المشغّل ليس اختبارًا.
 """
@@ -31,6 +41,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from zyko.sandbox.contracts import PermissionContract
+from zyko.sandbox.jail import JAIL_LEVEL_BWRAP, jail_level, jail_preexec, wrap_argv, write_roots
 
 # ملفات ظلّ المشغّل — وجودها في جذر الجذر يجعل «python -m pytest» ينفّذ
 # كود المخطف لا مشغّل الاختبارات الحقيقي — رفض قبل التشغيل لا ثقة
@@ -156,14 +167,22 @@ def run_tests(
                 stdout_tail="", stderr_tail="",
                 reason_ar=f"«{shadow}» في جذر التشغيل يظلّل المشغّل الحقيقي — رفض قبل التنفيذ",
             )
-    # 3) التنفيذ: argv قائمة، بيئة بيضاء، مهلة من العقد
+    # 3) التنفيذ: argv قائمة، بيئة بيضاء، مهلة من العقد، وحصر الكتابة بالنواة
     timeout = contract.timeout_s if contract.timeout_s > 0 else 1.0
     env = contract.sanitized_env()
     command_text = " ".join(tokens)
     timed_out = False
+    # العزل النواتي: جذور العقد + مجلد الحرارة — الكتابة خارجها EPERM من النواة
+    roots_for_jail = write_roots(contract.roots)
+    preexec = jail_preexec(roots_for_jail)
+    exec_argv = (
+        wrap_argv(list(tokens), roots_for_jail) or list(tokens)
+        if jail_level() == JAIL_LEVEL_BWRAP
+        else list(tokens)
+    )
     try:
         proc = subprocess.run(  # noqa: S603 — argv قائمة مفحوصة، بلا shell
-            list(tokens),
+            exec_argv,
             cwd=str(cwd_path),
             env=env,
             capture_output=True,
@@ -171,6 +190,7 @@ def run_tests(
             encoding="utf-8",
             errors="replace",
             timeout=timeout,
+            preexec_fn=preexec,
         )
         exit_code = proc.returncode
         stdout, stderr = proc.stdout or "", proc.stderr or ""
