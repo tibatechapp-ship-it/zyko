@@ -30,8 +30,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from zyko.ai.receipt import hash_file
-from zyko.mind.critic import CriticReport, critique
+from zyko.mind.autodetect import CoreDecision
 from zyko.mind.core import DeterministicCore, ModelCore, core_report
+from zyko.mind.critic import CriticReport, critique
 from zyko.mind.memory import MindMemory
 from zyko.mind.perception import perceive
 from zyko.mind.planner import PLAN_GATE_TITLE, build_plan
@@ -72,6 +73,7 @@ class MindReceipt:
 
     goal: str
     core: dict
+    core_decision: dict
     out: str
     rounds: int
     rounds_ran: int
@@ -96,6 +98,7 @@ class MindReceipt:
             "schema": RECEIPT_SCHEMA,
             "goal": self.goal,
             "core": self.core,
+            "core_decision": self.core_decision,
             "out": self.out,
             "rounds": self.rounds,
             "rounds_ran": self.rounds_ran,
@@ -123,6 +126,11 @@ class MindReceipt:
         lines = ["# إيصال الحلقة الإدراكية — ZYKO Mind", ""]
         lines.append(f"الهدف: {self.goal}")
         lines.append(f"النوع: {self.kind} (ثقة {self.confidence:.2f}) — القلب: {self.core['name']}")
+        if self.core_decision:
+            lines.append(
+                f"قرار القلب: {self.core_decision['selected']} ({self.core_decision['mode']})"
+                f" — {self.core_decision['reason_ar']}"
+            )
         verdict = "مقبول" if self.ok else f"مرفوض عند «{self.failed_step}»"
         lines.append(f"الحكم: {verdict} — جولات منفذة {self.rounds_ran}/{self.rounds}")
         lines.append("")
@@ -154,10 +162,18 @@ class MindLoop:
         *,
         rounds: int = DEFAULT_ROUNDS,
         fail_under: int = DEFAULT_FAIL_UNDER,
+        core_decision: CoreDecision | dict | None = None,
     ) -> None:
         self.core: ModelCore = core if core is not None else DeterministicCore()
         self.rounds = max(1, int(rounds))
         self.fail_under = int(fail_under)
+        # قرار اختيار القلب يدخل الإيصال وسلسلة الأدلة — الكشف التلقائي
+        # جزء موثق من القصة لا حدس صامت. القلب الحتمي بدون قرار يعطي {}.
+        self.core_decision: dict = (
+            dict(core_decision.to_dict())
+            if isinstance(core_decision, CoreDecision)
+            else dict(core_decision or {})
+        )
 
     # ------------------------------------------------------------ الحرس
     def _structural_block(
@@ -190,6 +206,7 @@ class MindLoop:
             "schema": RECEIPT_SCHEMA,
             "goal": receipt.goal,
             "core": receipt.core,
+            "core_decision": receipt.core_decision,
             "out": receipt.out,
             "rounds": receipt.rounds,
             "rounds_ran": receipt.rounds_ran,
@@ -221,6 +238,7 @@ class MindLoop:
         receipt = MindReceipt(
             goal=goal if isinstance(goal, str) else repr(goal),
             core=core_report(self.core),
+            core_decision=self.core_decision,
             out=out_path.name,
             rounds=self.rounds,
             rounds_ran=0,
@@ -235,7 +253,11 @@ class MindLoop:
         # ---- 0) حرس المدخلات قبل أي عمل — عقد الحلقة نفسه بلا مساومة
         if not isinstance(goal, str):
             return self._structural_block(
-                receipt, "goal", "حرس المدخلات", "الهدف يجب أن يكون نصًا عربيًا — وصل نوع غير نصي", started
+                receipt,
+                "goal",
+                "حرس المدخلات",
+                "الهدف يجب أن يكون نصًا عربيًا — وصل نوع غير نصي",
+                started,
             )
         desc = " ".join(goal.split())
         if not desc:
@@ -330,7 +352,9 @@ class MindLoop:
                     step="execute",
                     title_ar="التنفيذ (محرك الحلقة: توليد ← مراجعة ← إصلاح)",
                     ok=exec_ok,
-                    exit_code=result.exit_code if result.ok and exec_ok else (2 if not result.ok else 1),
+                    exit_code=result.exit_code
+                    if result.ok and exec_ok
+                    else (2 if not result.ok else 1),
                     details_ar=details,
                     evidence=evidence,
                 )
@@ -409,7 +433,9 @@ class MindLoop:
         for index, step_result in enumerate(result.steps, start=1):
             state = "نجحت" if step_result.ok else "فشلت"
             summary = (
-                step_summary_ar(step_result.output) if step_result.ok else (step_result.error_ar or "فشل")
+                step_summary_ar(step_result.output)
+                if step_result.ok
+                else (step_result.error_ar or "فشل")
             )
             parts.append(f"{index}. [{step_result.step.tool}] {state}: {summary}")
         parts.append(f"سلسلة الأدلة chain_hash {result.receipt['chain_hash'][:16]}…")
@@ -439,7 +465,9 @@ class MindLoop:
             return None
 
     # ------------------------------------------------------------ النقد والتحسين
-    def _critique(self, perception, out_path: Path, score_after: int | None, *, dry_run: bool = False) -> CriticReport:
+    def _critique(
+        self, perception, out_path: Path, score_after: int | None, *, dry_run: bool = False
+    ) -> CriticReport:
         """نقد الناتج على كل المعايير المُدرَكة — فحوص حتمية على القرص."""
         return critique(
             perception,
@@ -450,7 +478,9 @@ class MindLoop:
             dry_run=dry_run,
         )
 
-    def _refine(self, perception, out_path: Path, receipt: MindReceipt, score_after: int | None) -> CriticReport:
+    def _refine(
+        self, perception, out_path: Path, receipt: MindReceipt, score_after: int | None
+    ) -> CriticReport:
         """جولة تحسين حتمية: إصلاح الملفات المولَّدة ثم نقد ثانٍ — موثقة لا مكررة."""
         if perception.kind.value != "GENERATE":
             receipt.steps.append(

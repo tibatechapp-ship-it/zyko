@@ -19,7 +19,8 @@ class TestBuildPlan:
         assert [s.index for s in plan.steps] == [1, 2, 3]
 
     def test_fix_plan_on_existing_file(self):
-        import pathlib, tempfile
+        import pathlib
+        import tempfile
 
         with tempfile.TemporaryDirectory() as td:
             f = pathlib.Path(td) / "app.py"

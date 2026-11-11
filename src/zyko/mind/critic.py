@@ -106,16 +106,19 @@ def _check_criterion(
     text = criterion.text_ar
     if kind == "score":
         if dry_run:
-            current = f"الدرجة الحالية {score_after}" if score_after is not None else "بلا درجة مقاسة"
+            current = (
+                f"الدرجة الحالية {score_after}" if score_after is not None else "بلا درجة مقاسة"
+            )
             return CriticFinding(
-                text, kind, True, f"تخطٍّ — تشغيل جاف ({current})؛ الحد {fail_under} يُفحص عند وضع الكتابة"
+                text,
+                kind,
+                True,
+                f"تخطٍّ — تشغيل جاف ({current})؛ الحد {fail_under} يُفحص عند وضع الكتابة",
             )
         if score_after is None:
             return CriticFinding(text, kind, False, "لا درجة مقاسة — الفحص مرفوض احترازيًا")
         passed = score_after >= fail_under
-        return CriticFinding(
-            text, kind, passed, f"الدرجة المقاسة {score_after} والحد {fail_under}"
-        )
+        return CriticFinding(text, kind, passed, f"الدرجة المقاسة {score_after} والحد {fail_under}")
     if kind == "artifact":
         if dry_run:
             return CriticFinding(text, kind, True, "تخطٍّ — تشغيل جاف لا يولّد على القرص")
@@ -127,23 +130,33 @@ def _check_criterion(
             )
         target = perception.target_path
         exists = bool(target) and Path(target).is_file() if target else False
-        return CriticFinding(text, kind, exists, f"المسار «{target}» موجود" if exists else "المسار مفقود")
+        return CriticFinding(
+            text, kind, exists, f"المسار «{target}» موجود" if exists else "المسار مفقود"
+        )
     if kind == "explicit":
         if dry_run:
             return CriticFinding(text, kind, True, "تخطٍّ — تشغيل جاف لا يولّد على القرص")
         if "اختبار" in text:
-            has_tests = any(
-                p.name.startswith("test_") for p in out_dir.rglob("*.py")
-            ) if out_dir.is_dir() else False
+            has_tests = (
+                any(p.name.startswith("test_") for p in out_dir.rglob("*.py"))
+                if out_dir.is_dir()
+                else False
+            )
             return CriticFinding(
                 text, kind, has_tests, "ملفات اختبار موجودة" if has_tests else "لا ملفات اختبار"
             )
         if "README" in text:
             has_readme = (out_dir / "README.md").is_file() if out_dir.is_dir() else False
-            return CriticFinding(text, kind, has_readme, "README.md موجود" if has_readme else "README.md مفقود")
+            return CriticFinding(
+                text, kind, has_readme, "README.md موجود" if has_readme else "README.md مفقود"
+            )
         if "واجهة سطر" in text:
-            has_cli = any("__main__.py" in p.name or "cli.py" in p.name for p in out_dir.rglob("*.py"))
-            return CriticFinding(text, kind, has_cli, "مدخل سطر أوامر موجود" if has_cli else "لا مدخل سطر أوامر")
+            has_cli = any(
+                "__main__.py" in p.name or "cli.py" in p.name for p in out_dir.rglob("*.py")
+            )
+            return CriticFinding(
+                text, kind, has_cli, "مدخل سطر أوامر موجود" if has_cli else "لا مدخل سطر أوامر"
+            )
         return CriticFinding(text, kind, True, "معيار صريح بلا فحص مخصص — يُحتسب مثبتًا موثقًا")
     # kind == "always": معايرا الهوية على النصوص الفعلية
     if "بيانات شخصية" in text:
@@ -165,8 +178,10 @@ def critique(
 ) -> CriticReport:
     """نقد الناتج الفعلي على كل المعايير المُدرَكة — بلا استثناء خارج."""
     out_path = Path(out_dir)
-    target_path = Path(target) if target is not None else (
-        Path(perception.target_path) if perception.target_path else None
+    target_path = (
+        Path(target)
+        if target is not None
+        else (Path(perception.target_path) if perception.target_path else None)
     )
     texts = _scan_texts(out_path, target_path)
     findings = tuple(

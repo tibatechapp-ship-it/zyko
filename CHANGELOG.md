@@ -1,3 +1,75 @@
+## 0.25.0 — the real brain activates itself: environment-driven core auto-detection for `zyko mind`, with the decision signed into the receipt
+
+### The biggest autonomy gap closes: no explicit flag required anymore
+
+Until 0.24.0 the cognitive loop always ran on `DeterministicCore` —
+activating a real brain required knowing in advance which brain to build
+and constructing it by hand. That was the documented gap: **the real
+brain was never on by default**. This release makes the choice
+self-activating and auditable: `zyko mind run` now selects its core from
+the environment, and the *decision itself* — every candidate considered,
+available or not, with an Arabic reason — is part of the receipt and the
+`chain_hash`, not a silent guess.
+
+- **`mind/autodetect.py`** — one function, `select_core()`, with a
+  documented order: (1) explicit intent first (`--brain` on the command
+  line, then `ZYKO_MIND_CORE` in the environment), (2) cloud providers
+  in a fixed table order (`qwen`, `openai`, `anthropic`, `deepseek`,
+  `groq`, `mistral`, `together`, `openrouter` — key present = candidate
+  available, **no network probing of clouds**: an exported key is
+  explicit user intent, and every later failure documents itself as an
+  Arabic rejection at the plan gate), (3) a local Ollama endpoint
+  (short-timeout reachability probe, injectable — wins only if it is up
+  *and* has a pulled model), (4) the deterministic fallback — exactly
+  the pre-0.25.0 behavior, so tests and CI stay network-free and the
+  zero-keys default is unchanged.
+- **Cloud brains ride the existing, proven path**: every cloud candidate
+  is a `QwenBrain` (OpenAI-compatible `chat/completions` over stdlib
+  `urllib`) behind `GatedBrain` → `BrainCore` — PII then RTL, the same
+  gates as always. Hosts and default models mirror the
+  `zyko.providers` registry in-repo (no invented endpoints); per-label
+  `ZYKO_MIND_<LABEL>_HOST` and a global `ZYKO_MIND_MODEL` override the
+  documented defaults. Anthropic rides its documented OpenAI-compat
+  layer at `https://api.anthropic.com/v1`.
+- **Explicit intent fails loudly, auto mode never raises**: an unknown
+  `--brain` label or an `ollama` request with no model (no `--model`, no
+  `ZYKO_OLLAMA_MODEL`, and a probe that cannot discover one) is an
+  Arabic `ValueError` → exit code 2; a missing cloud key still builds
+  the requested brain whose first `propose` documents the missing key —
+  the existing `QwenBrain` contract. Auto mode, by contract, can never
+  raise: worst case is the deterministic core with the reason recorded.
+- **Secrets never touch the receipt**: the decision JSON records env
+  *names* and availability only — a dedicated test proves the key value
+  never appears anywhere in `to_dict()`, the printed summary, or the
+  written receipt.
+- **The plan gate now surfaces *why* a real brain failed**: when the
+  core returns an empty advisory, `build_plan` appends the core's own
+  verdicts (`BrainCore.last_verdicts`) to the gate — "مفتاح Qwen
+  مطلوب…" reaches the receipt instead of a bare "القلب أعاد نصًا
+  فارغًا" silence.
+- **CLI surface**: `zyko mind run` gains `--brain auto` (default) with
+  all eleven documented choices plus `--model`; the summary prints the
+  chosen core and its reason; `MindReceipt` carries `core_decision`
+  (inside `to_dict`, `to_json`, `to_md`, and the `chain_hash` payload —
+  same goal, same environment, same receipt by the byte, now including
+  the core decision).
+
+### Truth numbers
+
+- 45 new tests (`tests/mind/test_autodetect.py`): documented
+  table order, precedence pairs, deterministic fallback paths, cloud
+  wins (qwen/openai/anthropic hosts+models), Ollama probe injection
+  (up-with-models / up-empty / down), every explicit-override path,
+  secret-leak proofs, receipt and chain-hash integration, and the CLI
+  contract (exit codes 0/1/2 included).
+- Full suite: **2270 passed, 1 documented skip, 0 failed** (2225 → 2270 passing; 45 new tests). Lint and format
+  green under the current ruff across `src/zyko/mind` + `tests/mind`
+  (pre-existing drift in the mind package caught by the newer ruff is
+  fixed in the same release).
+- Baseline artifact regenerated with the real 0.25.0 run
+  (`benchmarks/results/baseline_2026-11-11.json`, compare 12/12,
+  determinism ✅) so the version contract test stays honest.
+
 ## 0.24.0 — the autonomous mind: MIND.md Phase A ships as `zyko.mind`, the six-module cognitive loop with a deterministic receipt and three-layer memory
 
 ### The six cognitive modules of the study now exist as one tested package

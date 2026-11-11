@@ -12,6 +12,7 @@
 وبلا استثناء يخرج من الحلقة أبدًا.
 """
 
+from zyko.mind.autodetect import CandidateRecord, CoreDecision, select_core
 from zyko.mind.core import BrainCore, DeterministicCore, ModelCore, ScriptedCore
 from zyko.mind.critic import CriticFinding, CriticReport, critique
 from zyko.mind.loop import MindLoop, MindReceipt, MindStepRecord
@@ -21,6 +22,8 @@ from zyko.mind.planner import MindPlan, MindStep, build_plan
 
 __all__ = [
     "BrainCore",
+    "CandidateRecord",
+    "CoreDecision",
     "CriticFinding",
     "CriticReport",
     "DeterministicCore",
@@ -37,4 +40,5 @@ __all__ = [
     "build_plan",
     "critique",
     "perceive",
+    "select_core",
 ]

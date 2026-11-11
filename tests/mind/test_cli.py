@@ -5,9 +5,8 @@ from __future__ import annotations
 import subprocess
 import sys
 
-import pytest
-
-from zyko.mind.cli import EXIT_FINDINGS, EXIT_OK, handle_mind, main as mind_main, mind_map_text
+from zyko.mind.cli import EXIT_FINDINGS, EXIT_OK, handle_mind, mind_map_text
+from zyko.mind.cli import main as mind_main
 
 
 class _Args:
@@ -69,7 +68,9 @@ class TestModuleMain:
         assert mind_main(["map"]) == EXIT_OK
 
     def test_python_m_mind_run(self, tmp_path):
-        code = mind_main(["run", "انشئ مشروع قائمة مهام مع واجهة سطر أوامر", "-o", str(tmp_path / "proj")])
+        code = mind_main(
+            ["run", "انشئ مشروع قائمة مهام مع واجهة سطر أوامر", "-o", str(tmp_path / "proj")]
+        )
         assert code == EXIT_OK
 
 
@@ -77,8 +78,16 @@ class TestSubprocess:
     def test_cli_entry_z_mind(self, tmp_path):
         """`zyko mind run …` عبر نقطة الدخول الرسمية — بلا شبكة."""
         proc = subprocess.run(
-            [sys.executable, "-m", "zyko", "mind", "run", "انشئ مشروع قائمة مهام مع واجهة سطر أوامر",
-             "-o", str(tmp_path / "proj")],
+            [
+                sys.executable,
+                "-m",
+                "zyko",
+                "mind",
+                "run",
+                "انشئ مشروع قائمة مهام مع واجهة سطر أوامر",
+                "-o",
+                str(tmp_path / "proj"),
+            ],
             capture_output=True,
             text=True,
             timeout=120,
@@ -88,8 +97,15 @@ class TestSubprocess:
 
     def test_python_dash_m_dash_zyko_dot_mind(self, tmp_path):
         proc = subprocess.run(
-            [sys.executable, "-m", "zyko.mind", "run", "انشئ مشروع قائمة مهام مع واجهة سطر أوامر",
-             "-o", str(tmp_path / "proj")],
+            [
+                sys.executable,
+                "-m",
+                "zyko.mind",
+                "run",
+                "انشئ مشروع قائمة مهام مع واجهة سطر أوامر",
+                "-o",
+                str(tmp_path / "proj"),
+            ],
             capture_output=True,
             text=True,
             timeout=120,

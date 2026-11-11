@@ -150,7 +150,9 @@ def perceive(goal: object) -> Perception:
     classification = classify(normalized)
     context = extract_context(normalized)
     target = context.get("path") or None
-    criteria = _kind_criteria(classification.task) + _explicit_criteria(normalized) + _identity_criteria()
+    criteria = (
+        _kind_criteria(classification.task) + _explicit_criteria(normalized) + _identity_criteria()
+    )
     return Perception(
         goal=normalized,
         classification=classification,

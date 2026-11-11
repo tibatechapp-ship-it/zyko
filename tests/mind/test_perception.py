@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from zyko.mind.perception import perceive, normalize_goal
+from zyko.mind.perception import normalize_goal, perceive
 from zyko.orchestrator.classify import TaskType
 
 
@@ -34,7 +34,9 @@ class TestPerceive:
         kinds = [c.kind for c in p.criteria]
         assert kinds.count("artifact") == 1
         assert kinds.count("score") == 1
-        assert kinds[-2:] == [("always" if "بيانات" in c.text_ar else "always") for c in p.criteria[-2:]]
+        assert kinds[-2:] == [
+            ("always" if "بيانات" in c.text_ar else "always") for c in p.criteria[-2:]
+        ]
 
     def test_identity_criteria_always_present(self):
         p = perceive("انشئ مشروع قائمة مهام")

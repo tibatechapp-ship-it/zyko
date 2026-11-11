@@ -62,7 +62,9 @@ class MindPlan:
         """نص الخطة المختصر — للعرض وللتوثيق، حتمي بالبايت."""
         lines = [f"خطة «{self.goal}» — النوع {self.kind.value} — القلب {self.core_name}"]
         for step in self.steps:
-            lines.append(f"{step.index}. {step.title_ar} [{step.tool}] — قبول: {step.acceptance_ar}")
+            lines.append(
+                f"{step.index}. {step.title_ar} [{step.tool}] — قبول: {step.acceptance_ar}"
+            )
         if self.advisory:
             lines.append(f"استشارة القلب: {self.advisory}")
         return "\n".join(lines)
@@ -197,6 +199,9 @@ def build_plan(perception: Perception, core: ModelCore) -> MindPlan:
         ),
     )
     if not advisory.strip():
+        # الأدلة الداخلية للقلب (آخر أحكام BrainCore) تُلحق بالحكم —
+        # فشل دماغ حقيقي (مفتاح غائب، خادم متعطل) يظهر سببه في الإيصال
+        # لا «نص فارغ» صامتة.
         return MindPlan(
             goal=perception.goal,
             kind=perception.kind,
@@ -204,7 +209,7 @@ def build_plan(perception: Perception, core: ModelCore) -> MindPlan:
             advisory="",
             core_name=str(getattr(core, "name", "unknown")),
             deterministic=bool(getattr(core, "deterministic", False)),
-            verdicts=(core_verdict,),
+            verdicts=(core_verdict,) + tuple(getattr(core, "last_verdicts", ()) or ()),
         )
     verdicts = (core_verdict,) + check_proposal_gates(advisory)
     return MindPlan(

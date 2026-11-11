@@ -4,12 +4,9 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from zyko.mind.core import ScriptedCore
 from zyko.mind.loop import MindLoop, MindReceipt
 from zyko.mind.memory import MindMemory
-
 
 GOAL = "انشئ مشروع قائمة مهام مع واجهة سطر أوامر"
 
@@ -127,7 +124,9 @@ class TestGuards:
 
 class TestScriptedCore:
     def test_scripted_core_advisory_used(self, tmp_path):
-        core = ScriptedCore({"مشروع": "خطة مقترحة: قائمة مهام بسيطة مع واجهة سطر أوامر"}, default="فارغ")
+        core = ScriptedCore(
+            {"مشروع": "خطة مقترحة: قائمة مهام بسيطة مع واجهة سطر أوامر"}, default="فارغ"
+        )
         receipt = MindLoop(core).run(GOAL, tmp_path / "proj")
         assert receipt.ok
         assert "خطة مقترحة" in receipt.plan_text
@@ -207,7 +206,10 @@ class TestNoNetwork:
         """الحلقة الافتراضية تعمل بلا شبكة ولا مفاتيح — معيار إتمام المرحلة A."""
         import os
 
-        saved = {k: os.environ.pop(k, None) for k in ("ZYKO_QWEN_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY")}
+        saved = {
+            k: os.environ.pop(k, None)
+            for k in ("ZYKO_QWEN_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY")
+        }
         try:
             receipt = MindLoop().run(GOAL, tmp_path / "proj")
             assert receipt.ok

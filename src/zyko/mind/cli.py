@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 from typing import Any, Sequence
 
-from zyko.mind.core import DeterministicCore
+from zyko.mind.autodetect import EXPLICIT_CHOICES, CoreDecision, select_core
 from zyko.mind.loop import DEFAULT_FAIL_UNDER, DEFAULT_ROUNDS, MindLoop
 from zyko.version import __version__
 
@@ -37,6 +37,7 @@ def mind_map_text() -> str:
             "الوحدة     الأمر                              ماذا تفعل",
             "إدراك      داخلي (حتمي)                       تطبيع ← تصنيف ← معايير نجاح",
             "تخطيط      داخلي (بوابة PII←RTL)              خطوات حتمية + استشارة القلب",
+            "القلب      تلقائي من البيئة (--brain auto)     مفاتيح سحابية أو Ollama أو حتمي",
             "تنفيذ      محرك الحلقة أو المحدّد              تفويض حرفي لمحركات المصنع",
             "نقد        داخلي (حتمي على القرص)             معايير النجاح على الناتج الفعلي",
             "تحسين      FixerEngine (جولة ثانية عند فجوات)  إصلاح موثق ثم نقد ثانٍ",
@@ -62,10 +63,19 @@ def register_to(sub: argparse._SubParsersAction) -> None:
     p.add_argument("-o", "--out", required=True, help="مجلد الإخراج (جديد وفارغ)")
     p.add_argument("--rounds", type=int, default=DEFAULT_ROUNDS)
     p.add_argument("--fail-under", type=int, default=DEFAULT_FAIL_UNDER)
+    p.add_argument(
+        "--brain",
+        choices=("auto",) + EXPLICIT_CHOICES,
+        default="auto",
+        help="القلب: auto كشف تلقائي من البيئة (افتراضي)، أو deterministic، أو مزود سحابي، أو ollama المحلي",
+    )
+    p.add_argument(
+        "--model", default=None, help="اسم النموذج (يغلب الافتراضي) — مثال: qwen-plus أو qwen2.5:7b"
+    )
     p.add_argument("--dry-run", action="store_true", help="تشغيل جاف — توثيق بلا كتابة")
     p.add_argument("--json", action="store_true", help="طباعة الإيصال JSON كاملًا")
 
-    m = sub.add_parser("map", help="خريطة العقل المستقل (نص ثابت)")
+    sub.add_parser("map", help="خريطة العقل المستقل (نص ثابت)")
 
 
 def handle_mind(args: Any) -> int:
@@ -86,11 +96,29 @@ def handle_mind_map(_args: Any) -> int:
 
 
 def handle_mind_run(args: Any) -> int:
-    """شغّل الحلقة كاملة واطبع ملخص البوابات — بنسق المستودع الحرفي."""
+    """شغّل الحلقة كاملة واطبع ملخص البوابات — بنسق المستودع الحرفي.
+
+    القلب يُختار هنا ذاتيًا (``select_core``): مفاتيح البيئة أو نقطة
+    Ollama تفعّل دماغًا حقيقيًا بلا علم، وغيابها يعيد الحتمي — والقرار
+    يطبع ويُوثّق في الإيصال. التجاوز الصريح غير الصالح خطأ استخدام (2).
+    """
     rounds = int(getattr(args, "rounds", 2) or 2)
     fail_under = int(getattr(args, "fail_under", 75) or 75)
     dry_run = bool(getattr(args, "dry_run", False))
-    loop = MindLoop(DeterministicCore(), rounds=rounds, fail_under=fail_under)
+    try:
+        decision: CoreDecision = select_core(
+            explicit=getattr(args, "brain", None),
+            model=getattr(args, "model", None),
+        )
+    except ValueError as exc:
+        print(f"خطأ: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    loop = MindLoop(
+        decision.core,
+        rounds=rounds,
+        fail_under=fail_under,
+        core_decision=decision,
+    )
     receipt = loop.run(args.goal, Path(args.out), write=not dry_run)
 
     if getattr(args, "json", False):
@@ -98,11 +126,14 @@ def handle_mind_run(args: Any) -> int:
     else:
         print("الحلقة الإدراكية zyko mind — الهدف:", receipt.goal)
         print(_LINE)
+        print(f"القلب المُختار: {decision.selected} ({decision.mode}) — {decision.reason_ar}")
         for step in receipt.steps:
             state = "نجاح" if step.ok else "فشل"
             print(f"{step.title_ar:<42} {state:<6} {step.details_ar}")
         print(_LINE)
-        verdict = "الحلقة مقبولة ✅" if receipt.ok else f"الحلقة مرفوضة ❌ — عند «{receipt.failed_step}»"
+        verdict = (
+            "الحلقة مقبولة ✅" if receipt.ok else f"الحلقة مرفوضة ❌ — عند «{receipt.failed_step}»"
+        )
         print(
             f"الخلاصة: {sum(1 for s in receipt.steps if s.ok)}/{len(receipt.steps)} بوابة ناجحة"
             f" — جولات {receipt.rounds_ran}/{receipt.rounds} — الحكم: {verdict}"

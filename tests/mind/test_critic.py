@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pathlib
-
 from zyko.mind.critic import critique
 from zyko.mind.perception import perceive
 
@@ -11,7 +9,9 @@ from zyko.mind.perception import perceive
 class TestCritiqueGenerate:
     def test_green_on_generated_project(self, tmp_path):
         (tmp_path / "app.py").write_text("def main():\n    return 0\n", encoding="utf-8")
-        (tmp_path / "test_app.py").write_text("def test_main():\n    assert main() == 0\n", encoding="utf-8")
+        (tmp_path / "test_app.py").write_text(
+            "def test_main():\n    assert main() == 0\n", encoding="utf-8"
+        )
         p = perceive("انشئ مشروع مهام مع اختبارات")
         report = critique(p, tmp_path, score_after=90, fail_under=75)
         assert report.ok
