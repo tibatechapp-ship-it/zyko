@@ -44,7 +44,10 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - run: pip install -e .[dev] fastapi httpx
+      # ساق ضاد: الحزمة الاختيارية مثبتة هنا فقط (v0.2.0 مثبّتة للحتمية) —
+      # تخطيات ضاد الـ12 تُغلق هنا وتُشغَّل فعليًا؛ بقية السواعق تبقيها
+      # تخطيًا موثقًا (حزمة اختيارية غير مثبتة — تخطٍ لا فشل).
+      - run: pip install -e .[dev] fastapi httpx "daad @ git+https://github.com/tibatechapp-ship-it/daad.git@v0.2.0"
       - name: Full suite with junit receipt
         run: pytest -q --junitxml=/tmp/junit.xml
       - name: README numbers must match this run (badge can no longer rot)
