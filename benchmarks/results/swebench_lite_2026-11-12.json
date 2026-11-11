@@ -1,0 +1,246 @@
+{
+ "protocol": "SWE-bench-Lite (psf/requests) — عقل حقيقي خلف بوابات zyko",
+ "model_label": "glm-4.7",
+ "model_served_by": "z-ai-web-dev-sdk bridge (local, 127.0.0.1)",
+ "httpbin": "http://127.0.0.1:8642/",
+ "python_env": "3.9 (uv) — بيئة معزولة لكل حالة",
+ "aggregate": {
+  "total": 6,
+  "resolved_strict": 0,
+  "resolved_env": 2,
+  "f2p_repaired_total": 1,
+  "f2p_total": 42,
+  "applied_count": 4,
+  "contract_rejections": 2,
+  "gate_rejections": 0,
+  "resolve_rate_env": 0.3333
+ },
+ "attempts": [
+  {
+   "instance_id": "psf__requests-1963",
+   "file_choice": "requests/sessions.py",
+   "choice_reply_sha16": "c80d84057edadb04",
+   "diff_reply_sha16": "908229323e8ad0fe",
+   "proposal_accepted": true,
+   "verdict": {
+    "instance_id": "psf__requests-1963",
+    "patch_applied": true,
+    "apply_error_ar": null,
+    "patch_sha16": "df2177f09c52d958",
+    "contract_reason_ar": "مسموح",
+    "f2p_failed_at_base": [
+     "test_requests.py::TestRedirects::test_requests_are_updated_each_time"
+    ],
+    "p2p_failed_at_base": [
+     "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+     "test_requests.py::TestTimeout::test_stream_timeout"
+    ],
+    "f2p_passed_after": [
+     "test_requests.py::RequestsTestCase::test_DIGESTAUTH_QUOTES_QOP_VALUE",
+     "test_requests.py::RequestsTestCase::test_DIGESTAUTH_WRONG_HTTP_401_GET",
+     "test_requests.py::RequestsTestCase::test_DIGEST_AUTH_RETURNS_COOKIE",
+     "test_requests.py::RequestsTestCase::test_DIGEST_HTTP_200_OK_GET",
+     "test_requests.py::RequestsTestCase::test_POSTBIN_GET_POST_FILES_WITH_DATA",
+     "test_requests.py::RequestsTestCase::test_param_cookiejar_works",
+     "test_requests.py::TestRedirects::test_requests_are_updated_each_time"
+    ],
+    "f2p_failed_after": [],
+    "p2p_failed_after": [
+     "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+     "test_requests.py::TestTimeout::test_stream_timeout"
+    ],
+    "runs_error_ar": null,
+    "resolved_strict": false,
+    "resolved_env": true,
+    "f2p_repaired_count": 1,
+    "attempts_note_ar": "طُبِّقت وقِيست"
+   }
+  },
+  {
+   "instance_id": "psf__requests-2148",
+   "file_choice": "requests/models.py",
+   "choice_reply_sha16": "633feaee006d302c",
+   "diff_reply_sha16": "d8a8f029e28e7499",
+   "proposal_accepted": true,
+   "verdict": {
+    "instance_id": "psf__requests-2148",
+    "patch_applied": false,
+    "apply_error_ar": "فشل فحص التطبيق: error: corrupt patch at line 22",
+    "patch_sha16": "d9553754d38911da",
+    "contract_reason_ar": "مسموح",
+    "f2p_failed_at_base": [
+     "test_requests.py::RequestsTestCase::test_iter_content_handles_socket_error"
+    ],
+    "p2p_failed_at_base": [
+     "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+    ],
+    "f2p_passed_after": [],
+    "f2p_failed_after": [
+     "test_requests.py::RequestsTestCase::test_DIGEST_AUTH_RETURNS_COOKIE",
+     "test_requests.py::RequestsTestCase::test_HTTP_200_OK_GET_ALTERNATIVE",
+     "test_requests.py::RequestsTestCase::test_HTTP_200_OK_HEAD",
+     "test_requests.py::RequestsTestCase::test_POSTBIN_GET_POST_FILES",
+     "test_requests.py::RequestsTestCase::test_auth_is_stripped_on_redirect_off_host",
+     "test_requests.py::RequestsTestCase::test_basicauth_with_netrc",
+     "test_requests.py::RequestsTestCase::test_cookie_quote_wrapped",
+     "test_requests.py::RequestsTestCase::test_generic_cookiejar_works",
+     "test_requests.py::RequestsTestCase::test_iter_content_handles_socket_error",
+     "test_requests.py::RequestsTestCase::test_unicode_multipart_post"
+    ],
+    "p2p_failed_after": [],
+    "runs_error_ar": null,
+    "resolved_strict": false,
+    "resolved_env": false,
+    "f2p_repaired_count": 0,
+    "attempts_note_ar": "git apply رفض الرقعة — لم تُطبَّق"
+   }
+  },
+  {
+   "instance_id": "psf__requests-2317",
+   "file_choice": "requests/sessions.py",
+   "choice_reply_sha16": "c80d84057edadb04",
+   "diff_reply_sha16": "c9cb509129dfd090",
+   "proposal_accepted": true,
+   "verdict": {
+    "instance_id": "psf__requests-2317",
+    "patch_applied": false,
+    "apply_error_ar": "فشل فحص التطبيق: error: corrupt patch at line 11",
+    "patch_sha16": "7618fc143b46dd5d",
+    "contract_reason_ar": "مسموح",
+    "f2p_failed_at_base": [
+     "test_requests.py::RequestsTestCase::test_requests_history_is_saved",
+     "test_requests.py::TestTimeout::test_encoded_methods"
+    ],
+    "p2p_failed_at_base": [
+     "test_requests.py::RequestsTestCase::test_connection_error",
+     "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+     "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+     "test_requests.py::TestTimeout::test_stream_timeout"
+    ],
+    "f2p_passed_after": [],
+    "f2p_failed_after": [
+     "test_requests.py::RequestsTestCase::test_HTTP_302_ALLOW_REDIRECT_GET",
+     "test_requests.py::RequestsTestCase::test_POSTBIN_GET_POST_FILES",
+     "test_requests.py::RequestsTestCase::test_POSTBIN_GET_POST_FILES_WITH_DATA",
+     "test_requests.py::RequestsTestCase::test_basicauth_with_netrc",
+     "test_requests.py::RequestsTestCase::test_json_param_post_content_type_works",
+     "test_requests.py::RequestsTestCase::test_manual_redirect_with_partial_body_read",
+     "test_requests.py::RequestsTestCase::test_requests_history_is_saved",
+     "test_requests.py::TestTimeout::test_encoded_methods"
+    ],
+    "p2p_failed_after": [],
+    "runs_error_ar": null,
+    "resolved_strict": false,
+    "resolved_env": false,
+    "f2p_repaired_count": 0,
+    "attempts_note_ar": "git apply رفض الرقعة — لم تُطبَّق"
+   }
+  },
+  {
+   "instance_id": "psf__requests-2674",
+   "file_choice": "requests/packages/urllib3/exceptions.py",
+   "choice_reply_sha16": "7de2c310b2f9d134",
+   "diff_reply_sha16": "cc1e03692d57cbb0",
+   "proposal_accepted": true,
+   "verdict": {
+    "instance_id": "psf__requests-2674",
+    "patch_applied": true,
+    "apply_error_ar": null,
+    "patch_sha16": "c7729892df54794b",
+    "contract_reason_ar": "مسموح",
+    "f2p_failed_at_base": [
+     "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+    ],
+    "p2p_failed_at_base": [
+     "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+    ],
+    "f2p_passed_after": [
+     "test_requests.py::RequestsTestCase::test_BASICAUTH_TUPLE_HTTP_200_OK_GET",
+     "test_requests.py::RequestsTestCase::test_HTTP_200_OK_GET_ALTERNATIVE",
+     "test_requests.py::RequestsTestCase::test_HTTP_200_OK_GET_WITH_PARAMS",
+     "test_requests.py::RequestsTestCase::test_HTTP_200_OK_HEAD",
+     "test_requests.py::RequestsTestCase::test_auth_is_retained_for_redirect_on_host",
+     "test_requests.py::RequestsTestCase::test_different_encodings_dont_break_post",
+     "test_requests.py::RequestsTestCase::test_manual_redirect_with_partial_body_read",
+     "test_requests.py::RequestsTestCase::test_prepared_from_session",
+     "test_requests.py::RequestsTestCase::test_unicode_multipart_post",
+     "test_requests.py::TestTimeout::test_encoded_methods",
+     "test_requests.py::TestTimeout::test_none_timeout"
+    ],
+    "f2p_failed_after": [
+     "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+    ],
+    "p2p_failed_after": [
+     "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+    ],
+    "runs_error_ar": null,
+    "resolved_strict": false,
+    "resolved_env": false,
+    "f2p_repaired_count": 0,
+    "attempts_note_ar": "طُبِّقت وقِيست"
+   }
+  },
+  {
+   "instance_id": "psf__requests-3362",
+   "file_choice": "requests/models.py",
+   "choice_reply_sha16": "633feaee006d302c",
+   "diff_reply_sha16": "1585c72a802e0c0f",
+   "proposal_accepted": true,
+   "verdict": {
+    "instance_id": "psf__requests-3362",
+    "patch_applied": true,
+    "apply_error_ar": null,
+    "patch_sha16": "f0d02bbaa087a538",
+    "contract_reason_ar": "مسموح",
+    "f2p_failed_at_base": [
+     "tests/test_requests.py::TestRequests::test_response_decode_unicode"
+    ],
+    "p2p_failed_at_base": [],
+    "f2p_passed_after": [],
+    "f2p_failed_after": [
+     "tests/test_requests.py::TestRequests::test_response_decode_unicode"
+    ],
+    "p2p_failed_after": [],
+    "runs_error_ar": null,
+    "resolved_strict": false,
+    "resolved_env": false,
+    "f2p_repaired_count": 0,
+    "attempts_note_ar": "طُبِّقت وقِيست"
+   }
+  },
+  {
+   "instance_id": "psf__requests-863",
+   "file_choice": "requests/models.py",
+   "choice_reply_sha16": "633feaee006d302c",
+   "diff_reply_sha16": "eacef818fc1fe799",
+   "proposal_accepted": true,
+   "verdict": {
+    "instance_id": "psf__requests-863",
+    "patch_applied": true,
+    "apply_error_ar": null,
+    "patch_sha16": "bdc878fde816c1be",
+    "contract_reason_ar": "مسموح",
+    "f2p_failed_at_base": [],
+    "p2p_failed_at_base": [
+     "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+    ],
+    "f2p_passed_after": [
+     "tests/test_requests.py::RequestsTestSuite::test_POSTBIN_GET_POST_FILES_WITH_HEADERS",
+     "tests/test_requests.py::RequestsTestSuite::test_nonurlencoded_postdata",
+     "tests/test_requests.py::RequestsTestSuite::test_prefetch_redirect_bug",
+     "tests/test_requests.py::RequestsTestSuite::test_urlencoded_post_data"
+    ],
+    "f2p_failed_after": [],
+    "p2p_failed_after": [
+     "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+    ],
+    "runs_error_ar": null,
+    "resolved_strict": false,
+    "resolved_env": true,
+    "f2p_repaired_count": 0,
+    "attempts_note_ar": "طُبِّقت وقِيست"
+   }
+  }
+ ],
+ "chain_hash": "e74940b07922e0ff"
+}

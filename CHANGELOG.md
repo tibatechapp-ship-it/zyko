@@ -1,3 +1,34 @@
+## 0.32.0 — public evidence: real SWE-bench-Lite instances, a real model behind the same gates, receipts over opinions
+
+### Wave 8: enter the public arena — measure, publish, then treat what the numbers expose
+
+- **`benchmarks/swebench.py` — بروتوكول SWE-bench-Lite الصادق**: 6 حالات
+  حقيقية من مجموعة psf/requests (مستخرَجة من ``princeton-nlp/SWE-bench_Lite``
+  يوم 2026-11-12، والرقعة الذهبية مستبعدة عمداً — المقياس هو zyko لا الوحش)،
+  ببروتوكول المقياس نفسه: قياس أساس (FAIL_TO_PASS + PASS_TO_PASS) ثم
+  رقعة مرشحة ثم قياس بعد، وحكمان موثقان — **صارم** (بروتوكول المقياس
+  الرسمي حرفياً) و**بيئي** (فشل P2P الحي عند الأساس يُغتفر لا يُخفى).
+- **عقل حقيقي خلف البوابات نفسها**: عقل إصلاح أحادي الملف بجولة واحدة
+  (نداءان: اختيار الملف من الشجرة ثم توليد رقعة موحدة) عبر نقطة متوافقة
+  مع OpenAI، وكل اقتراح يمرّ PII ثم RTL قبل أن يلمس الشجرة — والنقل
+  حقن فتبقى الاختبارات بلا شبكة ولا مفتاح إطلاقاً.
+- **حرس الرقعة**: مسارات نسبية فقط، لا أسماء حساسة (حرس الأسرار نفسه)،
+  لا حذف ملفات اختبار، سقف حجم معلن — والرفض بسببه العربي الموثق.
+- **النتيجة المنشورة على عدّة المعمل**: المحاولات 6 — حكم صارم 0/6،
+  حكم بيئي موثق 2/6 (منها حالة واحدة بإصلاح حقيقي لعقدة FAIL_TO_PASS
+  فاشلة عند الأساس دون أي تراجع)، رقع مطبقة 4/6، رفض حرس 2 (رقع مشوهة
+  رفضها ``git apply`` موثقة لا مُخمَّنة)، رفض بوابات 0 — الأرقام في
+  ``benchmarks/results/swebench_lite_2026-11-12.json`` بإيصال سلسلة
+  sha256 حتمي بالبايت.
+- **قراءة الجولة**: أعطال الرقع المشوهة (2/6) واختيار ملف واحد بجولة
+  واحدة هما العلة الموثقة القادمة — وهي رحلة الجولة 9 (العقل الموسع:
+  حلقة متعددة الملفات مع تلقيم نتائج الاختبارات داخل العقود والعزل).
+- 32 اختباراً جديداً بلا شبكة ولا مفتاح.
+
+pyproject/CITATION/version.py/README/EVAL: 0.31.0 → 0.32.0 — and the
+README metrics stay enforced by `scripts/check_readme_metrics.py` from
+the live junit of this very run.
+
 ## 0.31.0 — the repair lab: foreign broken code is detected, repaired, and measured — the local SWE-bench-style strength test
 
 ### Wave 7: know our programming level honestly, then treat what the numbers expose
