@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased — the brain now classifies too: `--brain` covers the whole mind (classify → plan), deterministically guarded
+## 0.22.0 — the whole mind classifies and plans, templates hit 100/100, huge files get reviewed, and every number is told honestly
+
+### The brain now classifies too: `--brain` covers the whole mind (classify → plan), deterministically guarded
 
 `--brain qwen|ollama` used to deepen planning only — classification stayed
 exclusively deterministic. This cycle extends the real brain to the first
@@ -38,9 +40,9 @@ safe:
   honest contract is "document the exit code verbatim" — the test now
   accepts any `خرج برمز N` without inventing platform assumptions.
 
-**Test count: 2024 passed (13 skipped), 0 failures — ruff clean.**
+**Test count: 2036 passed (13 skipped), 0 failures — ruff clean.**
 
-## Unreleased — template quality: the signed discovery closes at 100/100 and the guard threshold doubles to 70
+### Template quality: the signed discovery closes at 100/100 and the guard threshold doubles to 70
 
 Gauntlet+ self-review (previous cycle) had signed an honest discovery: the
 factory's raw output bottomed at 48 (worst file 20) — generated test files
@@ -93,7 +95,7 @@ templates themselves, not the threshold:
 clean across src/tests/benchmarks (lint debt from the previous cycle's
 commits also cleared: unused imports and unsorted blocks fixed).**
 
-## Unreleased — five tracks at once: brain-planned `do`, huge files, Gauntlet+, end-to-end integration, honest comparison
+### Five tracks at once: brain-planned `do`, huge files, Gauntlet+, end-to-end integration, honest comparison
 
 Five capability tracks land together, each independently verified and
 deterministic by construction:
@@ -168,7 +170,7 @@ an Arabic docstring during development — fixed, proving the gate works.
 **Test count: 2004 passed (13 skipped), 0 failures — 93 new tests this
 cycle.**
 
-## Unreleased — the loop closes on real code: `--mode existing` wires the brain to `zyko do`
+### The loop closes on real code: `--mode existing` wires the brain to `zyko do`
 
 The real-world test on psf/requests (`docs/REAL_WORLD_TEST.md`) proved the
 deterministic chain (`classify → route → run → Guardian → signed receipt`)
@@ -186,6 +188,46 @@ A shared `step_summary_ar` in `zyko.orchestrator.run` is now the single
 summary source for both `zyko do` and the session gate, fixing the blind
 "أُنجزت" summary for applied fixes (now "أُصلح N ملاحظة — الدرجة X→Y").
 11 new tests (1922 total), coverage 95%.
+
+### The metrics cycle: a measured ×3.9 speedup on huge files, a scalable performance gate, a committed benchmark ledger, and truth-synced badges
+
+A signed test caught its own environment: `test_large_file_reviewed_not_refused`
+blew its 120s budget under coverage (186.98s) while the algorithm was healthy —
+absolute wall-clock budgets break under tracing and on slow machines. Fixed at
+both levels, with the byte contract re-proven live (`d0e52368…f42485` unchanged
+on the real psf/requests target):
+
+- **`zyko.reviewer.astcache`** — `ast.walk` computed once per tree (BFS order is
+  deterministic; the cached list is byte-identical to the fresh generator). The
+  38 rule checkers and `taint.py` reuse it; `_iter_funcs` is memoized per tree —
+  it was re-walking per rule (×38 per chunk). Live result on a real 6.19MB /
+  750-chunk file: **73.66s → 18.91s (×3.9)** with the same 300,001 findings and
+  the same score; `zyko compare` review speed on psf/requests `models.py`:
+  195.8ms → **46.2ms/file**.
+- **The perf gate itself became honest**: the absolute budgets (120s, ≥50KB/s)
+  are replaced by a *relative scalability gate* — the per-line time of the 6MB
+  file must stay ≤ 3× the per-line time of an ~80KB reference from the same
+  generator — plus a 600s hang-guard. The gate now passes under coverage and on
+  slow machines, and still slams on quadratic aggregation (the classic
+  huge-file failure).
+- **A committed benchmark ledger**: `scripts/make_bench_baseline.py` wraps two
+  real user-command receipts — `zyko compare` (12/12 probes, byte determinism,
+  verify rotation) and `zyko gauntlet --repeats 2 --review-sample 6` (review min
+  score 100 ≥ 70) — in provenance (version, python, platform, target sha256)
+  into `benchmarks/results/baseline_2026-11-11.json`. The receipts are the
+  byte-contract payloads, untouched; the provenance lives in the envelope.
+  `tests/test_bench_baseline_artifact.py` validates the envelope and
+  *re-derives* compare live on a committed real file — the ledger cannot rot.
+- **Truth-synced badges**: the tests badge (1581), the README count line (2004)
+  and the site badge (438) had rotted behind reality (2049 collected: 2036
+  passed + 13 skipped documented). `scripts/check_readme_metrics.py` reads this run's junit XML and
+  fails CI unless the badge and the line match the exact run; a CI
+  `metrics-truth` job enforces it on every push, and a unit test keeps README
+  internally coherent locally.
+- **Full-suite coverage measured, not remembered**: 94.19% (12,927/13,725
+  statements, 798 missing) on Python 3.12 — recorded in
+  `docs/STUDY_2026-11-11.md` next to the honest competitive study; the
+  per-phase ≥85% CI gates are unchanged.
 
 ## 0.21.0 — the brain digests and swarms: `compress` and `swarm` complete the orchestrator
 

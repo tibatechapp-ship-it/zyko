@@ -27,8 +27,10 @@ import re
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Callable
+from weakref import WeakKeyDictionary
 
 from zyko.reviewer import taint as _taint
+from zyko.reviewer.astcache import walk as _cached_walk
 
 # --------------------------------------------------------------- التصنيفات
 CATEGORIES: tuple[str, ...] = ("error_handling", "security", "quality")
@@ -150,8 +152,24 @@ def _name_of(node: ast.expr | None) -> str:
     return ""
 
 
-def _iter_funcs(tree: ast.Module) -> Iterator[tuple[str, ast.FunctionDef | ast.AsyncFunctionDef]]:
-    """كل الدوال (المتزامنة وغير المتزامنة) مع اسمها المؤهل."""
+# مذكّرة دوال الشجرة: القواعد المتعددة تستدعي _iter_funcs على الشجرة نفسها
+# لكل مقطع — التذكير يحفظ الترتيب والحصيلة بايت-ببايت (البناء الحتمي نفسه)
+# ويقتصّ إعادة الجولان ×عدد القواعد. المفاتيح ضعيفة: تُفرَّغ مع الشجرة.
+_FUNCS_CACHE: "WeakKeyDictionary[ast.Module, tuple[tuple[str, ast.FunctionDef | ast.AsyncFunctionDef], ...]]" = WeakKeyDictionary()
+
+
+def _iter_funcs(
+    tree: ast.Module,
+) -> tuple[tuple[str, ast.FunctionDef | ast.AsyncFunctionDef], ...]:
+    """كل الدوال (المتزامنة وغير المتزامنة) مع اسمها المؤهل — مذكَّرة لكل شجرة.
+
+    البناء نفسه بالترتيب نفسه (الدوال المتزامنة وغير المتزامنة بأعقاقها
+    المؤهلة كما كانت)، والعائد صفّ قابل لإعادة التكرار — ترقية تفي بالمولّد
+    القديم وتكفي كل المستدعين (منهم fixer/fixes.py).
+    """
+    cached = _FUNCS_CACHE.get(tree)
+    if cached is not None:
+        return cached
     parents: dict[int, str] = {}
 
     def _walk(node: ast.AST, prefix: str) -> None:
@@ -164,9 +182,13 @@ def _iter_funcs(tree: ast.Module) -> Iterator[tuple[str, ast.FunctionDef | ast.A
                 _walk(child, f"{prefix}{child.name}.")
 
     _walk(tree, "")
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            yield parents.get(id(node), node.name), node
+    result = tuple(
+        (parents.get(id(node), node.name), node)
+        for node in _cached_walk(tree)
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    )
+    _FUNCS_CACHE[tree] = result
+    return result
 
 
 def _is_trivial_body(body: list[ast.stmt]) -> bool:
@@ -237,7 +259,7 @@ _BRANCH_TYPES = (ast.If, ast.For, ast.AsyncFor, ast.While, ast.With, ast.AsyncWi
 def _bare_except(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     return [
         (n.lineno, n.col_offset, None)
-        for n in ast.walk(tree)
+        for n in _cached_walk(tree)
         if isinstance(n, ast.ExceptHandler) and n.type is None
     ]
 
@@ -245,14 +267,14 @@ def _bare_except(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 def _swallowed_exception(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     return [
         (n.lineno, n.col_offset, None)
-        for n in ast.walk(tree)
+        for n in _cached_walk(tree)
         if isinstance(n, ast.ExceptHandler) and _is_trivial_body(n.body)
     ]
 
 
 def _raise_without_from(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not isinstance(n, ast.ExceptHandler):
             continue
         for sub in _iter_except_actions(n.body):
@@ -287,7 +309,7 @@ def _open_outside_with(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 
 def _shell_true(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not isinstance(n, ast.Call):
             continue
         for kw in n.keywords:
@@ -310,16 +332,16 @@ def _mutable_default(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 
 
 def _assert_validation(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
-    return [(n.lineno, n.col_offset, None) for n in ast.walk(tree) if isinstance(n, ast.Assert)]
+    return [(n.lineno, n.col_offset, None) for n in _cached_walk(tree) if isinstance(n, ast.Assert)]
 
 
 def _return_in_finally(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not isinstance(n, ast.Try):
             continue
         for stmt in n.finalbody:
-            for sub in ast.walk(stmt):
+            for sub in _cached_walk(stmt):
                 if isinstance(sub, ast.Return):
                     out.append((sub.lineno, sub.col_offset, None))
     return out
@@ -328,7 +350,7 @@ def _return_in_finally(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 def _broad_except(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     return [
         (n.lineno, n.col_offset, None)
-        for n in ast.walk(tree)
+        for n in _cached_walk(tree)
         if isinstance(n, ast.ExceptHandler)
         and isinstance(n.type, ast.Name)
         and n.type.id == "Exception"
@@ -338,7 +360,7 @@ def _broad_except(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 def _base_except(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     return [
         (n.lineno, n.col_offset, None)
-        for n in ast.walk(tree)
+        for n in _cached_walk(tree)
         if isinstance(n, ast.ExceptHandler)
         and isinstance(n.type, ast.Name)
         and n.type.id == "BaseException"
@@ -348,7 +370,7 @@ def _base_except(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 # ------------------------------------------------------- قواعد الأمن (R-SEC)
 def _eval_exec(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if (
             isinstance(n, ast.Call)
             and isinstance(n.func, ast.Name)
@@ -366,11 +388,11 @@ _UNSAFE_DESERIALIZERS = frozenset({"pickle", "_pickle", "cPickle", "marshal", "d
 def _pickle_load(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     # استيراد مباشر: from pickle import loads
     direct: set[str] = set()
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if isinstance(n, ast.ImportFrom) and n.module in ("pickle", "_pickle"):
             direct.update(a.name for a in n.names)
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not isinstance(n, ast.Call):
             continue
         if isinstance(n.func, ast.Attribute):
@@ -390,7 +412,7 @@ def _pickle_load(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 def _unsafe_yaml(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     out: list[Anchor] = []
     safe_loaders = ("SafeLoader", "CSafeLoader")
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)):
             continue
         if _name_of(n.func.value) != "yaml":
@@ -416,7 +438,7 @@ def _sql_string_build(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
         if _SQL_DML_RE.search(text):
             out.append((node.lineno, node.col_offset, detail))
 
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if isinstance(n, ast.JoinedStr):
             literal = "".join(p.value for p in n.values if isinstance(p, ast.Constant))
             _check_text(literal, n, "f-string SQL")
@@ -451,7 +473,7 @@ def _hardcoded_secret(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
             return
         out.append((node.lineno, node.col_offset, name))
 
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if isinstance(n, ast.Assign):
             for t in n.targets:
                 if isinstance(t, ast.Name):
@@ -471,7 +493,7 @@ def _hardcoded_secret(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 
 def _weak_hash(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if (
             isinstance(n, ast.Call)
             and isinstance(n.func, ast.Attribute)
@@ -484,7 +506,7 @@ def _weak_hash(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 
 def _tls_verify_off(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if isinstance(n, ast.Call):
             for kw in n.keywords:
                 if (
@@ -507,7 +529,7 @@ def _tls_verify_off(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 def _os_exec(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     risky = ("system", "popen", "execv", "execve", "execvp", "spawnl", "spawnle", "spawnv")
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if (
             isinstance(n, ast.Call)
             and isinstance(n.func, ast.Attribute)
@@ -524,7 +546,7 @@ def _collect_zipfile_vars(tree: ast.Module) -> set[str]:
     وروابط with — قوس أمان مُقاس ميدانيًا في ميزان لأن اجتياز روابط
     symlinks الخاص بـ tar لا ينطبق على صيغة zip."""
     names: set[str] = set()
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if isinstance(n, (ast.With, ast.AsyncWith)):
             for item in n.items:
                 expr, optional = item.context_expr, item.optional_vars
@@ -549,7 +571,7 @@ def _path_traversal(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     input()/sys.argv — تدفق بيانات مؤكد، لا تخمين بنيوي."""
     tainted = _taint.propagate(tree, _taint.is_input_source)
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if (
             isinstance(n, ast.Call)
             and isinstance(n.func, ast.Name)
@@ -565,11 +587,11 @@ def _ssl_unverified_context(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     """R-SEC-110 (B323 في ميزان): ssl._create_unverified_context() يعطل
     التحقق من الشهادات للعملية كلها — مؤهلًا أو مستوردًا بالاسم."""
     direct = False
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if isinstance(n, ast.ImportFrom) and n.module == "ssl":
             direct = direct or any(a.name == "_create_unverified_context" for a in n.names)
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not isinstance(n, ast.Call):
             continue
         if isinstance(n.func, ast.Name) and n.func.id == "_create_unverified_context" and direct:
@@ -593,7 +615,7 @@ def _request_without_timeout(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     timeout. أضيق من Bandit عمدًا: مستقبلات الجلسات (session.get) خارج
     النطاق — انحراف موثق يبقي القاعدة بلا إنذارات كاذبة."""
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not isinstance(n, ast.Call) or not isinstance(n.func, ast.Attribute):
             continue
         if n.func.attr not in _HTTP_VERB_METHODS:
@@ -610,7 +632,7 @@ def _torch_unsafe_load(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     """R-SEC-112 (B614 في ميزان): torch.load يزيل التسلسل عبر pickle ما لم
     يُصرَّح بـ weights_only=True (تخفيف PyTorch)."""
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not (
             isinstance(n, ast.Call)
             and isinstance(n.func, ast.Attribute)
@@ -633,7 +655,7 @@ def _hf_trust_remote_code(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     """R-SEC-113 (B615 في ميزان): أي نداء يفعّل trust_remote_code=True
     ينفذ شيفرة منسلة من مستودع نموذج بعيد."""
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not isinstance(n, ast.Call):
             continue
         if any(
@@ -650,7 +672,7 @@ def _jinja2_autoescape_false(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     """R-SEC-114 (B701 في ميزان): autoescape=False يعطل تهريب HTML —
     باب هجمات XSS (القاعدة على شكل الوسيط أينما ظهر)."""
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not isinstance(n, ast.Call):
             continue
         if any(
@@ -667,7 +689,7 @@ def _django_mark_safe(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     """R-SEC-115 (B703 في ميزان): mark_safe يعلن المحتوى آمنًا لـ HTML
     دون تهريب — راجع مسار المدخل."""
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not isinstance(n, ast.Call):
             continue
         if (isinstance(n.func, ast.Name) and n.func.id == "mark_safe") or (
@@ -686,7 +708,7 @@ def _tarfile_extractall(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     اجتياز روابط symlink الخاص بـ tar لا ينطبق على صيغة zip."""
     zipfile_vars = _collect_zipfile_vars(tree)
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not (
             isinstance(n, ast.Call)
             and isinstance(n.func, ast.Attribute)
@@ -736,7 +758,7 @@ def _hardcoded_tmp_path(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     قيم الاستدعاءات والإسناد — نصوص التوثيق والتعبيرات العارية لا تُكشف
     (انحراف دقة موثق)."""
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if isinstance(n, ast.Call):
             for arg in n.args:
                 _check_tmp_value(n, arg, out)
@@ -759,12 +781,12 @@ def _input_to_subprocess(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     أو sys.argv يصل مضخة عملية — تدفق مؤكد لا شكلي. يغطي subprocess.*
     المؤهل وأسماء os.system/os.popen المستوردة بالاسم."""
     bare_sinks: set[str] = set()
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if isinstance(n, ast.ImportFrom) and n.module in ("os", "subprocess"):
             bare_sinks.update(a.name for a in n.names if a.name in ("system", "popen"))
     tainted = _taint.propagate(tree, _taint.is_input_source)
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not isinstance(n, ast.Call):
             continue
         is_sink = False
@@ -816,7 +838,7 @@ def _request_to_sql(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     على السطر نفسه."""
     tainted = _taint.propagate(tree, _taint.is_request_source)
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not (
             isinstance(n, ast.Call)
             and isinstance(n.func, ast.Attribute)
@@ -878,7 +900,7 @@ def _too_many_args(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 
 def _missing_docstring(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not isinstance(n, _DOCSTRING_TYPES):
             continue
         if n.name.startswith("_"):
@@ -905,7 +927,7 @@ def _no_type_hints(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 
 def _none_compare(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if not isinstance(n, ast.Compare):
             continue
         if not any(isinstance(op, (ast.Eq, ast.NotEq)) for op in n.ops):
@@ -919,14 +941,14 @@ def _none_compare(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 def _string_identifiers(tree: ast.Module) -> set[str]:
     """المعرّفات الظاهرة داخل نصوص الملف (توثيق/مراجع نصية) — تُحسب استخدامًا."""
     names: set[str] = set()
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if isinstance(n, ast.Constant) and isinstance(n.value, str):
             names.update(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", n.value))
     return names
 
 
 def _unused_import(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
-    used: set[str] = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
+    used: set[str] = {n.id for n in _cached_walk(tree) if isinstance(n, ast.Name)}
     used |= _string_identifiers(tree)
     exported: set[str] = set()
     for n in tree.body:
@@ -959,7 +981,7 @@ def _unused_import(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 
 def _builtin_shadow(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if isinstance(n, (ast.Assign, ast.AnnAssign)):
             targets = n.targets if isinstance(n, ast.Assign) else [n.target]
             for t in targets:
@@ -975,7 +997,7 @@ def _builtin_shadow(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
 
 def _lambda_assign(tree: ast.Module, cfg: RuleConfig) -> list[Anchor]:
     out: list[Anchor] = []
-    for n in ast.walk(tree):
+    for n in _cached_walk(tree):
         if isinstance(n, ast.Assign) and isinstance(n.value, ast.Lambda):
             names = [t.id for t in n.targets if isinstance(t, ast.Name)]
             out.append((n.lineno, n.col_offset, names[0] if names else None))

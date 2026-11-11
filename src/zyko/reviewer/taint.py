@@ -31,6 +31,8 @@ from __future__ import annotations
 
 import ast
 
+from zyko.reviewer.astcache import walk as _cached_walk
+
 # خصائص بيانات الطلب في Flask/Django — ما يتحكم فيه العميل.
 REQUEST_DATA_ATTRS = frozenset(
     {
@@ -178,7 +180,7 @@ def _assign_targets(node: ast.AST) -> list[str]:
 def _collect_assignments(tree: ast.Module):
     """أزواج (الأهداف، القيمة) لكل عقدة على شكل إسناد في الملف."""
     pairs: list[tuple[list[str], ast.expr]] = []
-    for node in ast.walk(tree):
+    for node in _cached_walk(tree):
         if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
             value = getattr(node, "value", None)
             if value is None:  # إسناد موصوف بلا قيمة

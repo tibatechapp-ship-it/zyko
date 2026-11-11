@@ -98,9 +98,30 @@ def test_large_file_reviewed_not_refused(tmp_path: Path) -> None:
     assert result.mode == "chunked" and result.chunk_count > 1
     assert result.reviewed_chunks == result.chunk_count
     assert result.counts["critical"] == 0
-    # ميزانية القوة/السرعة: سقف زمني متسامح لآلات CI الأبطأ + حد أدنى للإنتاجية
-    assert seconds < 120.0
-    assert len(source.encode("utf-8")) / max(seconds, 0.001) > 50_000  # ≥ 50KB/s
+
+    # بوابة التدرّج النسبية (قياس القوة/السرعة الآلي على أي آلة):
+    # الأبواب الزمنية المطلقة (120 ثانية و≥50KB/s سابقًا) كانت هشة —
+    # تحت تغطية الاختبارات أو على آلة CI بطيئة تنكسر رغم أن الخوارزمية
+    # سليمة. الصادق هو قياس *التدرّج*: مرجع صغير من المصدر نفسه فوق
+    # سقف المقطع (‎~80KB → ~10 مقاطع)، فلو تحول التجميع تربيعيًا
+    # (التفشل الكلاسيكي للملفات الضخمة) انفجرت نسبة الزمن/السطر
+    # مهما كانت سرعة الآلة — وهذا ما نصطاده.
+    ref_source = _big_source(2_000)
+    ref_lines = max(len(ref_source.splitlines()), 1)
+    ref_started = time.perf_counter()
+    review_large_source(ref_source)
+    ref_seconds = time.perf_counter() - ref_started
+
+    big_lines = max(len(source.splitlines()), 1)
+    per_line_big = seconds / big_lines
+    per_line_ref = ref_seconds / ref_lines
+    assert per_line_big <= 3.0 * per_line_ref, (
+        "تدهور تربيعي محتمل: زمن السطر في الملف الضخم تجاوز 3× المرجع "
+        f"(big={per_line_big:.6f}s/سطر، ref={per_line_ref:.6f}s/سطر)"
+    )
+    # حارس تعليق مطلق متسامح فقط — ليس بوابة أداء، بل ضد الانهيار الكامل
+    assert seconds < 600.0
+
     payload = result.to_dict()
     assert payload["mode"] == "chunked" and payload["chunk_count"] == result.chunk_count
     assert "chunk_chain_hash" in payload
