@@ -78,7 +78,7 @@ def test_runs_below_two_rejected() -> None:
 def test_competitor_runs_real_command(tmp_path: Path) -> None:
     """أمر منافس حقيقي (بايثون مضمّن) يُشغَّل ويُقاس ويُحصى خرجه."""
     target = _target(tmp_path)
-    fake_linter = f'{sys.executable} -c "print(\'E1\'); print(\'E2\')"'
+    fake_linter = f"{sys.executable} -c \"print('E1'); print('E2')\""
     report = run_compare(target, competitor_cmd=f"{fake_linter} {{path}}", runs=2)
     comp = report.competitor
     assert comp.ran
@@ -148,6 +148,8 @@ def test_cli_compare_rejects_single_run(capsys) -> None:
 
     from zyko.cli.commands import cmd_compare
 
-    args = SimpleNamespace(target="x.py", competitor_cmd=None, runs=1, json_out=None, include_timing=False)
+    args = SimpleNamespace(
+        target="x.py", competitor_cmd=None, runs=1, json_out=None, include_timing=False
+    )
     assert cmd_compare(args) == 2
     assert "تشغيلين" in capsys.readouterr().err

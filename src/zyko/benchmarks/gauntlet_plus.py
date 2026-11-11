@@ -11,7 +11,7 @@
    الأعلى) يُقارن بميزانية صريحة. الأزمنة **خارج الإيصال الحتمي**
    دائمًا (عقد المصنع R2) — تُرد فقط مع ``include_timing=True``.
 3. **المراجعة الذاتية** — ما يولّده المصنع لا ينزل عن خط أساس الجودة
-   المرصود (``review_min_score``، الافتراضي 45 — انظر التعليق على
+   المرصود (``review_min_score``، الافتراضي 70 — انظر التعليق على
    الثابت): عيّنة حتمية من البرامج تُراجع ملفاً ملفًا بمحرك المراجعة،
    وأدنى درجة موثقة، وأي انحدار عن الخط ⇒ فشل صادق. المصنع الذي لا
    يجتاز مرآته لا يدّعي الجودة.
@@ -49,12 +49,13 @@ __all__ = [
 # ميزانية سرعة البناء الافتراضية: وسيط زمن بناء البرنامج الواحد (ملي ثانية).
 # القوالب صغيرة؛ 200ms وسطٌ متسامح يكشف انزلاقًا بمئة ضعف لا اهتزاز الآلة.
 DEFAULT_SPEED_BUDGET_MS = 200.0
-# عتبة المراجعة الذاتية الافتراضية: خط الأساس النسبي لا حد مطلق —
-# أدنى درجة مرصودة اليوم على مخرجات المصنع الخام هي 48 (ملفات الاختبار
-# المولَّدة تُميّر بقواعد asserts وdocstrings)، فالعتبة الافتراضية 45
-# تحرس هذا الخط بهامش وتكشف أي انحدار مستقبلي فورًا. رفعها خيار صريح
-# في كل نداء — ورفع جودة القوالب نفسها مهمة مستقلة موثقة.
-DEFAULT_REVIEW_MIN_SCORE = 45
+# عتبة المراجعة الذاتية الافتراضية: حد أدنى **موقّع بالاكتشاف** لا نسبة.
+# الاكتشاف الموثق (CHANGELOG): المراجعة الذاتية كشفت جودة خام عند 48
+# (docstrings مفقودة، وasserts تتلاشى مع -O، وتظليل مدمج)، فأُصلحت
+# القوالب نفسها حتى صارت كل ملفاتها المولَّدة تُراجَع بدرجة 100 بلا أي
+# ملاحظة. العتبة 70 إذًا أرضية صلبة فوق الاكتشاف التاريخي بهامش حقيقي:
+# أي انحدار مستقبلي في القوالب يصدم بهذا الحارس فورًا.
+DEFAULT_REVIEW_MIN_SCORE = 70
 
 
 # --------------------------------------------------------------- الإحصاء
@@ -127,6 +128,8 @@ class StressReport:
             return False
         if any(not row.ok for row in self.review_rows):
             return False
+        if self.gauntlet is not None and not self.gauntlet.ok:
+            return False
         return True
 
     @property
@@ -166,7 +169,10 @@ class StressReport:
         import json
 
         return json.dumps(
-            self.to_dict(include_timing=include_timing), ensure_ascii=False, sort_keys=True, indent=2
+            self.to_dict(include_timing=include_timing),
+            ensure_ascii=False,
+            sort_keys=True,
+            indent=2,
         )
 
     def table_ar(self) -> str:
@@ -207,7 +213,9 @@ class StressReport:
         lines.append("-" * 62)
         lines.append(f"بصمة عينة المراجعة: {self.review_chain_hash[:16]}…")
         lines.append(
-            "الناتج النهائي: ✅ كل الحراس خضراء" if self.ok else "الناتج النهائي: ❌ فشل صادق في الأعلى"
+            "الناتج النهائي: ✅ كل الحراس خضراء"
+            if self.ok
+            else "الناتج النهائي: ❌ فشل صادق في الأعلى"
         )
         return "\n".join(lines)
 
@@ -310,7 +318,8 @@ def run_stress_gauntlet(
     bad_review = [row.name for row in review_rows if not row.ok]
     if bad_review:
         problems.append(
-            f"{len(bad_review)} برنامجًا دون عتبة المراجعة {review_min_score}: " + "، ".join(bad_review[:5])
+            f"{len(bad_review)} برنامجًا دون عتبة المراجعة {review_min_score}: "
+            + "، ".join(bad_review[:5])
         )
 
     # ---- الفحص القائم اختياريًا (بناء وتنفيذ باختبارات حقيقية)

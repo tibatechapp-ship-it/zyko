@@ -20,8 +20,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from zyko.ai.brains import GateVerdict, Proposal
 from zyko.ai.receipt import hash_file
 from zyko.orchestrator import classify, extract_context, route, run, swarm
@@ -64,8 +62,7 @@ def _review_json(path: Path) -> str:
     payload = {
         "task": TaskType.REVIEW.value,
         "steps": [
-            {"tool": s.tool, "path": s.args["path"], "reason_ar": s.reason_ar}
-            for s in plan.steps
+            {"tool": s.tool, "path": s.args["path"], "reason_ar": s.reason_ar} for s in plan.steps
         ],
     }
     return json.dumps(payload, ensure_ascii=False)
@@ -198,6 +195,7 @@ def test_brain_plan_flows_into_signed_receipt(tmp_path: Path) -> None:
 
 def test_brain_rejection_keeps_chain_intact(tmp_path: Path) -> None:
     """دماغ مرفوض بالبوابات ⇒ الخطة الحتمية تنفَّذ والإيصال بلا planner."""
+
     class RejectingBrain:
         name = "no"
         deterministic = False

@@ -15,6 +15,8 @@ import pytest
 
 from zyko.coder.plan import PlanValidationError, ProjectPlan
 from zyko.fixer import FixerEngine
+from zyko.fixer.edits import Edit
+from zyko.fixer.fixes import FixContext
 from zyko.pipeline.engine import (
     MAX_ROUNDS,
     SCHEMA,
@@ -23,6 +25,8 @@ from zyko.pipeline.engine import (
     PipelineEngine,
     PipelineResult,
 )
+from zyko.reviewer.engine import ReviewEngine
+from zyko.reviewer.rules import Finding
 
 DESC_TODO = "أريد قائمة مهام يومية بسيطة أضيف فيها المهام وأشطبها عند إنجازها"
 DESC_BLOG = "مدونة عربية أنشر فيها مقالاتي مع صفحة تعريف عني"
@@ -34,6 +38,56 @@ def engine():
     return PipelineEngine()
 
 
+class _InjectedReviewer(ReviewEngine):
+    """مراجع يضيف ملاحظات مدفونة فوق المراجعة الحقيقية — مصائر الملاحظات حتميًا."""
+
+    def __init__(self, extras: dict[str, list[Finding]]) -> None:
+        super().__init__()
+        self._extras = extras
+
+    def review_source(self, source: str, filename: str = "<text>"):
+        result = super().review_source(source, filename)
+        for key, findings in self._extras.items():
+            if key in filename:
+                result.findings.extend(findings)
+        return result
+
+
+_FINDING_FIXABLE = Finding(
+    rule_id="R-QLT-204",
+    severity="low",
+    category="quality",
+    line=1,
+    col=0,
+    message_ar="رمز عام بلا docstring (حقن اختباري)",
+    suggestion_ar="أضف docstring عربيًا يشرح الغرض",
+)
+_FINDING_MANUAL = Finding(
+    rule_id="R-QLT-201",
+    severity="medium",
+    category="quality",
+    line=1,
+    col=0,
+    message_ar="دالة أطول من الحد المسموح (حقن اختباري)",
+    suggestion_ar="قسّمها إلى دوال أصغر بمسؤولية واحدة",
+)
+
+
+def _probe_planner(ctx: FixContext) -> list[Edit]:  # noqa: ARG001
+    """مخطط حقن حتمي: تعليق واحد أعلى الملف — يثبت أنّ المُصلِح يكتب فعلًا."""
+    return [
+        Edit(
+            line=1,
+            col=0,
+            end_line=1,
+            end_col=0,
+            replacement="# حقن اختباري حتمي: المُصلِح فعّال\n",
+            rule_id="R-QLT-204",
+            note_ar="حقن اختباري",
+        )
+    ]
+
+
 # ------------------------------------------------------------ التكامل
 def test_end_to_end_generates_reviews_and_fixes(engine, tmp_path):
     r = engine.run(DESC_TODO, tmp_path / "todo", write=True)
@@ -42,10 +96,13 @@ def test_end_to_end_generates_reviews_and_fixes(engine, tmp_path):
     assert r.plan is not None and r.plan["name"] == "todo-cli"
     assert r.files and r.py_files
     assert r.rounds_ran == 1
-    assert r.fixed_total > 0, "المرساة يجب أن تُظهر إصلاحات فعلية"
-    assert r.min_score_after >= r.min_score_before, "لا تراجع في أدنى درجة"
+    # القوالب المثالية تخرج 100/100 بلا أي ملاحظة — لا إصلاح مطلوب؛
+    # قيمة حلقة مراجعة←إصلاح تُثبَت في بوابة المرحلة 4 بمعيب مقصود حتمي،
+    # وتدفق الملاحظات نفسه يُختبر أدناه بمراجع محقون.
+    assert r.fixed_total == r.manual_total == r.open_total == 0
+    assert r.min_score_before == r.min_score_after == 100
     assert r.verdict_ar
-    assert r.exit_code in (0, 1)
+    assert r.exit_code == 0
 
 
 def test_written_files_parse_and_differ_from_raw(engine, tmp_path):
@@ -88,8 +145,10 @@ def test_blog_template_minimal_python(engine, tmp_path):
 
 
 # --------------------------------------------------- مصائر الملاحظات
-def test_every_outcome_carries_suggestion_ar(engine, tmp_path):
-    r = engine.run(DESC_TODO, tmp_path / "todo", write=False)
+def test_every_outcome_carries_suggestion_ar(tmp_path):
+    """كل ملاحظة (حتى المحقونة حتميًا) تحمل حقولها العربية كاملة."""
+    reviewer = _InjectedReviewer({"cli.py": [_FINDING_FIXABLE]})
+    r = PipelineEngine(reviewer=reviewer).run(DESC_TODO, tmp_path / "todo", write=False)
     assert r.ok
     total = 0
     for f in r.per_file:
@@ -114,10 +173,12 @@ def test_fixed_rules_disappear_from_after(engine, tmp_path):
         assert not (fixed_rules & open_rules), f"قاعدة في حالتين معًا: {fixed_rules & open_rules}"
 
 
-def test_manual_findings_keep_manual_status(engine, tmp_path):
-    r = engine.run(DESC_TODO, tmp_path / "todo", write=False)
+def test_manual_findings_keep_manual_status(tmp_path):
+    """الملاحظة اليدوية (غير القابلة للإصلاح الآلي) تحتفظ بحالتها وسببها."""
+    reviewer = _InjectedReviewer({"core.py": [_FINDING_MANUAL]})
+    r = PipelineEngine(reviewer=reviewer).run(DESC_TODO, tmp_path / "todo", write=False)
     assert r.ok
-    assert r.manual_total + r.fixed_total + r.open_total > 0
+    assert r.manual_total >= 1
     for f in r.per_file:
         for o in f["outcomes"]:
             if o["status"] == "manual":

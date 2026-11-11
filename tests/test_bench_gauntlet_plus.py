@@ -17,8 +17,61 @@ import hashlib
 
 import pytest
 
-from zyko.benchmarks.gauntlet import build_matrix
-from zyko.benchmarks.gauntlet_plus import run_stress_gauntlet
+from zyko.benchmarks.gauntlet import GauntletReport, build_matrix
+from zyko.benchmarks.gauntlet_plus import (
+    DEFAULT_REVIEW_MIN_SCORE,
+    StressReport,
+    run_stress_gauntlet,
+)
+
+
+# ------------------------------------------------------------- الاكتشاف الموقّع
+def test_signed_threshold_is_seventy() -> None:
+    """العتبة الموقّعة: 70 فوق الاكتشاف التاريخي (48) بهامش حقيقي."""
+    assert DEFAULT_REVIEW_MIN_SCORE == 70
+
+
+def test_generated_output_reviews_at_hundred() -> None:
+    """مصفوفة كاملة (كل النوايا × نسخة) تُراجَع ملفاً ملفًا بدرجة 100."""
+    from zyko.coder.generate import build_all_files
+    from zyko.reviewer.engine import ReviewEngine
+
+    engine = ReviewEngine()
+    for plan in build_matrix(1):
+        for path, item in sorted(build_all_files(plan).items()):
+            if not path.endswith(".py"):
+                continue
+            result = engine.review_source(item.content, f"{plan.name}/{path}")
+            assert result.score == 100, f"{plan.name}/{path}: {result.score}"
+            assert result.findings == [], f"{plan.name}/{path}: {result.findings}"
+
+
+def test_embedded_gauntlet_failure_blocks_ok() -> None:
+    """فشل صادق: البناء والتنفيذ 96/100 داخل طبقة الشدّ يرفض ok الكلية."""
+    rows = ()
+    report = StressReport(
+        per_intent=2,
+        repeats=1,
+        matrix_hashes=("a" * 64,),
+        determinism_ok=True,
+        build_stats=None,
+        review_rows=rows,
+        review_min_score=70,
+    )
+    assert report.ok
+    broken = GauntletReport(per_intent=2, rows=(), executed=0)
+    assert not broken.ok  # مصفوفة فارغة = فشل
+    failed = StressReport(
+        per_intent=2,
+        repeats=1,
+        matrix_hashes=("a" * 64,),
+        determinism_ok=True,
+        build_stats=None,
+        review_rows=rows,
+        review_min_score=70,
+        gauntlet=broken,
+    )
+    assert not failed.ok, "الناتج يجب أن يعكس فشل الـ gauntlet المضمّن"
 
 
 # ------------------------------------------------------------- القبول الكامل
@@ -142,8 +195,13 @@ def test_cli_gauntlet_stress_path(tmp_path, capsys) -> None:
     from zyko.cli.commands import cmd_gauntlet
 
     args = SimpleNamespace(
-        per_intent=1, execute=0, execute_all=False, json_out=None,
-        include_timing=False, repeats=2, review_sample=2,
+        per_intent=1,
+        execute=0,
+        execute_all=False,
+        json_out=None,
+        include_timing=False,
+        repeats=2,
+        review_sample=2,
     )
     code = cmd_gauntlet(args)
     out = capsys.readouterr().out
@@ -158,8 +216,13 @@ def test_cli_gauntlet_stress_json_out(tmp_path, capsys) -> None:
 
     json_path = tmp_path / "stress.json"
     args = SimpleNamespace(
-        per_intent=1, execute=0, execute_all=False, json_out=str(json_path),
-        include_timing=False, repeats=1, review_sample=2,
+        per_intent=1,
+        execute=0,
+        execute_all=False,
+        json_out=str(json_path),
+        include_timing=False,
+        repeats=1,
+        review_sample=2,
     )
     code = cmd_gauntlet(args)
     assert code == 0
@@ -174,10 +237,54 @@ def test_cli_gauntlet_classic_path_unchanged(capsys) -> None:
     from zyko.cli.commands import cmd_gauntlet
 
     args = SimpleNamespace(
-        per_intent=1, execute=0, execute_all=False, json_out=None,
-        include_timing=False, repeats=1, review_sample=0,
+        per_intent=1,
+        execute=0,
+        execute_all=False,
+        json_out=None,
+        include_timing=False,
+        repeats=1,
+        review_sample=0,
     )
     code = cmd_gauntlet(args)
     out = capsys.readouterr().out
     assert code == 0
     assert "الفحص الكبير" in out  # جدول run_gauntlet القائم
+
+
+def test_cli_execute_reaches_stress_layer(monkeypatch, tmp_path) -> None:
+    """--execute لم يعد يسقط بصمت: يصل لطبقة الشدّ مع repeats/review معًا."""
+    from zyko.cli.commands import cmd_gauntlet
+
+    captured: dict[str, object] = {}
+
+    def fake_stress(per_intent, *, repeats, review_sample, execute=0, **kw):
+        captured.update(
+            per_intent=per_intent, repeats=repeats, review_sample=review_sample, execute=execute
+        )
+
+        from zyko.benchmarks.gauntlet_plus import StressReport as R
+
+        return R(
+            per_intent=per_intent,
+            repeats=repeats,
+            matrix_hashes=("a" * 64,),
+            determinism_ok=True,
+            build_stats=None,
+            review_rows=(),
+            review_min_score=70,
+        )
+
+    monkeypatch.setattr("zyko.benchmarks.gauntlet_plus.run_stress_gauntlet", fake_stress)
+
+    class Args:
+        per_intent = 2
+        execute = 5
+        execute_all = False
+        repeats = 2
+        review_sample = 3
+        json_out = str(tmp_path / "stress.json")
+        include_timing = False
+
+    assert cmd_gauntlet(Args()) == 0
+    assert captured["execute"] == 5, "--execute يجب أن يصل لطبقة الشدّ"
+    assert captured["repeats"] == 2 and captured["review_sample"] == 3

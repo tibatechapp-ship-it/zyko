@@ -159,7 +159,11 @@ def parse_brain_plan(text: str, brain_name: str) -> Plan | None:
 
 def _default_reason_ar(tool: str) -> str:
     """سبب عربي افتراضي حتمي إن أغفل الدماغ حقل السبب."""
-    return "مراجعة حتمية بقواعد AST — بلا نموذج وبلا شبكة" if tool == "review" else "إصلاح آلي للملاحظات القابلة للإصلاح ثم إعادة فحص"
+    return (
+        "مراجعة حتمية بقواعد AST — بلا نموذج وبلا شبكة"
+        if tool == "review"
+        else "إصلاح آلي للملاحظات القابلة للإصلاح ثم إعادة فحص"
+    )
 
 
 def plan_with_brain(
@@ -185,9 +189,13 @@ def plan_with_brain(
         return _with_note(fallback, note), note
     if not getattr(proposal, "accepted", False):
         reasons = "؛ ".join(
-            v.details_ar for v in getattr(proposal, "verdicts", ()) or () if not v.passed and v.details_ar
+            v.details_ar
+            for v in getattr(proposal, "verdicts", ()) or ()
+            if not v.passed and v.details_ar
         )
-        note = "اقتراح الدماغ مرفوض عند البوابات — رجوع للمخطط الحتمي" + (f": {reasons}" if reasons else "")
+        note = "اقتراح الدماغ مرفوض عند البوابات — رجوع للمخطط الحتمي" + (
+            f": {reasons}" if reasons else ""
+        )
         return _with_note(fallback, note), note
 
     plan = parse_brain_plan(getattr(proposal, "text", "") or "", brain_name)

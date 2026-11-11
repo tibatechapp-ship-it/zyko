@@ -119,6 +119,20 @@ def _final_sources(result: PipelineResult) -> dict[str, str]:
     return result.final_sources
 
 
+# معيب مقصود حتمي لقياس قيمة الحلقة: التوليد المثالي (قوالب 100/100) لا
+# يحتاج إصلاحًا، فتُثبَت قيمة مراجعة←إصلاح على هذا المقطع — docstrings
+# مفقودة (R-QLT-204) ومقارنة None بـ == (R-QLT-206)، وكلها قابلة للإصلاح.
+_LOOP_VALUE_PROBE = """def handler(items):
+    return [x for x in items if x]
+
+
+def other(value):
+    if value == None:
+        return 0
+    return value
+"""
+
+
 def _check_idempotence(result: PipelineResult) -> list[str]:
     """G3: تمرير ناتج الحلقة النهائي على مُصلِح جديد ⇒ لا تغيير إطلاقًا."""
     problems: list[str] = []
@@ -146,13 +160,20 @@ def _run_anchor(engine: PipelineEngine, label: str, desc: str, tmp: Path) -> Gat
         row.problems.append("لم تُولَّد أي ملفات")
         return row
 
-    # G4 التحسن: لا تراجع في أي ملف + إصلاحات فعلية
+    # G4 التحسن: لا تراجع في أي ملف + قيمة حلقة مثبتة
     regressions = [f["path"] for f in first.per_file if f["score_after"] < f["score_before"]]
     if regressions:
         row.problems.append(f"ملفات تراجعت درجتها: {', '.join(regressions)}")
-    if first.fixed_total == 0:
-        row.problems.append("لا إصلاحات — المراسي يجب أن تُظهر قيمة الحلقة")
-    row.improved = not regressions and first.fixed_total > 0
+    if first.fixed_total > 0:
+        loop_value = True
+    else:
+        # التوليد المثالي لا يحتاج إصلاحًا — القيمة تُثبَت بمعيب مقصود حتمي:
+        # يجب أن يتعرف عليه المُصلِح ويصلحه، وإلا فقيمة الحلقة مفقودة فعلًا.
+        probe = FixerEngine().fix_source(_LOOP_VALUE_PROBE, "loop_probe.py")
+        loop_value = probe.changed
+        if not probe.changed:
+            row.problems.append("قيمة الحلقة مفقودة: حتى المعيب المقصود لم يُصلَح")
+    row.improved = not regressions and loop_value
 
     # G3 الاعتدال
     idem = _check_idempotence(first)

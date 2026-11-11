@@ -13,8 +13,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from zyko.ai.brains import GateVerdict, Proposal
 from zyko.orchestrator import parse_brain_plan, plan_with_brain, planner_prompt, route
 from zyko.orchestrator.classify import classify
@@ -308,13 +306,24 @@ def test_default_goal_without_brain_unchanged(tmp_path) -> None:
 # ------------------------------------------------------------- CLI
 def test_cli_do_requires_model_with_brain(capsys) -> None:
     """--brain بلا --model ⇒ خطأ استخدام 2 ورسالة عربية على stderr."""
-    from zyko.cli.commands import cmd_do
     from types import SimpleNamespace
 
+    from zyko.cli.commands import cmd_do
+
     args = SimpleNamespace(
-        goal="راجع x.py", path=None, file=None, src=None, description=None,
-        brain="qwen", model=None, qwen_host=None, ollama_host=None,
-        write=False, json=False, receipt=None, dry_run=True,
+        goal="راجع x.py",
+        path=None,
+        file=None,
+        src=None,
+        description=None,
+        brain="qwen",
+        model=None,
+        qwen_host=None,
+        ollama_host=None,
+        write=False,
+        json=False,
+        receipt=None,
+        dry_run=True,
     )
     assert cmd_do(args) == 2
     err = capsys.readouterr().err
@@ -332,9 +341,19 @@ def test_cli_do_with_brain_fallback_prints_note(capsys, monkeypatch) -> None:
 
     monkeypatch.setattr(ai_cli, "build_brain", fake_build_brain)
     ns = SimpleNamespace(
-        goal="راجع نقطة/الدخول.py", path=None, file=None, src=None, description=None,
-        brain="qwen", model="m", qwen_host=None, ollama_host=None,
-        write=False, json=False, receipt=None, dry_run=True,
+        goal="راجع نقطة/الدخول.py",
+        path=None,
+        file=None,
+        src=None,
+        description=None,
+        brain="qwen",
+        model="m",
+        qwen_host=None,
+        ollama_host=None,
+        write=False,
+        json=False,
+        receipt=None,
+        dry_run=True,
     )
     # الملف غير موجود ⇒ الخطة الحتمية تُنفَّذ وتفشل خطوتها بأدب — لكن الملاحظة طُبعت
     from zyko.cli import commands  # noqa: F401 — يثبت قابلية الاستيراد
@@ -359,9 +378,19 @@ def test_cli_do_with_brain_accepted_prints_note(tmp_path, capsys, monkeypatch) -
 
     monkeypatch.setattr(ai_cli, "build_brain", fake_build_brain)
     ns = SimpleNamespace(
-        goal=f"افحص {target}", path=None, file=None, src=None, description=None,
-        brain="qwen", model="m", qwen_host=None, ollama_host=None,
-        write=False, json=False, receipt=None, dry_run=True,
+        goal=f"افحص {target}",
+        path=None,
+        file=None,
+        src=None,
+        description=None,
+        brain="qwen",
+        model="m",
+        qwen_host=None,
+        ollama_host=None,
+        write=False,
+        json=False,
+        receipt=None,
+        dry_run=True,
     )
     from zyko.cli import commands
 

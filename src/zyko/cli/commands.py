@@ -477,7 +477,12 @@ def cmd_gauntlet(args: Any) -> int:
         if repeats < 1:
             print("خطأ: --repeats يجب أن يكون 1 على الأقل", file=sys.stderr)
             return 2
-        stress = run_stress_gauntlet(per_intent, repeats=repeats, review_sample=review_sample)
+        stress = run_stress_gauntlet(
+            per_intent,
+            repeats=repeats,
+            review_sample=review_sample,
+            execute=execute,
+        )
         if getattr(args, "json_out", None):
             out_path = Path(getattr(args, "json_out"))
             out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -512,7 +517,9 @@ def cmd_compare(args: Any) -> int:
 
     runs = int(getattr(args, "runs", 3))
     if runs < 2:
-        print("خطأ: --runs يجب أن يكون 2 على الأقل — الحتمية تحتاج تشغيلين للمقارنة", file=sys.stderr)
+        print(
+            "خطأ: --runs يجب أن يكون 2 على الأقل — الحتمية تحتاج تشغيلين للمقارنة", file=sys.stderr
+        )
         return 2
     report = run_compare(
         args.target,
@@ -619,7 +626,9 @@ def cmd_do(args: Any) -> int:
 
     brain_choice = getattr(args, "brain", None)
     if brain_choice and not getattr(args, "model", None):
-        print(f"خطأ: --brain {brain_choice} يتطلب --model — مثال: --model qwen2.5:7b", file=sys.stderr)
+        print(
+            f"خطأ: --brain {brain_choice} يتطلب --model — مثال: --model qwen2.5:7b", file=sys.stderr
+        )
         return 2
 
     classification = classify(goal)

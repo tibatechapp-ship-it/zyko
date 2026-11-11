@@ -37,7 +37,7 @@ def test_json_payload_structure(result):
     assert d["ok"] is True
     assert d["plan"]["name"] == "todo-cli"
     assert d["failed_stage"] is None and d["error_ar"] is None
-    assert d["fixed_total"] > 0
+    assert d["fixed_total"] == 0  # القوالب المثالية: لا إصلاحات
     assert d["summary_before"]["files"] == len(d["py_files"]) == d["summary_after"]["files"]
     for f in d["per_file"]:
         for o in f["outcomes"]:
@@ -49,7 +49,7 @@ def test_text_report_sections(result):
     assert "حلقة التغذية الراجعة" in t
     assert "المخطط: todo-cli" in t
     assert "الحكم النهائي:" in t
-    assert "الإصلاح:" in t  # كل ملاحظة تعرض اقتراحها العربي
+    assert "المصائر: أُصلح 0 — يدوي 0 — يبقى 0" in t  # قوالب مثالية بلا ملاحظات
     assert "[todo-cli" in t or any(p.startswith("[") for p in t.splitlines())
 
 

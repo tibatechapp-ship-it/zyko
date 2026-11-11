@@ -173,7 +173,9 @@ def review_large_file(path: str | Path) -> ReviewResult:
     except OSError as exc:
         return _refusal(str(p), f"تعذّر فحص حجم الملف: {exc}")
     if size > MAX_LARGE_BYTES:
-        return _refusal(str(p), f"الملف يتجاوز سقف المراجعة المقطّعة ({size} بايت > {MAX_LARGE_BYTES})")
+        return _refusal(
+            str(p), f"الملف يتجاوز سقف المراجعة المقطّعة ({size} بايت > {MAX_LARGE_BYTES})"
+        )
     try:
         source = p.read_text(encoding="utf-8")
     except UnicodeDecodeError:

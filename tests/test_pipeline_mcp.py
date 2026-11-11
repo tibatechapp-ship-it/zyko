@@ -46,7 +46,7 @@ def test_run_pipeline_dry_run(server):
     payload = json.loads(resp["result"]["content"][0]["text"])
     assert payload["tool"] == "run_pipeline"
     assert payload["ok"] is True
-    assert payload["summary"]["fixed"] > 0
+    assert payload["summary"]["fixed"] == 0  # القوالب المثالية: لا إصلاحات
     assert payload["plan"]["name"] == "todo-cli"
     for f in payload["per_file"]:
         for o in f["outcomes"]:

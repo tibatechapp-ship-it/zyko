@@ -38,6 +38,11 @@ def cls_name(module: str) -> str:
     return "".join(part.capitalize() for part in module.split("_"))
 
 
+def _doc3(text: str) -> str:
+    """يغلّف نص docstring الثلاثي للاستيفاء داخل القوالب المتشعبة بلا اقتباس في المصدر."""
+    return "'''" + text + "'''"
+
+
 def _readme(plan: ProjectPlan, run_lines: list[str]) -> GenFile:
     disp = plan.display_name or plan.name
     mods = "\n".join(f"- `{m}`" for m in plan.modules)
@@ -140,7 +145,7 @@ def _cli_core_section(module: str) -> str:
 class {C}Row:
     """صف {module}: سجل قصير قابل للتخزين في JSON."""
 
-    id: int
+    row_id: int
     title: str
     done: bool = False
 
@@ -153,21 +158,25 @@ class {C}Store:
         self._seq = 0
 
     def add(self, title: str) -> {C}Row:
+        """أضف صفًا جديدًا بعنوان غير فارغ وارجع به برقم تسلسلي صاعد."""
         title = title.strip()
         if not title:
             raise ValueError("العنوان فارغ")
         self._seq += 1
-        row = {C}Row(id=self._seq, title=title)
-        self._rows[row.id] = row
+        row = {C}Row(row_id=self._seq, title=title)
+        self._rows[row.row_id] = row
         return row
 
     def list(self) -> list[{C}Row]:
+        """ارجع بكل الصفوف مرتبة برقم المعرف — عرض لا يغيّر الحالة."""
         return [self._rows[k] for k in sorted(self._rows)]
 
     def get(self, row_id: int) -> {C}Row | None:
+        """ارجع بالصف المطلوب أو None إن لم يوجد — بحث بلا آثار جانبية."""
         return self._rows.get(row_id)
 
     def toggle(self, row_id: int) -> bool:
+        """اقلب حالة إنجاز الصف وارجع True، أو False إن كان مفقودًا."""
         row = self._rows.get(row_id)
         if row is None:
             return False
@@ -175,41 +184,30 @@ class {C}Store:
         return True
 
     def remove(self, row_id: int) -> bool:
+        """احذف الصف وارجع True إن وُجد وحُذف، وFalse إن لم يوجد."""
         return self._rows.pop(row_id, None) is not None
 
     def to_json(self) -> str:
+        """سلسل كل الصفوف إلى JSON عربي مقروء بترتيب المعرفات."""
         rows = [r.__dict__ for r in self.list()]
         return json.dumps(rows, ensure_ascii=False, indent=2)
 
     @classmethod
     def from_json(cls, raw: str) -> "{C}Store":
+        """أعد بناء المخزن من JSON سابق مع مواصلة الترقيم من أحدث معرف."""
         store = cls()
         for row in json.loads(raw):
             r = {C}Row(**row)
-            store._rows[r.id] = r
-            store._seq = max(store._seq, r.id)
+            store._rows[r.row_id] = r
+            store._seq = max(store._seq, r.row_id)
         return store
 '''
 
 
-def _cli_cli_section(module: str) -> str:
-    return f'''    # --- {module} ---
-    sub_{module} = mods.add_parser("{module}", help="إدارة {module} (add/list/rm/toggle)")
-    {module}_sub = sub_{module}.add_subparsers(dest="{module}_cmd", required=True)
-    p = {module}_sub.add_parser("add", help="إضافة صف جديد")
-    p.add_argument("title", help="العنوان")
-    p = {module}_sub.add_parser("list", help="عرض الصفوف")
-    p = {module}_sub.add_parser("rm", help="حذف برقم المعرف")
-    p.add_argument("id", type=int)
-    p = {module}_sub.add_parser("toggle", help="قلب حالة الإنجاز")
-    p.add_argument("id", type=int)
-'''
-
-
 def build_python_cli(plan: ProjectPlan) -> dict[str, GenFile]:
+    crud_doc = _doc3("دورة CRUD كاملة: إضافة ثم عرض وقلب وحذف بترقيم متسلسل صاعد")
     pkg = plan.pkg
     core_sections = "".join(_cli_core_section(m) for m in plan.modules)
-    cli_sections = "".join(_cli_cli_section(m) for m in plan.modules)
     main_body = "\n".join(
         f'''    if args.module == "{m}":
         store = {cls_name(m)}Store()
@@ -221,7 +219,7 @@ def build_python_cli(plan: ProjectPlan) -> dict[str, GenFile]:
     """منفّذ أوامر {m} القصيرة — يطبع بالعربية ويرجع كود خروج."""
     if args.{m}_cmd == "add":
         row = store.add(args.title)
-        print(f"أُضيف {{row.id}}: {{row.title}}")
+        print(f"أُضيف {{row.row_id}}: {{row.title}}")
         return 0
     if args.{m}_cmd == "list":
         rows = store.list()
@@ -230,7 +228,7 @@ def build_python_cli(plan: ProjectPlan) -> dict[str, GenFile]:
             return 0
         for r in rows:
             mark = "✓" if r.done else "·"
-            print(f"{{r.id}} {{mark}} {{r.title}}")
+            print(f"{{r.row_id}} {{mark}} {{r.title}}")
         return 0
     if args.{m}_cmd == "rm":
         print("حُذف" if store.remove(args.id) else "غير موجود")
@@ -276,9 +274,19 @@ from .core import {", ".join(cls_name(m) + "Store" for m in plan.modules)}
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """ابنِ محلّل الأوامر الجذري: وحدة فرعية لكل مخزن مع أوامرها الأربعة."""
     root = argparse.ArgumentParser(prog="{plan.name}", description="{plan.description.strip()[:70]}")
     mods = root.add_subparsers(dest="module", required=True)
-{cli_sections}
+    for name in ({", ".join(repr(m) for m in plan.modules)}{"," if len(plan.modules) == 1 else ""}):
+        sub = mods.add_parser(name, help=f"إدارة {{name}} (add/list/rm/toggle)")
+        commands = sub.add_subparsers(dest=f"{{name}}_cmd", required=True)
+        p = commands.add_parser("add", help="إضافة صف جديد")
+        p.add_argument("title", help="العنوان")
+        commands.add_parser("list", help="عرض الصفوف")
+        p = commands.add_parser("rm", help="حذف برقم المعرف")
+        p.add_argument("id", type=int)
+        p = commands.add_parser("toggle", help="قلب حالة الإنجاز")
+        p.add_argument("id", type=int)
     return root
 
 
@@ -286,6 +294,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """نفّذ الأمر المطلوب على وحدته وارجع بكود خروج: 0 نجاح و2 فشل."""
     args = build_parser().parse_args(argv)
 {main_body}
     print("لا وحدة مطابقة", file=sys.stderr)
@@ -303,7 +312,7 @@ from .cli import main
 raise SystemExit(main())
 '''
 
-    tests = f'''"""اختبارات أولية: CRUD لكل وحدة + دخان CLI."""
+    tests = f'''"""اختبارات أولية: CRUD لكل وحدة + دخان CLI — فحوص صريحة تنجو من -O."""
 
 from __future__ import annotations
 
@@ -313,33 +322,40 @@ from {pkg}.cli import build_parser, main
 from {pkg}.core import {", ".join(cls_name(m) + "Store" for m in plan.modules)}
 
 
+def _check(condition: bool, message: str) -> None:
+    """فحص صريح برفع AssertionError — ينجو من تشغيل python -O حيث يختفي assert."""
+    if not condition:
+        raise AssertionError(message)
+
+
 {
         "".join(
             f"""
 def test_{m}_crud_roundtrip() -> None:
+    {crud_doc}
     store = {cls_name(m)}Store()
     a = store.add("أول")
     b = store.add("ثانٍ")
-    assert [r.id for r in store.list()] == [a.id, b.id]
-    assert store.toggle(b.id) is True
-    assert store.list()[1].done is True
-    assert store.remove(a.id) is True
-    assert store.get(a.id) is None
+    _check([r.row_id for r in store.list()] == [a.row_id, b.row_id], "الترقيم التسلسلي يجب أن يكون صاعدًا")
+    _check(store.toggle(b.row_id) is True, "قلب حالة صف موجود يجب أن يرجع True")
+    _check(store.list()[1].done is True, "الصف المقلوب يجب أن يكون منجزًا")
+    _check(store.remove(a.row_id) is True, "حذف صف موجود يجب أن يرجع True")
+    _check(store.get(a.row_id) is None, "الصف المحذوف يجب أن يختفي")
     with pytest.raises(ValueError):
-        store.add("   ")
-""".rstrip()
+        store.add("   ")""".rstrip()
             for m in plan.modules
         )
     }
 
 
 def test_cli_help_exits_zero(capsys: pytest.CaptureFixture[str]) -> None:
+    """--help يخرج بكود 0 ويذكر أول وحدة في المخرجات."""
     parser = build_parser()
-    assert parser is not None
+    _check(parser is not None, "محلّل الأوامر يجب أن يُبنى")
     with pytest.raises(SystemExit) as exc:
         main(["--help"])
-    assert exc.value.code == 0
-    assert "{plan.modules[0]}" in capsys.readouterr().out
+    _check(exc.value.code == 0, "كود خروج المساعدة يجب أن يكون 0")
+    _check("{plan.modules[0]}" in capsys.readouterr().out, "المساعدة يجب أن تذكر الوحدة الأولى")
 
 
 def test_cli_dispatch_routes_commands(capsys: pytest.CaptureFixture[str]) -> None:
@@ -348,10 +364,10 @@ def test_cli_dispatch_routes_commands(capsys: pytest.CaptureFixture[str]) -> Non
     المخزن في الذاكرة ويُبنى لكل استدعاء، فالقائمة بعد إضافة متوقّع أن تكون فارغة —
     المهم هنا أن التوجيه يعمل وأن الإخراج العربي صحيح.
     """
-    assert main(["{plan.modules[0]}", "add", "صف تجريبي"]) == 0
-    assert "أُضيف" in capsys.readouterr().out
-    assert main(["{plan.modules[0]}", "list"]) == 0
-    assert "لا صفوف بعد" in capsys.readouterr().out
+    _check(main(["{plan.modules[0]}", "add", "صف تجريبي"]) == 0, "الإضافة عبر CLI يجب أن تنجح")
+    _check("أُضيف" in capsys.readouterr().out, "رسالة الإضافة العربية مفقودة")
+    _check(main(["{plan.modules[0]}", "list"]) == 0, "العرض عبر CLI يجب أن ينجح")
+    _check("لا صفوف بعد" in capsys.readouterr().out, "رسالة القائمة الفارغة مفقودة")
 '''
 
     files: dict[str, GenFile] = {
@@ -400,7 +416,7 @@ class {C}In(BaseModel):
 class {C}Out({C}In):
     """{module} كما يُعاد للعميل — مع المعرّف."""
 
-    id: int
+    item_id: int
 
 
 {module}_items: dict[int, {C}Out] = {{}}
@@ -409,18 +425,21 @@ class {C}Out({C}In):
 
 @app.post("/{module}", response_model={C}Out, status_code=201, tags=["{module}"])
 def create_{module}(payload: {C}In) -> {C}Out:
-    item = {C}Out(id=next({module}_seq), **payload.model_dump())
-    {module}_items[item.id] = item
+    """أنشئ {module} جديدًا من الحمولة وارجع به معرقّفًا برمز 201."""
+    item = {C}Out(item_id=next({module}_seq), **payload.model_dump())
+    {module}_items[item.item_id] = item
     return item
 
 
 @app.get("/{module}", response_model=list[{C}Out], tags=["{module}"])
 def list_{module}() -> list[{C}Out]:
+    """ارجع بكل عناصر {module} مرتبة بالمعرف — قراءة لا تغيّر الحالة."""
     return [{module}_items[k] for k in sorted({module}_items)]
 
 
 @app.get("/{module}/{{item_id}}", response_model={C}Out, tags=["{module}"])
 def get_{module}(item_id: int) -> {C}Out:
+    """ارجع بعنصر {module} المطلوب أو رمز 404 إن كان مفقودًا."""
     item = {module}_items.get(item_id)
     if item is None:
         raise HTTPException(status_code=404, detail="{module}: غير موجود")
@@ -429,11 +448,13 @@ def get_{module}(item_id: int) -> {C}Out:
 
 @app.delete("/{module}/{{item_id}}", status_code=204, tags=["{module}"])
 def delete_{module}(item_id: int) -> None:
+    """احذف عنصر {module} بمعرّفه — حذف صامت مهما كانت حالة العنصر."""
     {module}_items.pop(item_id, None)
 '''
 
 
 def build_fastapi_api(plan: ProjectPlan) -> dict[str, GenFile]:
+    crud_doc_api = _doc3("دورة CRUD عبر TestClient: إنشاء ثم قراءة وحذف ثم تحقق من 404")
     sections = "".join(_api_module_section(m) for m in plan.modules)
     app_py = f'''"""تطبيق {plan.display_name or plan.name} — FastAPI مع CRUD في الذاكرة.
 
@@ -457,11 +478,12 @@ app = FastAPI(
 
 @app.get("/health", tags=["نظام"])
 def health() -> dict[str, str]:
+    """فحص جهوزية التطبيق: يرجع حالته واسمه بلا ذاكرة ولا منافذ."""
     return {{"status": "ok", "app": "{plan.name}"}}
 {sections}
 '''
 
-    tests = f'''"""اختبارات أولية عبر TestClient — لا خادم حقيقي ولا منافذ."""
+    tests = f'''"""اختبارات أولية عبر TestClient — لا خادم حقيقي ولا منافذ، فحوص صريحة تنجو من -O."""
 
 from __future__ import annotations
 
@@ -476,25 +498,32 @@ from app.main import app  # noqa: E402
 client = TestClient(app)
 
 
+def _check(condition: bool, message: str) -> None:
+    """فحص صريح برفع AssertionError — ينجو من تشغيل python -O حيث يختفي assert."""
+    if not condition:
+        raise AssertionError(message)
+
+
 def test_health() -> None:
+    """/health يرجع رمز 200 وحالة ok."""
     r = client.get("/health")
-    assert r.status_code == 200
-    assert r.json()["status"] == "ok"
+    _check(r.status_code == 200, "فحص الجهوزية يجب أن يرجع 200")
+    _check(r.json()["status"] == "ok", "حالة الجهوزية يجب أن تكون ok")
 {
         "".join(
             f"""
 
 def test_{m}_crud_roundtrip() -> None:
+    {crud_doc_api}
     r = client.post("/{m}", json={{"title": "أول {m}"}})
-    assert r.status_code == 201
+    _check(r.status_code == 201, "الإنشاء يجب أن يرجع 201")
     item = r.json()
-    assert item["id"] >= 1 and item["done"] is False
+    _check(item["item_id"] >= 1 and item["done"] is False, "العنصر الجديد يجب أن يكون معرقّفًا وغير منجز")
 
-    assert client.get("/{m}").status_code == 200
-    assert client.get(f"/{m}/{{item['id']}}").json()["title"] == "أول {m}"
-    assert client.delete(f"/{m}/{{item['id']}}").status_code == 204
-    assert client.get(f"/{m}/{{item['id']}}").status_code == 404
-""".rstrip()
+    _check(client.get("/{m}").status_code == 200, "القائمة يجب أن ترجع 200")
+    _check(client.get(f"/{m}/{{item['item_id']}}").json()["title"] == "أول {m}", "العنوان المعاد يجب أن يطابق المُنشأ")
+    _check(client.delete(f"/{m}/{{item['item_id']}}").status_code == 204, "الحذف يجب أن يرجع 204")
+    _check(client.get(f"/{m}/{{item['item_id']}}").status_code == 404, "بعد الحذف يجب أن يرجع 404")""".rstrip()
             for m in plan.modules
         )
     }
@@ -640,7 +669,7 @@ nav a { color: var(--accent); text-decoration: none; }
 })();
 """
 
-    tests = f'''"""اختبارات بنية الموقع: RTL والاتجاه وأقسام الوحدات وقواعد CSS المنطقية."""
+    tests = f'''"""اختبارات بنية الموقع: RTL والاتجاه وأقسام الوحدات وقواعد CSS المنطقية — فحوص صريحة تنجو من -O."""
 
 from __future__ import annotations
 
@@ -649,32 +678,42 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _check(condition: bool, message: str) -> None:
+    """فحص صريح برفع AssertionError — ينجو من تشغيل python -O حيث يختفي assert."""
+    if not condition:
+        raise AssertionError(message)
+
+
 def test_structure_exists() -> None:
+    """كل ملفات الموقع الثلاثة موجودة على القرص."""
     for rel in ("index.html", "css/style.css", "js/main.js"):
-        assert (ROOT / rel).is_file(), f"مفقود: {{rel}}"
+        _check((ROOT / rel).is_file(), f"مفقود: {{rel}}")
 
 
 def test_html_is_rtl_arabic() -> None:
+    """الجذر RTL عربي وكل وحدة لها قسم بمعرّفها."""
     html = (ROOT / "index.html").read_text(encoding="utf-8")
-    assert 'dir="rtl"' in html
-    assert 'lang="ar"' in html
+    _check('dir="rtl"' in html, "اتجاه الصفحة يجب أن يكون rtl")
+    _check('lang="ar"' in html, "لغة الصفحة يجب أن تكون ar")
     for m in {plan.modules!r}:
-        assert f'id="{{m}}"' in html
+        _check(f'id="{{m}}"' in html, f"قسم الوحدة {{m}} مفقود")
 
 
 def test_css_uses_logical_properties_only() -> None:
+    """CSS بلا خصائص فيزيائية يسار/يمين — قواعد منطقية فقط تنعكس مع RTL."""
     css = (ROOT / "css" / "style.css").read_text(encoding="utf-8")
     for physical in ("text-align: left", "text-align: right", "float: left", "float: right",
                      "margin-left", "margin-right", "padding-left", "padding-right"):
-        assert physical not in css, f"خاصية فيزيائية تعكس في RTL: {{physical}}"
-    assert "padding-inline" in css
-    assert "text-align: start" in css
+        _check(physical not in css, f"خاصية فيزيائية تعكس في RTL: {{physical}}")
+    _check("padding-inline" in css, "يجب استخدام padding-inline المنطقية")
+    _check("text-align: start" in css, "المحاذاة يجب أن تكون start المنطقية")
 
 
 def test_js_nonempty_and_safe() -> None:
+    """جافاسكربت تعمل على كائن document وبلا استدعاء eval."""
     js = (ROOT / "js" / "main.js").read_text(encoding="utf-8")
-    assert "document" in js
-    assert "eval(" not in js
+    _check("document" in js, "السكربت يجب أن يستخدم document")
+    _check("eval(" not in js, "eval محظورة في السكربت المولَّد")
 '''
 
     pyproject = """[tool.pytest.ini_options]

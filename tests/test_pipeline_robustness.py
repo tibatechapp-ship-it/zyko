@@ -12,6 +12,8 @@ import json
 
 import pytest
 
+from tests.test_pipeline_engine import _FINDING_FIXABLE, _InjectedReviewer, _probe_planner
+from zyko.fixer import FixerEngine
 from zyko.pipeline.engine import (
     MAX_DESCRIPTION_LEN,
     STAGE_CODER,
@@ -103,6 +105,8 @@ def test_unwritable_fixed_output_is_structured(engine, tmp_path, monkeypatch):
 
     نُفشل الكتابة **فوق ملف قائم** فقط — وهي بالضبط خطوة كتابة الإصلاحات
     (التوليد يكتب ملفات جديدة، فلا يتأثر) — عزل دقيق للخطوة المستهدفة.
+    القوالب المثالية لا تنتج إصلاحات، فتُحقن ملاحظة قابلة للإصلاح حتميًا
+    في cli.py لتفعيل خطوة الكتابة نفسها.
     """
     real_write_text = __import__("pathlib").Path.write_text
 
@@ -112,7 +116,11 @@ def test_unwritable_fixed_output_is_structured(engine, tmp_path, monkeypatch):
         return real_write_text(self, data, *a, **k)
 
     monkeypatch.setattr("pathlib.Path.write_text", failing_overwrite)
-    r = engine.run(DESC, tmp_path / "todo", write=True)
+    fixer = FixerEngine(
+        reviewer=_InjectedReviewer({"cli.py": [_FINDING_FIXABLE]}),
+        planners={"R-QLT-204": _probe_planner},
+    )
+    r = PipelineEngine(fixer=fixer).run(DESC, tmp_path / "todo", write=True)
     monkeypatch.undo()
     assert_structured_failure(r, STAGE_FIXER)
     assert "النسخ المُصلَحة" in r.error_ar
@@ -171,4 +179,4 @@ def test_success_after_failures_untouched(engine, tmp_path):
         assert engine.run(bad, tmp_path / "bad", write=False).ok is False
     r = engine.run(DESC, tmp_path / "good", write=False)
     assert r.ok
-    assert r.fixed_total > 0
+    assert r.fixed_total == 0  # القوالب المثالية: لا ملاحظات ولا إصلاحات

@@ -30,7 +30,6 @@ from pathlib import Path
 from typing import Any
 
 from zyko.orchestrator import classify, extract_context, route, run
-from zyko.orchestrator.classify import TaskType
 from zyko.orchestrator.verify import verify_orchestration_receipt
 
 __all__ = [
@@ -123,12 +122,7 @@ class CompareReport:
     @property
     def ok(self) -> bool:
         """القبول: دقة كاملة + حتمية + verify + المنافس إن شُغِّل لم يفشل هيكليًا."""
-        return (
-            self.accuracy == 1.0
-            and self.determinism_ok
-            and self.verify_ok
-            and not self.problems
-        )
+        return self.accuracy == 1.0 and self.determinism_ok and self.verify_ok and not self.problems
 
     def to_dict(self, *, include_timing: bool = False) -> dict[str, Any]:
         payload: dict[str, Any] = {
@@ -151,7 +145,10 @@ class CompareReport:
 
     def to_json(self, *, include_timing: bool = False) -> str:
         return json.dumps(
-            self.to_dict(include_timing=include_timing), ensure_ascii=False, sort_keys=True, indent=2
+            self.to_dict(include_timing=include_timing),
+            ensure_ascii=False,
+            sort_keys=True,
+            indent=2,
         )
 
     def table_ar(self) -> str:
@@ -172,7 +169,9 @@ class CompareReport:
                 f"{comp.output_lines} سطرًا خرجًا"
             )
         else:
-            lines.append(f"المنافس ({comp.command or '—'}): {comp.error_ar or COMPETITOR_NOT_RUN_AR}")
+            lines.append(
+                f"المنافس ({comp.command or '—'}): {comp.error_ar or COMPETITOR_NOT_RUN_AR}"
+            )
         lines.append("-" * 62)
         if self.problems:
             for problem in self.problems:
@@ -249,7 +248,9 @@ def _run_competitor(
 ) -> CompetitorResult:
     """شغّل أمر المنافس كما مرّره المستخدم — بلا رقم عند الغياب أو الفشل."""
     if not cmd_template or not str(cmd_template).strip():
-        return CompetitorResult(command=cmd_template or "", ran=False, error_ar=COMPETITOR_NOT_RUN_AR)
+        return CompetitorResult(
+            command=cmd_template or "", ran=False, error_ar=COMPETITOR_NOT_RUN_AR
+        )
     if "{path}" not in str(cmd_template):
         return CompetitorResult(
             command=str(cmd_template),

@@ -1,5 +1,58 @@
 # Changelog
 
+## Unreleased — template quality: the signed discovery closes at 100/100 and the guard threshold doubles to 70
+
+Gauntlet+ self-review (previous cycle) had signed an honest discovery: the
+factory's raw output bottomed at 48 (worst file 20) — generated test files
+were flagged for `assert`-heavy validation, every store method lacked a
+docstring, dataclass/API fields shadowed builtins (`id`), and 3-module
+`build_parser` exceeded the 50-line function budget. This cycle repairs the
+templates themselves, not the threshold:
+
+- **Every generated file now reviews at 100/100, zero findings** (40-plan
+  matrix sweep, all three templates). Generated tests validate through an
+  explicit `_check(condition, message_ar)` helper that raises
+  `AssertionError` — surviving `python -O` where bare asserts vanish
+  (R-ERR-007, ×746 hits eliminated). Store/API methods and test functions
+  carry Arabic docstrings (R-QLT-204, ×730 eliminated). `TasksRow.id` →
+  `row_id`, `{C}Out.id` → `item_id` (R-QLT-208 eliminated; JSON keys stay
+  self-consistent inside each generated project). `build_parser` becomes a
+  data-driven loop over module names (R-QLT-201 eliminated) — and the
+  docstring text for nested template blocks is interpolated via a `_doc3`
+  helper so no triple quote ever nests inside an f-string: templates.py
+  stays Python 3.11-clean under the same grammar CI enforces.
+- **`DEFAULT_REVIEW_MIN_SCORE` doubles 45 → 70**, documented in-place as a
+  *signed discovery* floor: the historical worst (48) sits 22 points below
+  it, current reality (100) sits 30 above it — any template regression
+  slams the guard immediately.
+- **The stress layer is honest about its embedded gauntlet**:
+  `StressReport.ok` now includes `gauntlet.ok` — a 96/100 build-and-execute
+  result can no longer hide under a green determinism/speed/review table.
+- **`zyko gauntlet --execute` now reaches the stress layer** (CLI wiring
+  gap: the flag was silently dropped when `--repeats/--review-sample` were
+  active). Verified live: `--per-intent 10 --execute 12` runs 12 real
+  pytest suites inside generated projects — 100/100 pass, min review score
+  100 ≥ 70, byte-identical matrix across repeats.
+- **The factory's phase-4 gate proves the loop's value deterministically**:
+  with perfect templates nothing needs fixing, so the "improvement" anchor
+  (G4) now certifies the review→fix loop against a deterministic defective
+  probe (missing docstrings + `== None`) instead of demanding that fresh
+  generation contain findings. Phase-3 anchors pass again.
+- **Session evidence covers the whole generated tree** (`zyko ai session`):
+  evidence hashes were fix-loop rewrites only, which is empty when
+  generation is already perfect — now every produced file on disk is
+  hashed into the receipt, so `evidence` never lies about what exists.
+- Pipeline tests preserve their full semantic coverage through
+  deterministic injection: an `_InjectedReviewer` (subclassed
+  `ReviewEngine`) plus a probe planner exercise outcome fates (fixed /
+  manual / open), suggestion completeness, and the unwritable-disk
+  structured failure at STAGE_FIXER — no test now depends on raw
+  generation being imperfect.
+
+**Test count: 2008 passed (13 skipped), 0 failures — ruff check + format
+clean across src/tests/benchmarks (lint debt from the previous cycle's
+commits also cleared: unused imports and unsorted blocks fixed).**
+
 ## Unreleased — five tracks at once: brain-planned `do`, huge files, Gauntlet+, end-to-end integration, honest comparison
 
 Five capability tracks land together, each independently verified and

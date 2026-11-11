@@ -182,9 +182,11 @@ class AISession:
                 f"أدنى درجة بعد الإصلاح {result.min_score_after} دون الحد {self.fail_under}"
                 f" — تبقى {result.open_total + result.manual_total} ملاحظة"
             )
+        # الإثبات يغطي كل ملفات المشروع المولَّد على القرص (وليس ما أصلحه
+        # المحرّك فقط) — القوالب المثالية لا تحتاج إصلاحًا فتبقى الإثباتات كاملة.
         evidence = {
             rel: hash_file(out_path / rel)
-            for rel in sorted(result.written)
+            for rel in sorted(set(result.files) | set(result.written))
             if (out_path / rel).is_file()
         }
         receipt.files_written = sorted(result.written)

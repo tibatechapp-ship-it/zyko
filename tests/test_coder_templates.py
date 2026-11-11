@@ -50,9 +50,10 @@ def test_python_cli_structure_and_syntax() -> None:
     pyproject = tree["pyproject.toml"].content
     assert 'name = "demo-app"' in pyproject
     assert 'demo-app = "demo_app.cli:main"' in pyproject
-    # الوحدتان في CLI وcore
-    assert 'add_parser("tasks"' in tree["src/demo_app/cli.py"].content
-    assert 'add_parser("reports"' in tree["src/demo_app/cli.py"].content
+    # الوحدتان في CLI (حلقة بياناتية) وcore
+    cli = tree["src/demo_app/cli.py"].content
+    assert "for name in ('tasks', 'reports'):" in cli
+    assert "mods.add_parser(name" in cli
     assert "class TasksStore" in tree["src/demo_app/core.py"].content
     assert "class ReportsStore" in tree["src/demo_app/core.py"].content
 
