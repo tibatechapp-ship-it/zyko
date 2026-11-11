@@ -5,19 +5,25 @@
   1 الحلقة مرفوضة عند بوابة (خطة/نقد/تحسين)
   2 فشل هيكلي آمن (مدخلات عدائية أو فشل تنفيذ)
 
-أمر واحد: ``zyko mind "الهدف" -o مجلد`` — إدراك ← خطة ← تنفيذ ← نقد ←
-تحسين ← ذاكرة، بإيصال حتمي يُكتب في ``<out>/.zyko/mind/`` ويُطبَع ملخصه
-على الطرفية بنفس نسق بوابات المستودع (جدول مراسئ وحكم خلاصة).
+أوامر ثلاثة:
+  ``run``     — ``zyko mind "الهدف" -o مجلد``: إدراك ← خطة ← تنفيذ ← نقد ←
+              تحسين ← ذاكرة، بإيصال حتمي يُكتب في ``<out>/.zyko/mind/``
+              ويُطبَع ملخصه على الطرفية بنفس نسق بوابات المستودع.
+  ``map``     — خريطة العقل المستقل نص ثابت.
+  ``memory``  — الذاكرة العابرة للجلسات: دفتر موقّع ودروس عابرة للمشاريع،
+              بتدقيق يعاد حسابه من الرأس (سلسلة مكسورة = خروج 1).
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import Any, Sequence
 
 from zyko.mind.autodetect import EXPLICIT_CHOICES, CoreDecision, select_core
+from zyko.mind.global_memory import GlobalMemory
 from zyko.mind.loop import DEFAULT_FAIL_UNDER, DEFAULT_ROUNDS, MindLoop
 from zyko.version import __version__
 
@@ -43,12 +49,14 @@ def mind_map_text() -> str:
             "تحسين      FixerEngine + أدوات معزولة (--tools) إصلاح موثق + اختبارات حقيقية",
             "أدوات      جلسة بعقد صلاحيات وسجل تدقيق        patch_file وrun_tests موقّعة",
             "ذاكرة      <out>/.zyko/mind/                  حالة دائمة + دروس مستخلصة",
+            "الذاكرة العابرة  zyko mind memory               دفتر موقّع + دروس عابرة للمشاريع",
             "-" * 62,
             "أكواد الخروج: 0 مقبول · 1 مرفوض عند بوابة · 2 فشل هيكلي آمن",
             "أمثلة:",
             '  zyko mind "انشئ مشروع قائمة مهام مع واجهة سطر أوامر" -o ./جديد',
             '  zyko mind "اصلح الملف src/app.py" -o ./جلسة --dry-run   # تشغيل جاف',
             '  zyko mind "انشئ مشروع ملاحظات مع اختبارات" -o ./ن --rounds 2',
+            '  zyko mind memory --json   # الذاكرة العابرة: دفتر موقّع + تدقيق من الرأس',
         ]
     )
 
@@ -83,6 +91,14 @@ def register_to(sub: argparse._SubParsersAction) -> None:
 
     sub.add_parser("map", help="خريطة العقل المستقل (نص ثابت)")
 
+    p = sub.add_parser("memory", help="اعرض الذاكرة العابرة للجلسات — دفتر موقّع ودروس عابرة")
+    p.add_argument("--json", action="store_true", help="طباعة الخلاصة JSON حتميًا")
+    p.add_argument(
+        "--home",
+        default=None,
+        help="مجلد الذاكرة (افتراضي: ZYKO_DATA_DIR/mind حسب المنصة)",
+    )
+
 
 def handle_mind(args: Any) -> int:
     """وجّه أوامر العقل المستقل — نفس عقد ``handle_ai`` وأكواد الخروج."""
@@ -91,6 +107,8 @@ def handle_mind(args: Any) -> int:
         return handle_mind_map(args)
     if command == "run":
         return handle_mind_run(args)
+    if command == "memory":
+        return handle_mind_memory(args)
     print(f"أمر mind غير معروف: {command}", file=sys.stderr)
     return EXIT_USAGE
 
@@ -99,6 +117,33 @@ def handle_mind_map(_args: Any) -> int:
     """اطبع خريطة العقل — بلا عمل وبلا شبكة."""
     print(mind_map_text())
     return EXIT_OK
+
+
+def handle_mind_memory(args: Any) -> int:
+    """اعرض الذاكرة العابرة للجلسات — تدقيق موثق لا عرض حدسي.
+
+    الخلاصة حتمية بلا أي زمن، والتحقق يعاد حسابه من الرأس هنا —
+    سلسلة مكسورة تجعل الخروج 1 (بوابة تدقيق فاشلة) لا تحذيرًا صامتًا.
+    """
+    home = getattr(args, "home", None)
+    memory = GlobalMemory(home) if home else GlobalMemory()
+    data = memory.summary()
+    if getattr(args, "json", False):
+        print(json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True))
+    else:
+        print("الذاكرة العابرة للجلسات zyko mind memory")
+        print(_LINE)
+        print(f"المسار: {data['home']}")
+        print(f"الجلسات الموثقة: {data['sessions']} (مكتملة بلا فجوات: {data['sessions_ok']})")
+        print(f"الدروس العابرة للمشاريع: {data['lessons']}")
+        print(f"آخر جلسة: seq={data['last_seq']} — {data['last_outcome_ar'] or 'لا جلسات بعد'}")
+        verdict = "سلسلة سليمة ✅" if data["verify_ok"] else f"سلسلة مكسورة ❌ — {data['verify_reason_ar']}"
+        print(f"تدقيق الدفتر: {verdict}")
+        if data["lessons"]:
+            print(_LINE)
+            for index, lesson in enumerate(memory.load_lessons()[:10], start=1):
+                print(f"{index}. {lesson}")
+    return EXIT_OK if data["verify_ok"] else EXIT_FINDINGS
 
 
 def handle_mind_run(args: Any) -> int:

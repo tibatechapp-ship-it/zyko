@@ -5,8 +5,8 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.27.0-6366f1)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-2270%20passing-22c55e)](.github/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.28.0-6366f1)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-2575%20passing-22c55e)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Termux-10b981)](.github/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
@@ -19,7 +19,7 @@
 
 > توليد ← مراجعة ← إصلاح ← حارس — من بوابة واحدة، بإيصالات توجيه قابلة للتحقق، وعلى أي منصة.
 
-النسخة **0.27.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
+النسخة **0.28.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
 
 ---
 
@@ -33,7 +33,7 @@ re-computes any routing decision; byte-level determinism is a tested contract, n
 slogan). Works with **zero API keys** (deterministic brain), or a local model via
 Ollama, or any OpenAI-compatible cloud brain behind the same gates. Policy-as-code,
 MCP client+server, multi-user gateway, RAG essentials, agent crews, 2 mandatory
-dependencies, and first-class Android/Termux support. 2270 tests passing on
+dependencies, and first-class Android/Termux support. 2575 tests passing on
 Linux·macOS·Windows × Python 3.11–3.14. See [CHANGELOG](CHANGELOG.md) ·
 [Architecture](docs/ARCHITECTURE.md) · [Innovations](docs/INNOVATION.md).
 
@@ -141,6 +141,7 @@ real    0m0.828s
 | `zyko ai run` | جلسة ذكاء موثقة عبر البوابات (`planner` / `ollama` / `bestof`) |
 | `zyko mind run "الهدف" -o مجلد` | **الحلقة الإدراكية الكاملة** (المرحلة A من MIND.md): إدراك ← تخطيط ← تنفيذ ← نقد ← انعكاس وإعادة محاولة ← ذاكرة — حلقة ذاتية التصحيح: حرّاس مخرجات على كل مرحلة، وملاحظة انعكاس عربية من كل فشل تعود مدخلًا للمحاولة التالية تحت ميزانية صارمة لكل مرحلة، وكلها موثقة بالإيصال وذاكرة مشروع دائمة في `.zyko/mind/`. القلب تلقائي (`--brain auto` الافتراضي): أول مفتاح سحابي في البيئة أو نقطة Ollama محلية تفعّل دماغًا حقيقيًا خلف البوابات، والغياب يرجع الحتمي — والقرار في الإيصال بلا أي قيمة مفتاح |
 | `zyko mind run "الهدف" -o مجلد --tools` | **الأدوات المعزولة (الأولوية 3)**: جولة التحسين تشغّل اختبارات حقيقية (`pytest`/`unittest`) تحت عقد صلاحيات معلن — جذور محصورة، أمر من قائمة بيضاء بلا صدفة، بيئة بيضاء لا يعبر فيها سر، مهلة صارمة، وميزانية رقع لكل جلسة — وكل محاولة (مسموحة أو مرفوضة) موقّعة في سجل تدقيق JSONL بسلسلة sha256 كشف أي عبث بإعادة الحساب |
+| `zyko mind memory` | **الذاكرة العابرة للجلسات (الأولوية 4)**: دفتر جلسات JSONL ملحق-فقط بسلسلة sha256 يوقّع كل جلسة حلقة (الهدف بصمة لا نصًا — خصوصية بالتصميم)، ودروس عابرة للمشاريع بسقف حتمي (200 بإخلاء الأقدم أولًا) تُحمّل في كل جلسة قادمة أينما عمل العقل، واسترجاع حتمي بالبايت بلا عشوائية — والتدقيق يعاد حسابه من الرأس هنا: سلسلة مكسورة خروج 1 لا تحذير صامت |
 | `zyko ask / chat / route / serve` | البوابة والتوجيه متعدد المزوّدين |
 
 القائمة الكاملة: [docs/API.md](docs/API.md).
@@ -153,8 +154,9 @@ Linux · Windows · macOS · Android/Termux — مصفوفة CI خضراء عل�
 
 ```bash
 pytest -q
-# 2270 passed, 1 skipped  (1 = مرشح BestOfBrain غير موجود بهذه البيئة — تخطٍ موثق لا فشل؛
-#                          تخطيات ضاد الـ12 أُغلقت: ساق metrics-truth تثبّت ضاد v0.2.0 وتشغّلها)
+# 2575 passed, 19 skipped  (التخطيات موثقة بيئيًا: مزودات شبكة ودماغات غير مثبتة
+#                          في هذه البيئة — تخطٍّ لا فشل؛ تخطيات ضاد الـ12 أُغلقت:
+#                          ساق metrics-truth تثبّت ضاد v0.2.0 وتشغّلها)
 ```
 
 ---

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 from zyko.mind.core import ScriptedCore
+from zyko.mind.global_memory import GlobalMemory
 from zyko.mind.loop import MindLoop, MindReceipt
 from zyko.mind.memory import MindMemory
 
@@ -19,7 +20,7 @@ class TestHappyPath:
         assert receipt.kind == "GENERATE"
         assert receipt.plan_accepted
         steps = [s.step for s in receipt.steps]
-        assert steps == ["perceive", "plan", "execute", "critic", "memory"]
+        assert steps == ["perceive", "plan", "execute", "critic", "memory", "global-memory"]
         assert all(s.ok for s in receipt.steps)
 
     def test_generated_project_on_disk(self, tmp_path):
@@ -59,14 +60,23 @@ class TestDeterminism:
         assert hashes[0] == hashes[1]
 
     def test_receipt_json_deterministic(self, tmp_path):
+        """الحتمية الكاملة: نفس الهدف ونفس البيئة ⇒ نفس الإيصال بالبايت.
+
+        البيئة تشمل الذاكرة العابرة للجلسات — فتجدد بين الجولتين تحاكي
+        بيئتين متطابقتين بالبايت. آثار الجلسات السابقة (seq الدفتر، الدروس
+        المحملة) حالة بيئية موثقة خارج السلسلة: ``chain_hash`` متطابق دائمًا
+        بين هدفين متطابقين مهما اختلف تاريخ الجهاز.
+        """
         out = tmp_path / "proj"
         r1 = MindLoop().run(GOAL, out)
         j1 = r1.to_json()
         import shutil
 
         shutil.rmtree(out)
+        shutil.rmtree(GlobalMemory().home)  # نفس البيئة: صفر ذاكرة عابرة
         r2 = MindLoop().run(GOAL, out)
         assert j1 == r2.to_json()
+        assert r1.chain_hash == r2.chain_hash
 
     def test_chain_hash_64_hex(self, tmp_path):
         receipt = MindLoop().run(GOAL, tmp_path / "proj")
@@ -147,7 +157,7 @@ class TestDryRun:
         receipt = MindLoop().run(GOAL, out, write=False)
         assert not out.exists()
         assert receipt.dry_run
-        assert receipt.steps[-1].step == "memory"
+        assert receipt.steps[-1].step == "global-memory"
         assert "تخطٍّ" in receipt.steps[-1].details_ar
 
     def test_dry_run_receipt_ok(self, tmp_path):
@@ -161,7 +171,7 @@ class TestReceipt:
         data = json.loads(receipt.to_json())
         assert data["schema"] == "zyko.mind/receipt-v1"
         assert data["kind"] == "GENERATE"
-        assert len(data["steps"]) == 5
+        assert len(data["steps"]) == 6
 
     def test_to_md_readable(self, tmp_path):
         receipt = MindLoop().run(GOAL, tmp_path / "proj")

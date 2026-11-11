@@ -35,6 +35,7 @@ from zyko.ai.receipt import hash_file
 from zyko.mind.autodetect import CoreDecision
 from zyko.mind.core import DeterministicCore, ModelCore, core_report
 from zyko.mind.critic import CriticReport, critique
+from zyko.mind.global_memory import GlobalMemory
 from zyko.mind.memory import MindMemory
 from zyko.mind.perception import perceive
 from zyko.mind.planner import PLAN_GATE_TITLE, build_plan
@@ -110,6 +111,8 @@ class MindReceipt:
     steps: list[MindStepRecord] = field(default_factory=list)
     lessons_loaded: tuple[str, ...] = ()
     lessons_learned: tuple[str, ...] = ()
+    global_lessons_loaded: tuple[str, ...] = ()  # عابرة للمشاريع — خارج السلسلة (حالة بيئية)
+    global_session_seq: int | None = None  # seq في دفتر الجلسات — خارج السلسلة
     gaps_ar: tuple[str, ...] = ()
     reflections: list[dict] = field(default_factory=list)  # انعكاسات موثقة بترتيب زمني
     budget: dict = field(default_factory=dict)  # ميزانية إعادة المحاولة عند الختام
@@ -137,6 +140,8 @@ class MindReceipt:
             "steps": [s.to_dict() for s in self.steps],
             "lessons_loaded": list(self.lessons_loaded),
             "lessons_learned": list(self.lessons_learned),
+            "global_lessons_loaded": list(self.global_lessons_loaded),
+            "global_session_seq": self.global_session_seq,
             "gaps_ar": list(self.gaps_ar),
             "reflections": [dict(r) for r in self.reflections],
             "budget": dict(self.budget),
@@ -334,7 +339,14 @@ class MindLoop:
         perception = perceive(desc)
         receipt.kind = perception.kind.value
         receipt.confidence = perception.classification.confidence
-        receipt.lessons_loaded = MindMemory(out_path).load_lessons() if out_path.exists() else ()
+        # الذاكرة عند الإدراك: دروس المشروع أولًا ثم العابرة للمشاريع بلا تكرار —
+        # القراءة من الذاكرة العابرة آمنة في التشغيل الجاف (لا كتابة).
+        project_lessons = MindMemory(out_path).load_lessons() if out_path.exists() else ()
+        global_memory = GlobalMemory()
+        receipt.global_lessons_loaded = global_memory.load_lessons()
+        receipt.lessons_loaded = project_lessons + tuple(
+            lesson for lesson in receipt.global_lessons_loaded if lesson not in project_lessons
+        )
         p_guard = guard_perception(perception)
         receipt.steps.append(
             MindStepRecord(
@@ -770,6 +782,15 @@ class MindLoop:
                     details_ar="تخطٍّ — تشغيل جاف لا يكتب شيئًا على القرص",
                 )
             )
+            receipt.steps.append(
+                MindStepRecord(
+                    step="global-memory",
+                    title_ar="الذاكرة العابرة للجلسات (دفتر موقّع + دروس عابرة للمشاريع)",
+                    ok=True,
+                    exit_code=0,
+                    details_ar="تخطٍّ — تشغيل جاف لا يوقّع جلسة ولا يكتب درسًا عابرًا",
+                )
+            )
             return
         memory = MindMemory(out_path)
         evidence = memory.persist(
@@ -811,6 +832,38 @@ class MindLoop:
                     f"{len(learned)} من {len(lessons_source)} مرشحة"
                 ),
                 evidence=evidence,
+            )
+        )
+        # ---- الذاكرة العابرة للجلسات: توقيع في دفتر بسلسلة sha256 + دروس
+        # عابرة للمشاريع. آثارها موثقة في الخطوات والإيصال **خارج**
+        # chain_hash — لأن seq يعتمد تاريخ الجهاز، حالة بيئية لا مدخلًا فيها.
+        global_memory = GlobalMemory()
+        g_entry = global_memory.record_session(
+            goal=perception.goal,
+            project=out_path.name,
+            kind=perception.kind.value,
+            ok=True,
+            lessons_learned=len(learned),
+            gaps=len(receipt.gaps_ar),
+            reflections=len(receipt.reflections),
+            ts=time.time(),
+        )
+        receipt.global_session_seq = g_entry.seq
+        g_learned = global_memory.learn(lessons_source)
+        g_evidence = {str(global_memory.ledger_path): g_entry.hash}
+        if global_memory.lessons_path.exists():
+            g_evidence[str(global_memory.lessons_path)] = hash_file(global_memory.lessons_path)
+        receipt.steps.append(
+            MindStepRecord(
+                step="global-memory",
+                title_ar="الذاكرة العابرة للجلسات (دفتر موقّع + دروس عابرة للمشاريع)",
+                ok=True,
+                exit_code=0,
+                details_ar=(
+                    f"الجلسة {g_entry.seq} موقّعة في دفتر sha256 — دروس عابرة جديدة "
+                    f"{len(g_learned)} من {len(lessons_source)} مرشحة"
+                ),
+                evidence=g_evidence,
             )
         )
 

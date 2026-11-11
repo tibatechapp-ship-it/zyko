@@ -1,3 +1,62 @@
+## 0.28.0 — the mind remembers across sessions: a sha256-signed session ledger and cross-project lessons with deterministic recall
+
+### Priority 4 of the autonomy roadmap: memory that outlives the process
+
+Until 0.27.0 the loop's memory died with the project folder: `MindMemory`
+kept state and lessons in `<out>/.zyko/mind/`, so a lesson learned in one
+session could only be recalled inside that same project. The honest gap
+said it plainly: Aider carries conventions between chats; ZYKO forgot
+everything the moment a session ended. This release adds the fourth
+memory layer (`zyko.mind.global_memory`) — the mind remembers its lessons
+wherever it works — under the same house contracts: deterministic by the
+byte, Arabic-first evidence, zero dependencies, and every session signed
+into an append-only ledger whose chain exposes any tampering by
+re-computation from the head.
+
+- **`mind/global_memory.py` — `GlobalMemory`**: three artifacts under
+  `data_dir()/mind` (respects `ZYKO_DATA_DIR`, so tests stay hermetic):
+  * `sessions.jsonl` — append-only session ledger carrying the sha256
+    chain of the `zyko.sandbox.audit` contract (seq, prev_hash, hash;
+    `ts` stored but outside the chain). The raw goal is never written —
+    only its sha256 digest (privacy by design: raw text stays in project
+    memory alone). Secret-shaped text (`ghp_`/`gho_`/`sk-`/`AKIA`/`xox*`)
+    is masked before it ever touches the disk, and hostile values are
+    clamped deterministically — the ledger never raises, it records.
+  * `lessons.json` — cross-project lessons: exact-text dedup, capped at
+    200 with deterministic FIFO eviction (oldest seq first), `next_seq`
+    never reused after eviction, and invalid entries are skipped rather
+    than trusted.
+  * `MEMORY.md` — a deterministic Arabic summary rebuilt on every write,
+    with no timestamps, so identical histories produce identical bytes.
+- **Deterministic recall**: `recall(query)` normalizes Arabic (diacritics
+  and tatweel stripped), scores token containment, and breaks ties by
+  (score, newer seq, text) — the same query against the same memory
+  returns the same bytes on any machine; no randomness anywhere.
+- **Loop integration**: the loop loads project lessons first, then global
+  lessons without duplication (documented in `lessons_loaded` and the new
+  `global_lessons_loaded` receipt field); at the end it signs the session
+  into the ledger (new `global_session_seq` field plus a `global-memory`
+  gate step — the receipt now has six gates) and promotes the same
+  lessons to the global store. Dry runs document the skip and write
+  nothing. The ledger's `seq` depends on the machine's history, so
+  global-memory effects are documented **outside** `chain_hash` — the
+  same contract as `seconds_total`: identical goals still produce
+  identical chain hashes regardless of device history, and identical
+  environments still produce byte-identical receipts.
+- **`zyko mind memory` CLI**: the ledger is re-verified from the head on
+  every call — a broken chain exits 1 (an audit gate, not a warning);
+  `--json` prints the deterministic summary, `--home` overrides the store
+  path.
+- **Performance**: signatures are O(1) via the same writer-trust cache
+  contract as the audit log (one full read on the first signature, cache
+  invalidated by `reload()`), keeping 1000 ledger appends and a
+  1000-entry chain verification inside their test budgets.
+- **Numbers**: 61 new tests (ledger roundtrip, tamper/deletion/reorder
+  detection, privacy digest, secret masking, cap eviction and seq-reuse
+  prevention, recall determinism/diacritics/speed, byte-identical files
+  across homes, append+verify speed budgets, loop integration including
+  dry run and the CLI gate) — **2575 passing / 19 documented skips**.
+
 ## 0.27.0 — the tools execute: sandboxed patch_file/run_tests under permission contracts, every attempt signed into a sha256-chained audit log
 
 ### Priority 3 of the autonomy roadmap closes: the retry round now runs real tests, not just a deterministic fixer
