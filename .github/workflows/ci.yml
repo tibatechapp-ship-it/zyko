@@ -44,7 +44,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - run: pip install -e .
+      - run: pip install -e .[dev]
       - name: Full suite with junit receipt
         run: pytest -q --junitxml=/tmp/junit.xml
       - name: README numbers must match this run (badge can no longer rot)
