@@ -1,0 +1,217 @@
+"""اختبارات الحلقة الإدراكية الكاملة — إيصال حتمي وبوابات خمس وذاكرة."""
+
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from zyko.mind.core import ScriptedCore
+from zyko.mind.loop import MindLoop, MindReceipt
+from zyko.mind.memory import MindMemory
+
+
+GOAL = "انشئ مشروع قائمة مهام مع واجهة سطر أوامر"
+
+
+class TestHappyPath:
+    def test_full_loop_green(self, tmp_path):
+        receipt = MindLoop().run(GOAL, tmp_path / "proj")
+        assert receipt.ok
+        assert receipt.failed_step is None
+        assert receipt.kind == "GENERATE"
+        assert receipt.plan_accepted
+        steps = [s.step for s in receipt.steps]
+        assert steps == ["perceive", "plan", "execute", "critic", "memory"]
+        assert all(s.ok for s in receipt.steps)
+
+    def test_generated_project_on_disk(self, tmp_path):
+        out = tmp_path / "proj"
+        MindLoop().run(GOAL, out)
+        assert any(out.rglob("*.py"))
+
+    def test_memory_written_with_state_and_lessons(self, tmp_path):
+        out = tmp_path / "proj"
+        MindLoop().run(GOAL, out)
+        memory = MindMemory(out)
+        state = memory.load_state()
+        assert state["kind"] == "GENERATE"
+        assert state["goal"] == GOAL
+        assert memory.load_lessons()
+
+    def test_fix_path_on_existing_file(self, tmp_path):
+        target = tmp_path / "app.py"
+        target.write_text("def f( ):\n    x=1\n    return x\n", encoding="utf-8")
+        receipt = MindLoop().run(f"اصلح الملف {target}", tmp_path / "session")
+        assert receipt.ok
+        assert receipt.kind == "FIX"
+        assert receipt.rounds_ran == 1
+        assert target.read_text(encoding="utf-8") != "def f( ):\n    x=1\n    return x\n"
+
+
+class TestDeterminism:
+    def test_same_goal_same_chain_hash(self, tmp_path):
+        hashes = []
+        for _ in range(2):
+            out = tmp_path / "proj"
+            receipt = MindLoop().run(GOAL, out)
+            hashes.append(receipt.chain_hash)
+            import shutil
+
+            shutil.rmtree(out)
+        assert hashes[0] == hashes[1]
+
+    def test_receipt_json_deterministic(self, tmp_path):
+        out = tmp_path / "proj"
+        r1 = MindLoop().run(GOAL, out)
+        j1 = r1.to_json()
+        import shutil
+
+        shutil.rmtree(out)
+        r2 = MindLoop().run(GOAL, out)
+        assert j1 == r2.to_json()
+
+    def test_chain_hash_64_hex(self, tmp_path):
+        receipt = MindLoop().run(GOAL, tmp_path / "proj")
+        assert len(receipt.chain_hash) == 64
+        int(receipt.chain_hash, 16)  # سداسي عشري صالح
+
+
+class TestGuards:
+    def test_non_string_goal_structural_fail(self, tmp_path):
+        receipt = MindLoop().run(12345, tmp_path / "x")
+        assert not receipt.ok
+        assert receipt.failed_step == "goal"
+        assert receipt.steps[0].exit_code == 2
+
+    def test_empty_goal_structural_fail(self, tmp_path):
+        receipt = MindLoop().run("   ", tmp_path / "x")
+        assert not receipt.ok
+        assert receipt.failed_step == "goal"
+
+    def test_long_goal_structural_fail(self, tmp_path):
+        receipt = MindLoop().run("وصف" * 3000, tmp_path / "x")
+        assert not receipt.ok
+        assert receipt.failed_step == "goal"
+
+    def test_non_empty_out_dir_rejected_no_deletion(self, tmp_path):
+        out = tmp_path / "busy"
+        out.mkdir()
+        (out / "keep.txt").write_text("لا تُحذف", encoding="utf-8")
+        receipt = MindLoop().run(GOAL, out)
+        assert not receipt.ok
+        assert receipt.failed_step == "goal"
+        assert (out / "keep.txt").read_text(encoding="utf-8") == "لا تُحذف"
+
+    def test_unknown_task_rejected_before_any_writes(self, tmp_path):
+        out = tmp_path / "no"
+        receipt = MindLoop().run("قائمة مهام عادية بلا أمر", out)
+        assert not receipt.ok
+        # الإدراك يوثّق نوع UNKNOWN ثم بوابة الخطة ترفض — لا كتابة إطلاقًا
+        assert receipt.failed_step == "perceive"
+        assert receipt.steps[1].step == "plan" and not receipt.steps[1].ok
+        assert not out.exists()
+
+    def test_pii_goal_rejected_at_plan_no_writes(self, tmp_path):
+        out = tmp_path / "pii"
+        receipt = MindLoop().run("انشئ مشروع — للتواصل 0501234567", out)
+        assert not receipt.ok
+        assert receipt.failed_step == "plan"
+        assert not out.exists()
+
+    def test_fix_without_target_file_rejected(self, tmp_path):
+        receipt = MindLoop().run("اصلح الملف غير_الموجود_هنا.py", tmp_path / "s")
+        assert not receipt.ok
+        assert receipt.failed_step in ("plan", "execute")
+
+
+class TestScriptedCore:
+    def test_scripted_core_advisory_used(self, tmp_path):
+        core = ScriptedCore({"مشروع": "خطة مقترحة: قائمة مهام بسيطة مع واجهة سطر أوامر"}, default="فارغ")
+        receipt = MindLoop(core).run(GOAL, tmp_path / "proj")
+        assert receipt.ok
+        assert "خطة مقترحة" in receipt.plan_text
+
+    def test_scripted_core_empty_rejected_at_plan(self, tmp_path):
+        core = ScriptedCore({}, default="   ")
+        receipt = MindLoop(core).run(GOAL, tmp_path / "proj")
+        assert not receipt.ok
+        assert receipt.failed_step == "plan"
+
+
+class TestDryRun:
+    def test_dry_run_writes_nothing(self, tmp_path):
+        out = tmp_path / "dry"
+        receipt = MindLoop().run(GOAL, out, write=False)
+        assert not out.exists()
+        assert receipt.dry_run
+        assert receipt.steps[-1].step == "memory"
+        assert "تخطٍّ" in receipt.steps[-1].details_ar
+
+    def test_dry_run_receipt_ok(self, tmp_path):
+        receipt = MindLoop().run(GOAL, tmp_path / "dry", write=False)
+        assert receipt.ok
+
+
+class TestReceipt:
+    def test_to_json_round_trip(self, tmp_path):
+        receipt = MindLoop().run(GOAL, tmp_path / "proj")
+        data = json.loads(receipt.to_json())
+        assert data["schema"] == "zyko.mind/receipt-v1"
+        assert data["kind"] == "GENERATE"
+        assert len(data["steps"]) == 5
+
+    def test_to_md_readable(self, tmp_path):
+        receipt = MindLoop().run(GOAL, tmp_path / "proj")
+        md = receipt.to_md()
+        assert "إيصال الحلقة الإدراكية" in md
+        assert receipt.goal in md
+
+    def test_receipt_is_dataclass(self, tmp_path):
+        receipt = MindLoop().run(GOAL, tmp_path / "proj")
+        assert isinstance(receipt, MindReceipt)
+
+    def test_rounds_param_respected(self, tmp_path):
+        receipt = MindLoop(rounds=3).run(GOAL, tmp_path / "proj")
+        assert receipt.rounds == 3
+
+
+class TestRefine:
+    def test_refine_round_only_when_gaps(self, tmp_path):
+        # المشروع المولَّد مثالي — لا جولة تحسين ثانية توثَّق إلا عند فجوات
+        receipt = MindLoop(rounds=2).run(GOAL, tmp_path / "proj")
+        assert "refine" not in [s.step for s in receipt.steps]
+
+    def test_refine_engineered_gap_second_round(self, tmp_path):
+        # قلب مزيّف يلصق بيانًا شخصيًا في الاستشارة مرة واحدة — البوابات ترفض
+        # فتُرفض الخطة — والحلقة أعلى لا تُقبل؛ إثبات أن الجولات موثقة لا مكررة
+        class OncePIICore:
+            name = "once-pii"
+            deterministic = False
+            calls = 0
+
+            def respond(self, request, *, context=""):
+                self.calls += 1
+                if self.calls == 1:
+                    return "اتصل على 0501234567 للتنسيق"
+                return "خطة نظيفة بعد التعلم من الدرس"
+
+        core = OncePIICore()
+        receipt = MindLoop(core, rounds=2).run(GOAL, tmp_path / "proj")
+        assert not receipt.ok  # الجولة الأولى مرفوضة عند بوابة الخطة — بلا تجاوز
+        assert core.calls == 1  # الرفض عند البوابة يوقف كل شيء
+
+
+class TestNoNetwork:
+    def test_loop_offline_by_default(self, tmp_path):
+        """الحلقة الافتراضية تعمل بلا شبكة ولا مفاتيح — معيار إتمام المرحلة A."""
+        import os
+
+        saved = {k: os.environ.pop(k, None) for k in ("ZYKO_QWEN_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY")}
+        try:
+            receipt = MindLoop().run(GOAL, tmp_path / "proj")
+            assert receipt.ok
+        finally:
+            for k, v in saved.items():
+                if v is not None:
+                    os.environ[k] = v

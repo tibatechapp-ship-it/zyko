@@ -407,6 +407,16 @@ def build_parser() -> argparse.ArgumentParser:
     _register_ai(p.add_subparsers(dest="ai_cmd"))
     p.set_defaults(func=cmd.cmd_ai)
 
+    # mind (المرحلة A: الحلقة الإدراكية الكاملة — إدراك ← خطة ← تنفيذ ← نقد ← ذاكرة)
+    p = sub.add_parser(
+        "mind",
+        help="نواة العقل المستقل: run / map",
+    )
+    from zyko.mind.cli import register_to as _register_mind
+
+    _register_mind(p.add_subparsers(dest="mind_cmd"))
+    p.set_defaults(func=cmd.cmd_mind)
+
     return parser
 
 

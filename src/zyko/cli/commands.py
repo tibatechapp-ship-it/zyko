@@ -1251,3 +1251,15 @@ def cmd_ai(args: Any) -> int:
     from zyko.ai.cli import handle_ai
 
     return handle_ai(args)
+
+
+def cmd_mind(args: Any) -> int:
+    """نواة العقل المستقل (المرحلة A) — تفويض حرفي إلى zyko.mind.cli.
+
+    الحلقة الإدراكية الكاملة: إدراك ← تخطيط ← تنفيذ ← نقد ← تحسين ←
+    ذاكرة — كل انتقال بوابة موثقة، والإيصال حتمي بالبايت، والتشغيل
+    الجاف يوثّق بلا كتابة.
+    """
+    from zyko.mind.cli import handle_mind
+
+    return handle_mind(args)
