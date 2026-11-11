@@ -1,0 +1,387 @@
+{
+ "protocol": "SWE-bench-Lite (psf/requests) — عقل حقيقي داخل حلقة تلقيم الفشل (جولة 9)",
+ "loop": {
+  "max_attempts": 3,
+  "max_files": 3,
+  "feedback": "خطأ التطبيق ورفض الحرس وعقد FAIL_TO_PASS الفاشلة تُغذّى للعقل"
+ },
+ "model_label": "glm-4.7",
+ "model_served_by": "z-ai-web-dev-sdk bridge (local, 127.0.0.1)",
+ "httpbin": "http://127.0.0.1:8642/",
+ "python_env": "3.9 (uv) — بيئة معزولة لكل حالة",
+ "aggregate": {
+  "total": 6,
+  "resolved_strict": 1,
+  "resolved_env": 3,
+  "f2p_repaired_total": 3,
+  "f2p_total": 25,
+  "applied_count": 4,
+  "contract_rejections": 0,
+  "gate_rejections": 0,
+  "resolve_rate_env": 0.5
+ },
+ "attempts": [
+  {
+   "instance_id": "psf__requests-1963",
+   "file_choice": "requests/sessions.py",
+   "choice_reply_sha16": "",
+   "diff_reply_sha16": "b9721b705826fffe",
+   "proposal_accepted": true,
+   "verdict": {
+    "instance_id": "psf__requests-1963",
+    "patch_applied": true,
+    "apply_error_ar": null,
+    "patch_sha16": "e298e584b7d44e1a",
+    "contract_reason_ar": "مسموح",
+    "f2p_failed_at_base": [
+     "test_requests.py::TestRedirects::test_requests_are_updated_each_time"
+    ],
+    "p2p_failed_at_base": [
+     "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+     "test_requests.py::TestTimeout::test_stream_timeout"
+    ],
+    "f2p_passed_after": [
+     "test_requests.py::RequestsTestCase::test_DIGESTAUTH_QUOTES_QOP_VALUE",
+     "test_requests.py::RequestsTestCase::test_DIGESTAUTH_WRONG_HTTP_401_GET",
+     "test_requests.py::RequestsTestCase::test_DIGEST_AUTH_RETURNS_COOKIE",
+     "test_requests.py::RequestsTestCase::test_DIGEST_HTTP_200_OK_GET",
+     "test_requests.py::RequestsTestCase::test_POSTBIN_GET_POST_FILES_WITH_DATA",
+     "test_requests.py::RequestsTestCase::test_param_cookiejar_works",
+     "test_requests.py::TestRedirects::test_requests_are_updated_each_time"
+    ],
+    "f2p_failed_after": [],
+    "p2p_failed_after": [
+     "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+     "test_requests.py::TestTimeout::test_stream_timeout"
+    ],
+    "runs_error_ar": null,
+    "resolved_strict": false,
+    "resolved_env": true,
+    "f2p_repaired_count": 1,
+    "attempts_note_ar": "الحلقة طبّقت عند المحاولة 1"
+   },
+   "loop_attempts": [
+    {
+     "index": 1,
+     "feedback_sha16": "",
+     "file_choice": "requests/sessions.py",
+     "patch_sha16": "e298e584b7d44e1a",
+     "accepted": true,
+     "contract_reason_ar": "مسموح",
+     "applied": true,
+     "apply_error_ar": null,
+     "stop_reason_ar": "انصراف — حلّ"
+    }
+   ],
+   "max_attempts": 3
+  },
+  {
+   "instance_id": "psf__requests-2148",
+   "file_choice": "requests/models.py",
+   "choice_reply_sha16": "",
+   "diff_reply_sha16": "c748904ecdecea15",
+   "proposal_accepted": true,
+   "verdict": {
+    "instance_id": "psf__requests-2148",
+    "patch_applied": true,
+    "apply_error_ar": null,
+    "patch_sha16": "2722713eaab35b2a",
+    "contract_reason_ar": "مسموح",
+    "f2p_failed_at_base": [
+     "test_requests.py::RequestsTestCase::test_iter_content_handles_socket_error"
+    ],
+    "p2p_failed_at_base": [
+     "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+    ],
+    "f2p_passed_after": [
+     "test_requests.py::RequestsTestCase::test_DIGEST_AUTH_RETURNS_COOKIE",
+     "test_requests.py::RequestsTestCase::test_HTTP_200_OK_GET_ALTERNATIVE",
+     "test_requests.py::RequestsTestCase::test_HTTP_200_OK_HEAD",
+     "test_requests.py::RequestsTestCase::test_POSTBIN_GET_POST_FILES",
+     "test_requests.py::RequestsTestCase::test_auth_is_stripped_on_redirect_off_host",
+     "test_requests.py::RequestsTestCase::test_basicauth_with_netrc",
+     "test_requests.py::RequestsTestCase::test_cookie_quote_wrapped",
+     "test_requests.py::RequestsTestCase::test_generic_cookiejar_works",
+     "test_requests.py::RequestsTestCase::test_iter_content_handles_socket_error",
+     "test_requests.py::RequestsTestCase::test_unicode_multipart_post"
+    ],
+    "f2p_failed_after": [],
+    "p2p_failed_after": [],
+    "runs_error_ar": "pytest خرج بـ 4",
+    "resolved_strict": false,
+    "resolved_env": false,
+    "f2p_repaired_count": 1,
+    "attempts_note_ar": "الحلقة طبّقت عند المحاولة 3"
+   },
+   "loop_attempts": [
+    {
+     "index": 1,
+     "feedback_sha16": "",
+     "file_choice": "requests/models.py",
+     "patch_sha16": "5060d8c8ebbbba37",
+     "accepted": true,
+     "contract_reason_ar": "مسموح",
+     "applied": false,
+     "apply_error_ar": "فشل فحص التطبيق: error: corrupt patch at line 17",
+     "stop_reason_ar": "متابعة — رجعية التطبيق بُنيت"
+    },
+    {
+     "index": 2,
+     "feedback_sha16": "8eae435c26a98276",
+     "file_choice": "requests/models.py",
+     "patch_sha16": "7b39850366b1f7cd",
+     "accepted": true,
+     "contract_reason_ar": "مسموح",
+     "applied": false,
+     "apply_error_ar": "فشل فحص التطبيق: error: patch failed: requests/models.py:624",
+     "stop_reason_ar": "متابعة — رجعية التطبيق بُنيت"
+    },
+    {
+     "index": 3,
+     "feedback_sha16": "f3b3e244f4c7452b",
+     "file_choice": "requests/models.py",
+     "patch_sha16": "2722713eaab35b2a",
+     "accepted": true,
+     "contract_reason_ar": "مسموح",
+     "applied": true,
+     "apply_error_ar": null,
+     "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت"
+    }
+   ],
+   "max_attempts": 3
+  },
+  {
+   "instance_id": "psf__requests-2317",
+   "file_choice": "requests/sessions.py",
+   "choice_reply_sha16": "",
+   "diff_reply_sha16": "b870d60e917f02fe",
+   "proposal_accepted": true,
+   "verdict": {
+    "instance_id": "psf__requests-2317",
+    "patch_applied": false,
+    "apply_error_ar": null,
+    "patch_sha16": "",
+    "contract_reason_ar": "",
+    "f2p_failed_at_base": [
+     "test_requests.py::RequestsTestCase::test_requests_history_is_saved",
+     "test_requests.py::TestTimeout::test_encoded_methods"
+    ],
+    "p2p_failed_at_base": [
+     "test_requests.py::RequestsTestCase::test_connection_error",
+     "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+     "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+     "test_requests.py::TestTimeout::test_stream_timeout"
+    ],
+    "f2p_passed_after": [],
+    "f2p_failed_after": [],
+    "p2p_failed_after": [],
+    "runs_error_ar": null,
+    "resolved_strict": false,
+    "resolved_env": false,
+    "f2p_repaired_count": 0,
+    "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+   },
+   "loop_attempts": [
+    {
+     "index": 1,
+     "feedback_sha16": "",
+     "file_choice": "requests/sessions.py",
+     "patch_sha16": "7eaa7ac4ec7d9da3",
+     "accepted": true,
+     "contract_reason_ar": "مسموح",
+     "applied": false,
+     "apply_error_ar": "فشل فحص التطبيق: error: patch failed: requests/sessions.py:490",
+     "stop_reason_ar": "متابعة — رجعية التطبيق بُنيت"
+    },
+    {
+     "index": 2,
+     "feedback_sha16": "dc41fe63c04f94f6",
+     "file_choice": "requests/sessions.py",
+     "patch_sha16": "f1fad2e1b37adcc4",
+     "accepted": true,
+     "contract_reason_ar": "مسموح",
+     "applied": false,
+     "apply_error_ar": "فشل فحص التطبيق: error: patch failed: requests/sessions.py:487",
+     "stop_reason_ar": "متابعة — رجعية التطبيق بُنيت"
+    },
+    {
+     "index": 3,
+     "feedback_sha16": "e8e63aaa14d39050",
+     "file_choice": "requests/sessions.py",
+     "patch_sha16": "2c2f73135644c3dd",
+     "accepted": true,
+     "contract_reason_ar": "مسموح",
+     "applied": false,
+     "apply_error_ar": "فشل فحص التطبيق: error: patch failed: requests/sessions.py:484",
+     "stop_reason_ar": "نهاية الميزانية — التطبيق فشل"
+    }
+   ],
+   "max_attempts": 3
+  },
+  {
+   "instance_id": "psf__requests-2674",
+   "file_choice": "requests/adapters.py",
+   "choice_reply_sha16": "",
+   "diff_reply_sha16": "018e3366ea1a2d64",
+   "proposal_accepted": true,
+   "verdict": {
+    "instance_id": "psf__requests-2674",
+    "patch_applied": false,
+    "apply_error_ar": null,
+    "patch_sha16": "",
+    "contract_reason_ar": "",
+    "f2p_failed_at_base": [
+     "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+    ],
+    "p2p_failed_at_base": [
+     "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+    ],
+    "f2p_passed_after": [],
+    "f2p_failed_after": [],
+    "p2p_failed_after": [],
+    "runs_error_ar": null,
+    "resolved_strict": false,
+    "resolved_env": false,
+    "f2p_repaired_count": 0,
+    "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+   },
+   "loop_attempts": [
+    {
+     "index": 1,
+     "feedback_sha16": "",
+     "file_choice": "requests/exceptions.py",
+     "patch_sha16": "c2336a58bbaed738",
+     "accepted": true,
+     "contract_reason_ar": "مسموح",
+     "applied": false,
+     "apply_error_ar": "فشل فحص التطبيق: error: patch fragment without header at line 15: @@ -66,3 +70,7 @@",
+     "stop_reason_ar": "متابعة — رجعية التطبيق بُنيت"
+    },
+    {
+     "index": 2,
+     "feedback_sha16": "09cd8d54fe40aa37",
+     "file_choice": "requests/adapters.py",
+     "patch_sha16": "9165439fe03fab08",
+     "accepted": true,
+     "contract_reason_ar": "مسموح",
+     "applied": false,
+     "apply_error_ar": "فشل فحص التطبيق: error: corrupt patch at line 12",
+     "stop_reason_ar": "متابعة — رجعية التطبيق بُنيت"
+    },
+    {
+     "index": 3,
+     "feedback_sha16": "7293162aa16743c2",
+     "file_choice": "requests/adapters.py",
+     "patch_sha16": "69dd7a01081ce9fb",
+     "accepted": true,
+     "contract_reason_ar": "مسموح",
+     "applied": false,
+     "apply_error_ar": "فشل فحص التطبيق: error: corrupt patch at line 13",
+     "stop_reason_ar": "نهاية الميزانية — التطبيق فشل"
+    }
+   ],
+   "max_attempts": 3
+  },
+  {
+   "instance_id": "psf__requests-3362",
+   "file_choice": "requests/models.py",
+   "choice_reply_sha16": "",
+   "diff_reply_sha16": "2357c62323174953",
+   "proposal_accepted": true,
+   "verdict": {
+    "instance_id": "psf__requests-3362",
+    "patch_applied": true,
+    "apply_error_ar": null,
+    "patch_sha16": "ab8ed771312c3071",
+    "contract_reason_ar": "مسموح",
+    "f2p_failed_at_base": [
+     "tests/test_requests.py::TestRequests::test_response_decode_unicode"
+    ],
+    "p2p_failed_at_base": [],
+    "f2p_passed_after": [
+     "tests/test_requests.py::TestRequests::test_response_decode_unicode"
+    ],
+    "f2p_failed_after": [],
+    "p2p_failed_after": [],
+    "runs_error_ar": null,
+    "resolved_strict": true,
+    "resolved_env": true,
+    "f2p_repaired_count": 1,
+    "attempts_note_ar": "الحلقة طبّقت عند المحاولة 1"
+   },
+   "loop_attempts": [
+    {
+     "index": 1,
+     "feedback_sha16": "",
+     "file_choice": "requests/models.py",
+     "patch_sha16": "ab8ed771312c3071",
+     "accepted": true,
+     "contract_reason_ar": "مسموح",
+     "applied": true,
+     "apply_error_ar": null,
+     "stop_reason_ar": "انصراف — حلّ"
+    }
+   ],
+   "max_attempts": 3
+  },
+  {
+   "instance_id": "psf__requests-863",
+   "file_choice": "requests/models.py",
+   "choice_reply_sha16": "",
+   "diff_reply_sha16": "def9b743b1edcacc",
+   "proposal_accepted": true,
+   "verdict": {
+    "instance_id": "psf__requests-863",
+    "patch_applied": true,
+    "apply_error_ar": null,
+    "patch_sha16": "e15ddea4420543f6",
+    "contract_reason_ar": "مسموح",
+    "f2p_failed_at_base": [],
+    "p2p_failed_at_base": [
+     "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+    ],
+    "f2p_passed_after": [
+     "tests/test_requests.py::RequestsTestSuite::test_POSTBIN_GET_POST_FILES_WITH_HEADERS",
+     "tests/test_requests.py::RequestsTestSuite::test_nonurlencoded_postdata",
+     "tests/test_requests.py::RequestsTestSuite::test_prefetch_redirect_bug",
+     "tests/test_requests.py::RequestsTestSuite::test_urlencoded_post_data"
+    ],
+    "f2p_failed_after": [],
+    "p2p_failed_after": [
+     "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+    ],
+    "runs_error_ar": null,
+    "resolved_strict": false,
+    "resolved_env": true,
+    "f2p_repaired_count": 0,
+    "attempts_note_ar": "الحلقة طبّقت عند المحاولة 2"
+   },
+   "loop_attempts": [
+    {
+     "index": 1,
+     "feedback_sha16": "",
+     "file_choice": "requests/models.py",
+     "patch_sha16": "cd24a3f6fa51692f",
+     "accepted": true,
+     "contract_reason_ar": "مسموح",
+     "applied": false,
+     "apply_error_ar": "فشل فحص التطبيق: error: corrupt patch at line 17",
+     "stop_reason_ar": "متابعة — رجعية التطبيق بُنيت"
+    },
+    {
+     "index": 2,
+     "feedback_sha16": "8eae435c26a98276",
+     "file_choice": "requests/models.py",
+     "patch_sha16": "e15ddea4420543f6",
+     "accepted": true,
+     "contract_reason_ar": "مسموح",
+     "applied": true,
+     "apply_error_ar": null,
+     "stop_reason_ar": "انصراف — حلّ"
+    }
+   ],
+   "max_attempts": 3
+  }
+ ],
+ "chain_hash": "8f3ea45cb9700dd1"
+}
