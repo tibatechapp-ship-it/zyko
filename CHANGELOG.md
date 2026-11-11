@@ -1,5 +1,80 @@
 # Changelog
 
+## Unreleased — five tracks at once: brain-planned `do`, huge files, Gauntlet+, end-to-end integration, honest comparison
+
+Five capability tracks land together, each independently verified and
+deterministic by construction:
+
+**1) A real brain can now plan `zyko do` (`--brain ollama|qwen`).**
+`zyko.orchestrator.brain_route` sends a fixed Arabic prompt through the
+existing `Brain` contract — so the proposal still passes the same factory
+gates (planner → PII → RTL) before anything parses it — then validates the
+proposed JSON plan with hard deterministic rules: only REVIEW/FIX tasks,
+only `review`/`fix` tools, governed sequences (`(review)`, `(review, fix)`,
+`(fix)`), one path per plan that must exist on disk, bounded reasons. Any
+failure — invalid JSON, hallucinated path, rejected gates, a throwing
+brain — falls back to the deterministic planner with an honest Arabic note
+recorded inside the plan and the receipt. Accepted plans carry
+`planner: "brain:<name>"` in the receipt; the deterministic path emits no
+such key, so its receipts stay byte-identical to the previous contract
+(`chain_hash d0e52368…` unchanged). `build_brain` is extracted in
+`zyko.ai.cli` as the single construction point for both `zyko ai run` and
+`zyko do`. 27 new tests.
+
+**2) Huge files are reviewed instead of refused.** The reviewer used to
+reject anything over 5MB outright. `zyko.reviewer.largefile` now reviews
+files of any size up to a 100MB memory guard: deterministic 800-line
+windows closed at top-level definition boundaries (with a documented
+forced close for monolithic blocks), a streaming sha256 that matches the
+direct hash, findings merged with global line offsets and deterministic
+dedup, scoring through the same `SEVERITY_WEIGHT` math, and a 500-finding
+listing cap with `findings_truncated: true` while `counts` stay exact.
+`ReviewEngine.review_file` branches automatically, so the orchestrator,
+the session and the gauntlet all benefit with no special path; chunked
+fields appear in `to_dict` only for chunked results. Proven live: a
+6,188,902-byte / 450k-line file reviews through `zyko do` in 750 chunks
+(exit 0, signed chain). 15 new tests; the old refusal contract test was
+updated to the new one.
+
+**3) Gauntlet+ — the stress layer.** `zyko.benchmarks.gauntlet_plus`
+(wired to `zyko gauntlet --repeats N --review-sample M`) adds three guards
+on top of the untouched matrix: repeated-matrix byte-determinism (the
+matrix is built N times and every chain hash must match — any drift in
+generation is caught instantly), a speed guard (median/p95/max build time
+against an explicit budget, timings outside the deterministic receipt), and
+self-review (a deterministic sample of generated programs is reviewed by
+zyko's own engine against a relative baseline threshold — default 45,
+documented; the guard immediately earned its keep by finding real quality
+debt in the raw templates: missing docstrings and `assert`-heavy generated
+tests, worst raw score 48). Sample chain hash is recomputable from its
+rows, `zyko verify`-style. 14 new tests.
+
+**4) End-to-end integration suite.** `tests/test_integration_e2e.py`
+walks eight full chains: `zyko do` → receipt → offline `verify` (plus
+tamper detection and chain-hash recomputation), real write-mode fixes
+(hash changes on disk, score improves and matches a fresh review), the
+`existing` session full loop (brain → gates → orchestrator → written
+receipt) with dry-run touching nothing, brain plans flowing into signed
+receipts, huge files through the whole chain, ordered signed swarm
+results, the full factory session with baseline gates, and byte-level
+determinism across the whole chain. 13 new tests.
+
+**5) `zyko compare` — the honest benchmark harness.**
+`zyko.benchmarks.compare` measures zyko on your machine right now:
+classification accuracy over a labeled 12-probe table (all six task types
+plus UNKNOWN, Arabic and English — 12/12), review speed per file, byte
+determinism between runs, and receipt round-trip through `verify`. The
+competitor side is entirely opt-in via a user-supplied command template
+(`--competitor-cmd "ruff check {path}"`): when absent or failing, the
+report documents "لم يُشغَّل" or the exit code verbatim — **no invented
+numbers, ever**. 12 new tests.
+
+The repository's own Arabic typography gate caught one Latin comma inside
+an Arabic docstring during development — fixed, proving the gate works.
+
+**Test count: 2004 passed (13 skipped), 0 failures — 93 new tests this
+cycle.**
+
 ## Unreleased — the loop closes on real code: `--mode existing` wires the brain to `zyko do`
 
 The real-world test on psf/requests (`docs/REAL_WORLD_TEST.md`) proved the

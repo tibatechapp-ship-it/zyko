@@ -109,6 +109,9 @@ real    0m0.828s
 | `zyko factory dashboard` | لوحة تحكم عربية (HTML + Markdown) موقعة ببصمة |
 | `zyko factory map` | خريطة المصنع: الوحدات والعقود وأكواد الخروج |
 | `zyko verify <receipt>` | تحقق دون اتصال من أي إيصال توجيه |
+| `zyko gauntlet` | الفحص الكبير: 1000 برنامج حقيقي — ومع `--repeats`/`--review-sample` طبقة الشدّ (حتمية متكررة × سرعة × مراجعة ذاتية) |
+| `zyko compare <ملف>` | المقارنة الحتمية: دقة التصنيف + سرعة + حتمية على هدفك، ومنافس اختياري بأمر تمرره أنت |
+| `zyko do --brain ollama --model m` | العقل كاملاً مع تخطيط دماغ حقيقي خلف البوابات — والرجوع آمن للمخطط الحتمي عند أي فشل |
 | `zyko py <file.daad>` | ترجمة/تنفيذ بايثون عربية (ضاد) |
 | `zyko ai run` | جلسة ذكاء موثقة عبر البوابات (`planner` / `ollama` / `bestof`) |
 | `zyko ask / chat / route / serve` | البوابة والتوجيه متعدد المزوّدين |
@@ -123,7 +126,7 @@ Linux · Windows · macOS · Android/Termux — مصفوفة CI خضراء عل�
 
 ```bash
 pytest -q
-# 1581 passed, 10 skipped
+# 2004 passed, 13 skipped
 ```
 
 ---
