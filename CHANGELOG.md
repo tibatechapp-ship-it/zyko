@@ -1,3 +1,129 @@
+## 0.26.0 — the loop corrects itself: reflect/retry with per-stage output guards and a retry budget, every reflection signed into the receipt
+
+### Priority 2 of the autonomy roadmap closes: self-correction is now a documented, bounded, deterministic behavior
+
+Until 0.25.0 the cognitive loop critiqued its output and ran **at most one
+deterministic fix round** — a rejected plan gate stopped everything on the
+first attempt, and there was no notion of a per-stage budget. That was the
+documented gap: **reflection without retry is observation, not
+self-correction**. This release adds the reflect/retry loop as a first-class
+citizen of `zyko.mind`, with the same contracts as the rest of the factory:
+deterministic by the byte, Arabic-first, zero dependencies, and every
+decision — guard verdicts, reflection notes, budget consumption — signed
+into the receipt and the `chain_hash`.
+
+- **`mind/reflect.py` (new)** — the three primitives of self-correction.
+  *Guards*: `guard_perception` (classification known, positive confidence,
+  the two identity criteria preserved), `guard_plan` (accepted AND the
+  step tools/order match the deterministic route table per task kind —
+  "was the route right?" is now checkable, not assumed), `guard_execution`
+  (every signed sha256 evidence path must be a real readable file — a
+  receipt without disk evidence is rejected; dry runs document the honest
+  skip), and `guard_feedback` (a reflection note is itself inspected:
+  PII then RTL in the fixed order, prose bounded by
+  `MAX_FEEDBACK_CHARS = 600` while **gap names are sacred and never
+  truncated** — condensation must preserve meaning). *Budget*:
+  `RetryBudget` with a per-stage default (2), per-stage overrides, a hard
+  total cap (8), adversarial-name normalization (stage names are folded
+  and capped at 32 chars so a hostile name can never open a new budget
+  bucket), and invalid limits clamped to zero instead of raised —
+  `consume` grants or refuses, never throws. *Reflection*:
+  `reflect_note` builds the deterministic Arabic feedback note (header,
+  condensed reason, whole gap names, an explicit learn-and-retry
+  directive), with the prose budget computed minus the fixed scaffolding
+  so the whole note stays under the cap.
+- **Plan-gate retry — the real recovery path**: when the plan gate rejects
+  the core's advisory (empty text, PII, RTL error), the loop now reflects
+  — an Arabic lesson note is built from the failed gate verdicts, guarded,
+  and fed back into `build_plan(feedback=...)` which appends it to the
+  core consultation — the lesson changes the request, so a deterministic
+  core and a real brain alike get a fair second chance. The previous
+  behavior (reject once, stop forever) remains when the budget is
+  exhausted: three documented attempts, then a documented stop, zero
+  bypasses. Each rejected attempt is a receipt step titled with its
+  attempt number; the final verdict of the loop is **the last record per
+  gate** — a superseded attempt is history, not failure, while an
+  exhausted budget with a failing last attempt remains a full documented
+  failure.
+- **Critic-loop retry for generated projects**: gaps now loop — reflect
+  (note built from the gap list, guarded), consume budget, run the
+  deterministic fixer, critique again — bounded jointly by the critic
+  budget and the remaining rounds. Existing-code tasks keep the honest
+  single documented skip: re-running a deterministic route without
+  changed inputs is theater, and the receipt says so explicitly
+  (`retried: false` with the refusal reason) instead of pretending.
+- **The receipt tells the whole story**: `MindReceipt` carries
+  `reflections` (stage, attempt, trigger, guarded feedback, retried flag —
+  in chronological order) and `budget` (limits, overrides, used, total
+  cap, total used), both inside `to_dict`, `to_json`, `to_md` (a new
+  "الانعكاسات وإعادة المحاولة" section) and the `chain_hash` payload —
+  same goal, same environment, same receipt by the byte, now including
+  the entire self-correction story. The CLI summary prints the reflection
+  count and budget consumption. Memory learns from recovery too: a
+  recovered session adds its own lesson ("أعادت المحاولة N مرة بعد
+  انعكاس موثق") to `lessons.json`.
+- **Perception guard stops early, honestly**: an UNKNOWN task is now
+  rejected at the perception gate itself — before any core consultation —
+  with the guard's Arabic reason in the step. Zero bytes written, zero
+  wasted brain calls (documented behavior change from 0.25.0, where the
+  plan gate performed the rejection one step later).
+- **Security posture under adversarial input** (all proven by the new
+  stress suite): cores that raise, return `None`, dicts, or 50 KB clean
+  text never escape an exception out of the loop; a PII-emitting brain
+  can never leak the PII into a later request, a reflection note, or the
+  receipt (the gate summary records the *type*, never the value);
+  hostile stage names cannot split the budget; goals containing NUL or
+  bidi control characters end in a documented verdict, not a crash; the
+  receipt JSON carries no secret-shaped strings. Worst case (always-
+  failing brain) is three attempts and eight or fewer receipt steps —
+  and it stays under two seconds offline.
+
+### Truth numbers
+
+- 92 new tests: 58 unit tests (`tests/mind/test_reflect.py`) covering the
+  four guards, the budget contract (isolation, total cap, adversarial
+  names, clamping, deterministic serialization), condensation (gap names
+  survive a 5,000-char reason; the prose cap exempts preserved gap
+  bytes), and the loop integration (recovery determinism, memory
+  lessons, receipt sections); 34 stress tests
+  (`tests/mind/test_reflect_stress.py`) covering guaranteed termination
+  over adversarial cores and goals (parametrized: raise/None/dict/50 KB
+  cores; None/int/list/blank/huge/bidi/NUL goals), budget-bounded attempt
+  counts (0/1/2/5/8 monotone), PII non-leakage, no-secrets receipt JSON,
+  offline latency canaries (full loop < 2 s; 1,000 note+guard cycles
+  < 1 s; 100,000 budget consumes < 0.5 s), and byte-identical receipts
+  under exhaustion and recovery.
+- 2 tests in `tests/mind/test_loop.py` rewritten to the new contract:
+  the PII-once scenario now proves *recovery* (calls == 2, reflection
+  documented, plan accepted on attempt 2), and a new always-PII scenario
+  proves budget exhaustion is documented (3 calls, budget used == 2,
+  nothing written).
+- The unknown-task test now asserts the earlier, cheaper rejection: the
+  perception guard stops the loop with zero core consultations.
+- Full suite: **2,363 passed, 1 skipped** — up from 2,271, still zero
+  network, zero keys, zero new dependencies.
+
+### Where this stands against the state of the art
+
+| Capability | Reflexion / Self-Refine | Aider | SWE-agent | LangGraph | **ZYKO 0.26.0** |
+|---|---|---|---|---|---|
+| Feedback source | the model critiques itself | lint/test errors fed back | environment signals | per-node retry policy | **deterministic guards + measured disk evidence** |
+| External verifier | optional / self-judged | yes (tests) | yes (tests) | user-supplied | **always: PII/RTL gates, route table, sha256 evidence on disk** |
+| Retry budget | unbounded generations | global max attempts | global max iterations | per-node RetryPolicy | **per-stage + hard total cap, clamped, adversarial-name-proof** |
+| Reflection recorded | in a scratchpad | not persisted | trajectory log | checkpoints | **signed into the receipt: stage, attempt, trigger, guarded note** |
+| Feedback sanitized | no | no | no | no | **the note itself passes PII/RTL before re-entering any request** |
+| Determinism of the loop | no | no | no | partial | **byte-identical receipts, offline, no timestamps in the chain** |
+| Arabic-first evidence | no | no | no | no | **every guard reason and note is Arabic, RTL-checked** |
+
+The honest gap that remains: our retry is bounded to 3 plan attempts and
+2 critic rounds by default, while Aider/SWE-agent can iterate longer on
+hard tasks — that is a deliberate trade (determinism and auditability
+over open-ended search), revisitable by raising the budgets, and the
+next frontier is the sandboxed execution layer (Priority 3) where retries
+can re-run real tests instead of deterministic fixers.
+
+---
+
 ## 0.25.0 — the real brain activates itself: environment-driven core auto-detection for `zyko mind`, with the decision signed into the receipt
 
 ### The biggest autonomy gap closes: no explicit flag required anymore

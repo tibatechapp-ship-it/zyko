@@ -102,11 +102,14 @@ class TestGuards:
 
     def test_unknown_task_rejected_before_any_writes(self, tmp_path):
         out = tmp_path / "no"
-        receipt = MindLoop().run("قائمة مهام عادية بلا أمر", out)
+        core = ScriptedCore({}, default="لن يُستشعر أبدًا")
+        receipt = MindLoop(core).run("قائمة مهام عادية بلا أمر", out)
         assert not receipt.ok
-        # الإدراك يوثّق نوع UNKNOWN ثم بوابة الخطة ترفض — لا كتابة إطلاقًا
+        # حرس الإدراك يرفض مبكرًا — لا استشارة قلب ولا خطة، ولا كتابة إطلاقًا
         assert receipt.failed_step == "perceive"
-        assert receipt.steps[1].step == "plan" and not receipt.steps[1].ok
+        assert [s.step for s in receipt.steps] == ["perceive"]
+        assert core.calls == 0
+        assert "حرس الإدراك رفض الناتج" in receipt.steps[0].details_ar
         assert not out.exists()
 
     def test_pii_goal_rejected_at_plan_no_writes(self, tmp_path):
@@ -181,9 +184,11 @@ class TestRefine:
         receipt = MindLoop(rounds=2).run(GOAL, tmp_path / "proj")
         assert "refine" not in [s.step for s in receipt.steps]
 
-    def test_refine_engineered_gap_second_round(self, tmp_path):
-        # قلب مزيّف يلصق بيانًا شخصيًا في الاستشارة مرة واحدة — البوابات ترفض
-        # فتُرفض الخطة — والحلقة أعلى لا تُقبل؛ إثبات أن الجولات موثقة لا مكررة
+    def test_reflect_retry_recovers_from_pii_advisory(self, tmp_path):
+        # قلب مزيّف يلصق بيانًا شخصيًا في الاستشارة مرة واحدة — البوابات ترفض،
+        # فتنعكس الحلقة بملاحظة الدرس وتستشعر ثانية بنص نظيف تمرّ —
+        # السلوك ذاتي التصحيح: البوابات تقرر، والانعكاس يعلم، والميزانية تحسب،
+        # والقصة كلها موثقة في الإيصال.
         class OncePIICore:
             name = "once-pii"
             deterministic = False
@@ -197,8 +202,39 @@ class TestRefine:
 
         core = OncePIICore()
         receipt = MindLoop(core, rounds=2).run(GOAL, tmp_path / "proj")
-        assert not receipt.ok  # الجولة الأولى مرفوضة عند بوابة الخطة — بلا تجاوز
-        assert core.calls == 1  # الرفض عند البوابة يوقف كل شيء
+        assert receipt.ok
+        assert core.calls == 2  # استشارة مرفوضة + استشارة ثانية بالدرس
+        assert receipt.plan_accepted
+        plan_attempts = [s for s in receipt.steps if s.step == "plan"]
+        assert len(plan_attempts) == 2
+        assert not plan_attempts[0].ok and plan_attempts[1].ok
+        reflections = receipt.reflections
+        assert len(reflections) == 1
+        assert reflections[0]["stage"] == "plan"
+        assert reflections[0]["retried"] is True
+        assert "0501234567" not in json.dumps(reflections)  # الدرس لا يحمل البيان نفسه
+        assert receipt.budget["used"].get("plan") == 1
+
+    def test_reflect_budget_exhausted_documents_stop(self, tmp_path):
+        # قلب يلصق بيانًا شخصيًا كل مرة — الميزانية تنفد والفشل موثق بلا تجاوز
+        class AlwaysPIICore:
+            name = "always-pii"
+            deterministic = False
+            calls = 0
+
+            def respond(self, request, *, context=""):
+                self.calls += 1
+                return f"اتصل على 0501234567 للتنسيق (محاولة {self.calls})"
+
+        core = AlwaysPIICore()
+        receipt = MindLoop(core, rounds=2).run(GOAL, tmp_path / "proj")
+        assert not receipt.ok
+        assert receipt.failed_step == "plan"
+        assert core.calls == 3  # محاولة أصلية + الميزانية الافتراضية 2 إعادة
+        assert receipt.budget["used"].get("plan") == 2
+        assert receipt.budget["total_used"] == 2
+        assert not receipt.plan_accepted
+        assert not (tmp_path / "proj").exists()
 
 
 class TestNoNetwork:

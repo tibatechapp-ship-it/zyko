@@ -141,6 +141,12 @@ def handle_mind_run(args: Any) -> int:
         print(f"سلسلة الأدلة: {receipt.chain_hash[:16]}…")
         if receipt.lessons_learned:
             print(f"دروس مكتسبة: {len(receipt.lessons_learned)} — في .zyko/mind/")
+        if receipt.reflections:
+            print(
+                f"انعكاسات موثقة: {len(receipt.reflections)}"
+                f" — ميزانية مستهلكة {receipt.budget.get('total_used', 0)}"
+                f"/{receipt.budget.get('total_cap', 0)}"
+            )
     return EXIT_OK if receipt.ok else EXIT_FINDINGS
 
 

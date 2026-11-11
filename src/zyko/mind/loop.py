@@ -11,8 +11,9 @@
      تنفيذ ولا مسار موازٍ.
   4. **النقد** — فحص الناتج الفعلي على معايير النجاح (``critic``)؛
      الفجوات ملاحظات عربية لا حكم بالحدس.
-  5. **التحسين** — جولة إصلاح حتمية على الناتج المولَّد عند فجوات وجولات
-     متبقية (``FixerEngine``) ثم نقد ثانٍ — فتبقى الجولات موثقة لا مكررة.
+  5. **الانعكاس وإعادة المحاولة** — حلقة ذاتية التصحيح موثقة (``reflect``):
+     حرّاس مخرجات على كل مرحلة، وملاحظة انعكاس عربية من كل فشل تعود
+     مدخلًا للمحاولة التالية تحت ميزانية صارمة — جولات موثقة لا مكررة.
   6. **الذاكرة** — حالة المشروع الدائمة ودروسه المستخلصة في
      ``<out>/.zyko/mind/``؛ الدروس تُحمَّل في كل جلسة قادمة.
 
@@ -36,6 +37,20 @@ from zyko.mind.critic import CriticReport, critique
 from zyko.mind.memory import MindMemory
 from zyko.mind.perception import perceive
 from zyko.mind.planner import PLAN_GATE_TITLE, build_plan
+from zyko.mind.reflect import (
+    STAGE_CRITIC,
+    STAGE_PLAN,
+    Reflection,
+    RetryBudget,
+    condense_feedback,
+    fallback_note,
+    gate_verdict_summary,
+    guard_execution,
+    guard_feedback,
+    guard_perception,
+    guard_plan,
+    reflect_note,
+)
 from zyko.pipeline.engine import MAX_DESCRIPTION_LEN, PipelineEngine
 
 RECEIPT_SCHEMA = "zyko.mind/receipt-v1"
@@ -89,6 +104,8 @@ class MindReceipt:
     lessons_loaded: tuple[str, ...] = ()
     lessons_learned: tuple[str, ...] = ()
     gaps_ar: tuple[str, ...] = ()
+    reflections: list[dict] = field(default_factory=list)  # انعكاسات موثقة بترتيب زمني
+    budget: dict = field(default_factory=dict)  # ميزانية إعادة المحاولة عند الختام
     chain_hash: str = ""
     seconds_total: float = 0.0
 
@@ -114,6 +131,8 @@ class MindReceipt:
             "lessons_loaded": list(self.lessons_loaded),
             "lessons_learned": list(self.lessons_learned),
             "gaps_ar": list(self.gaps_ar),
+            "reflections": [dict(r) for r in self.reflections],
+            "budget": dict(self.budget),
             "chain_hash": self.chain_hash,
         }
 
@@ -143,6 +162,19 @@ class MindReceipt:
             lines.append("")
             lines.append("## فجوات النقد")
             lines.extend(f"- {g}" for g in self.gaps_ar)
+        if self.reflections:
+            lines.append("")
+            lines.append("## الانعكاسات وإعادة المحاولة")
+            lines.append(
+                f"الميزانية المستهلكة: {self.budget.get('total_used', 0)}"
+                f" من سقف {self.budget.get('total_cap', 0)} إعادة"
+            )
+            for r in self.reflections:
+                state = "أُعيدت المحاولة" if r.get("retried") else "توقفت الحلقة"
+                lines.append(
+                    f"- «{r.get('stage')}» المحاولة {r.get('attempt')} — {state}:"
+                    f" {r.get('trigger_ar')}"
+                )
         if self.lessons_learned:
             lines.append("")
             lines.append("## دروس تعلمتها هذه الجلسة")
@@ -163,10 +195,13 @@ class MindLoop:
         rounds: int = DEFAULT_ROUNDS,
         fail_under: int = DEFAULT_FAIL_UNDER,
         core_decision: CoreDecision | dict | None = None,
+        budget: RetryBudget | None = None,
     ) -> None:
         self.core: ModelCore = core if core is not None else DeterministicCore()
         self.rounds = max(1, int(rounds))
         self.fail_under = int(fail_under)
+        # ميزانية إعادة المحاولة: سقوف معلنة لا حدس — كل استهلاك موثق بالإيصال
+        self.budget = budget if budget is not None else RetryBudget()
         # قرار اختيار القلب يدخل الإيصال وسلسلة الأدلة — الكشف التلقائي
         # جزء موثق من القصة لا حدس صامت. القلب الحتمي بدون قرار يعطي {}.
         self.core_decision: dict = (
@@ -219,6 +254,8 @@ class MindLoop:
             ],
             "lessons_learned": list(receipt.lessons_learned),
             "gaps_ar": list(receipt.gaps_ar),
+            "reflections": list(receipt.reflections),
+            "budget": dict(receipt.budget),
             "ok": receipt.ok,
         }
         canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
@@ -281,39 +318,84 @@ class MindLoop:
                 started,
             )
 
-        # ---- 1) الإدراك: تصنيف + معايير نجاح — حتمي بلا نموذج
+        # ---- 1) الإدراك: تصنيف + معايير نجاح — حتمي بلا نموذج، وحارس يفحص ناتجه
         perception = perceive(desc)
         receipt.kind = perception.kind.value
         receipt.confidence = perception.classification.confidence
         receipt.lessons_loaded = MindMemory(out_path).load_lessons() if out_path.exists() else ()
+        p_guard = guard_perception(perception)
         receipt.steps.append(
             MindStepRecord(
                 step="perceive",
                 title_ar="الإدراك (تطبيع ← تصنيف ← معايير نجاح)",
-                ok=perception.kind.value != "UNKNOWN",
-                exit_code=0 if perception.kind.value != "UNKNOWN" else 1,
+                ok=p_guard.ok,
+                exit_code=0 if p_guard.ok else 1,
                 details_ar=(
                     f"النوع {perception.kind.value} بثقة {perception.classification.confidence:.2f} — "
                     f"{len(perception.criteria)} معايير نجاح، ودروس محملة: {len(receipt.lessons_loaded)}"
+                    if p_guard.ok
+                    else f"حرس الإدراك رفض الناتج — {p_guard.reason_ar}"
                 ),
             )
         )
+        if not p_guard.ok:
+            # لا استشارة قلب ولا خطة لمهمة غير مفهومة — رفض مبكر موثق
+            return self._finish(receipt, started)
 
-        # ---- 2) بوابة الخطة: خطوات حتمية + استشارة القلب خلف PII ← RTL
+        # ---- 2) بوابة الخطة مع حلقة الانعكاس: رفض ⇒ درس ⇒ استشارة جديدة
         plan = build_plan(perception, self.core)
-        receipt.plan_accepted = plan.accepted
-        receipt.plan_text = plan.text_ar() if plan.accepted else ""
-        receipt.steps.append(
-            MindStepRecord(
-                step="plan",
-                title_ar=PLAN_GATE_TITLE,
-                ok=plan.accepted,
-                exit_code=0 if plan.accepted else 1,
-                details_ar="؛ ".join(v.details_ar for v in plan.verdicts if v.details_ar)
-                or "اقتراح مرفوض",
+        attempt = 1
+        guard = guard_plan(plan, perception)
+        while not (plan.accepted and guard.ok):
+            trigger_ar = (
+                gate_verdict_summary(plan.verdicts) if not plan.accepted else guard.reason_ar
             )
-        )
-        if not plan.accepted:
+            note = reflect_note(STAGE_PLAN, reason_ar=trigger_ar, gaps=(), attempt=attempt)
+            feedback = note if guard_feedback(note).ok else fallback_note()
+            will_retry = self.budget.can_retry(STAGE_PLAN)
+            receipt.reflections.append(
+                Reflection(
+                    stage=STAGE_PLAN,
+                    attempt=attempt,
+                    trigger_ar=trigger_ar,
+                    feedback_ar=feedback,
+                    retried=will_retry,
+                ).to_dict()
+            )
+            receipt.steps.append(
+                MindStepRecord(
+                    step="plan",
+                    title_ar=f"{PLAN_GATE_TITLE} — المحاولة {attempt}",
+                    ok=False,
+                    exit_code=1,
+                    details_ar=trigger_ar
+                    + (
+                        " — أُعيدت المحاولة بملاحظة الدرس"
+                        if will_retry
+                        else " — توقفت الحلقة: نفدت ميزانية الخطة"
+                    ),
+                )
+            )
+            if not will_retry:
+                break
+            self.budget.consume(STAGE_PLAN)
+            attempt += 1
+            plan = build_plan(perception, self.core, feedback=feedback)
+            guard = guard_plan(plan, perception)
+        receipt.plan_accepted = bool(plan.accepted and guard.ok)
+        receipt.plan_text = plan.text_ar() if receipt.plan_accepted else ""
+        if receipt.plan_accepted:
+            receipt.steps.append(
+                MindStepRecord(
+                    step="plan",
+                    title_ar=PLAN_GATE_TITLE,
+                    ok=True,
+                    exit_code=0,
+                    details_ar="؛ ".join(v.details_ar for v in plan.verdicts if v.details_ar)
+                    or "خطة مقبولة",
+                )
+            )
+        else:
             return self._finish(receipt, started)
 
         # ---- 3) التنفيذ: تفويض حرفي لمحركات المصنع — لا مسار موازٍ
@@ -347,20 +429,24 @@ class MindLoop:
                 for rel in sorted(set(result.files) | set(result.written))
                 if (out_path / rel).is_file()
             }
-            receipt.steps.append(
-                MindStepRecord(
-                    step="execute",
-                    title_ar="التنفيذ (محرك الحلقة: توليد ← مراجعة ← إصلاح)",
-                    ok=exec_ok,
-                    exit_code=result.exit_code
-                    if result.ok and exec_ok
-                    else (2 if not result.ok else 1),
-                    details_ar=details,
-                    evidence=evidence,
-                )
+            exec_record = MindStepRecord(
+                step="execute",
+                title_ar="التنفيذ (محرك الحلقة: توليد ← مراجعة ← إصلاح)",
+                ok=exec_ok,
+                exit_code=result.exit_code
+                if result.ok and exec_ok
+                else (2 if not result.ok else 1),
+                details_ar=details,
+                evidence=evidence,
             )
+            exec_guard = guard_execution(exec_record, out_path, write=write)
+            if exec_record.ok and not exec_guard.ok:
+                exec_record.ok = False
+                exec_record.exit_code = 2
+                exec_record.details_ar = f"حرس التنفيذ رفض — {exec_guard.reason_ar}"
+            receipt.steps.append(exec_record)
             receipt.rounds_ran = max(1, result.rounds_ran)
-            if not exec_ok and not result.ok:
+            if not exec_record.ok and not result.ok:
                 return self._finish(receipt, started)
         else:
             target = perception.target_path or ""
@@ -380,6 +466,11 @@ class MindLoop:
                 )
                 return self._finish(receipt, started)
             exec_result = self._run_existing(perception, out_path, write=write)
+            existing_guard = guard_execution(exec_result, out_path, write=write)
+            if exec_result.ok and not existing_guard.ok:
+                exec_result.ok = False
+                exec_result.exit_code = 2
+                exec_result.details_ar = f"حرس التنفيذ رفض — {existing_guard.reason_ar}"
             receipt.steps.append(exec_result)
             score_after = self._existing_score(target)
             receipt.rounds_ran = 1
@@ -397,19 +488,74 @@ class MindLoop:
             )
         )
 
-        # ---- 5) التحسين: جولة إصلاح حتمية عند فجوات وجولات متبقية
+        # ---- 5) الانعكاس وإعادة المحاولة: فجوات ⇒ درس ⇒ إصلاح ⇒ نقد ثانٍ
+        # الكود القائم: جولة توثيق واحدة فقط — إعادة أعمى لمسار حتمي لا
+        # تغيّر مدخلاته رفض موثقة لا صامتة. البناء المولّد: حلقة كاملة
+        # تحت ميزانية النقد والجولات معًا، كل جولة بانعكاس موثق.
         final_report = report
-        if not report.ok and self.rounds > 1 and receipt.rounds_ran < self.rounds:
+        attempt = 1
+        if (
+            not final_report.ok
+            and perception.kind.value != "GENERATE"
+            and self.rounds > 1
+            and receipt.rounds_ran < self.rounds
+        ):
+            receipt.reflections.append(
+                Reflection(
+                    stage=STAGE_CRITIC,
+                    attempt=1,
+                    trigger_ar=condense_feedback("", final_report.gaps_ar, budget=200),
+                    feedback_ar="لا إعادة للمسار القائم — الإصلاح عبر خطوات الخطة نفسها",
+                    retried=False,
+                ).to_dict()
+            )
             receipt.rounds_ran += 1
             final_report = self._refine(perception, out_path, receipt, score_after)
+            receipt.gaps_ar = final_report.gaps_ar
+        while (
+            not final_report.ok
+            and perception.kind.value == "GENERATE"
+            and receipt.rounds_ran < self.rounds
+            and self.budget.can_retry(STAGE_CRITIC)
+        ):
+            trigger_ar = condense_feedback("", final_report.gaps_ar, budget=200)
+            note = reflect_note(
+                STAGE_CRITIC,
+                reason_ar=trigger_ar,
+                gaps=final_report.gaps_ar,
+                attempt=attempt,
+            )
+            feedback = note if guard_feedback(note, final_report.gaps_ar).ok else fallback_note()
+            self.budget.consume(STAGE_CRITIC)
+            receipt.reflections.append(
+                Reflection(
+                    stage=STAGE_CRITIC,
+                    attempt=attempt,
+                    trigger_ar=trigger_ar,
+                    feedback_ar=feedback,
+                    retried=True,
+                ).to_dict()
+            )
+            receipt.rounds_ran += 1
+            final_report = self._refine(perception, out_path, receipt, score_after)
+            receipt.gaps_ar = final_report.gaps_ar
+            attempt += 1
+        if not final_report.ok and attempt > 1 and perception.kind.value == "GENERATE":
+            # سبب التوقف موثق صريحًا: ميزانية النقد أو الجولات نفدت والفجوات باقية
+            receipt.reflections.append(
+                Reflection(
+                    stage=STAGE_CRITIC,
+                    attempt=attempt,
+                    trigger_ar=condense_feedback("", final_report.gaps_ar, budget=200),
+                    feedback_ar="توقفت الحلقة — نفدت ميزانية النقد أو الجولات والفجوات باقية",
+                    retried=False,
+                ).to_dict()
+            )
 
         # ---- 6) الذاكرة: حالة دائمة + دروس مستخلصة من فجوات النقد
         self._remember(perception, out_path, receipt, final_report, write=write)
 
-        # ---- الحكم النهائي: كل البوابات الخمس أخضر
-        receipt.ok = all(s.ok for s in receipt.steps)
-        if not receipt.ok:
-            receipt.failed_step = next(s.step for s in receipt.steps if not s.ok)
+        # ---- الحكم النهائي: آخر سجل لكل بوابة يقرر — في _finish
         return self._finish(receipt, started)
 
     # ------------------------------------------------------------ الوضع القائم
@@ -553,6 +699,11 @@ class MindLoop:
             if receipt.gaps_ar
             else ("الجلسة اكتملت بلا فجوات — النمط الناجح مرجع للجلسات القادمة",)
         )
+        if receipt.reflections:
+            retried_count = sum(1 for r in receipt.reflections if r.get("retried"))
+            lessons_source = lessons_source + (
+                f"الحلقة أعادت المحاولة {retried_count} مرة بعد انعكاس موثق — الفجوة تُعالج في الجولة التالية لا تُخفى",
+            )
         learned = memory.learn(lessons_source)
         receipt.lessons_learned = learned
         evidence.update(
@@ -576,10 +727,19 @@ class MindLoop:
 
     # ------------------------------------------------------------ الختام
     def _finish(self, receipt: MindReceipt, started: float) -> MindReceipt:
-        """أغلق الإيصال: الحكم + البصمة + الزمن خارج السلسلة."""
-        receipt.ok = all(s.ok for s in receipt.steps)
+        """أغلق الإيصال: الحكم النهائي + الميزانية + البصمة + الزمن خارج السلسلة.
+
+        عقد الحكم: **آخر سجل لكل بوابة هو الذي يقرر** — المحاولات الوسيطة
+        المرفوضة ثم المجتازة تاريخ موثق في الخطوات والانعكاسات لا فشل
+        نهائي، كما أن نفاد الميزانية بفشل أخير يبقى فشلًا كاملًا موثقًا.
+        """
+        final_gates: dict[str, bool] = {}
+        for s in receipt.steps:
+            final_gates[s.step] = s.ok
+        receipt.ok = all(final_gates.values())
         if not receipt.ok:
-            receipt.failed_step = next(s.step for s in receipt.steps if not s.ok)
+            receipt.failed_step = next(s.step for s in receipt.steps if not final_gates[s.step])
+        receipt.budget = self.budget.to_dict()
         receipt.chain_hash = self._chain_hash(receipt)
         receipt.seconds_total = time.perf_counter() - started
         return receipt

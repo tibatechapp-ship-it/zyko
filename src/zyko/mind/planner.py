@@ -135,12 +135,18 @@ def _steps_for(perception: Perception) -> tuple[MindStep, ...]:
     return ()
 
 
-def build_plan(perception: Perception, core: ModelCore) -> MindPlan:
+def build_plan(perception: Perception, core: ModelCore, *, feedback: str = "") -> MindPlan:
     """ابنِ الخطة: خطوات حتمية + استشارة القلب خلف البوابات — بلا استثناء.
 
     نص القلب يُفحص PII ثم RTL (الترتيب الثابت)؛ رفض أي بوابة يجعل الخطة
     مرفوضة كاملة بكل الأحكام موثقة، ومهمة غير مفهومة تُرفض قبل استشارة
     أي قلب — فشل هيكلي آمن لا يلمس القرص.
+
+    ``feedback`` هو ملاحظة الانعكاس من المحاولة السابقة (من
+    ``mind.reflect.reflect_note`` وقد سبق أن اجتازت حارس الملاحظة) —
+    تُلحق بالطلب فتغيّر مدخل الاستشارة فعلًا: بلاها إعادة المحاولة
+    حتميًا نفس النتيجة، وبها يتعلم القلب من رفض البوابة قبل أن يعيد
+    الصياغة.
     """
     steps = _steps_for(perception)
     if not steps:
@@ -167,6 +173,9 @@ def build_plan(perception: Perception, core: ModelCore) -> MindPlan:
         f"الهدف: {perception.goal}\nالنوع: {perception.kind.value}\n"
         f"الخطوات الحتمية: {len(steps)} — اقترح ملاحظات تخطيط عربية موجزة."
     )
+    note = str(feedback or "").strip()
+    if note:
+        plan_request = f"{plan_request}\nملاحظة انعكاس من المحاولة السابقة: {note}"
     try:
         advisory = core.respond(plan_request, context=perception.goal)
     except Exception as exc:  # noqa: BLE001 — فشل القلب دليل لا انهيار

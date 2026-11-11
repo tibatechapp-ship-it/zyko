@@ -5,7 +5,7 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.24.0-6366f1)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.26.0-6366f1)](CHANGELOG.md)
 [![Tests](https://img.shields.io/badge/tests-2270%20passing-22c55e)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Termux-10b981)](.github/workflows/ci.yml)
@@ -19,7 +19,7 @@
 
 > توليد ← مراجعة ← إصلاح ← حارس — من بوابة واحدة، بإيصالات توجيه قابلة للتحقق، وعلى أي منصة.
 
-النسخة **0.25.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
+النسخة **0.26.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
 
 ---
 
@@ -138,7 +138,7 @@ real    0m0.828s
 | `zyko do --brain ollama --model m` | العقل كاملاً مع تخطيط دماغ حقيقي خلف البوابات — والرجوع آمن للمخطط الحتمي عند أي فشل |
 | `zyko py <file.daad>` | ترجمة/تنفيذ بايثون عربية (ضاد) |
 | `zyko ai run` | جلسة ذكاء موثقة عبر البوابات (`planner` / `ollama` / `bestof`) |
-| `zyko mind run "الهدف" -o مجلد` | **الحلقة الإدراكية الكاملة** (المرحلة A من MIND.md): إدراك ← تخطيط ← تنفيذ ← نقد ← تحسين ← ذاكرة — بإيصال حتمي وذاكرة مشروع دائمة في `.zyko/mind/`. القلب تلقائي (`--brain auto` الافتراضي): أول مفتاح سحابي في البيئة أو نقطة Ollama محلية تفعّل دماغًا حقيقيًا خلف البوابات، والغياب يرجع الحتمي — والقرار في الإيصال بلا أي قيمة مفتاح |
+| `zyko mind run "الهدف" -o مجلد` | **الحلقة الإدراكية الكاملة** (المرحلة A من MIND.md): إدراك ← تخطيط ← تنفيذ ← نقد ← انعكاس وإعادة محاولة ← ذاكرة — حلقة ذاتية التصحيح: حرّاس مخرجات على كل مرحلة، وملاحظة انعكاس عربية من كل فشل تعود مدخلًا للمحاولة التالية تحت ميزانية صارمة لكل مرحلة، وكلها موثقة بالإيصال وذاكرة مشروع دائمة في `.zyko/mind/`. القلب تلقائي (`--brain auto` الافتراضي): أول مفتاح سحابي في البيئة أو نقطة Ollama محلية تفعّل دماغًا حقيقيًا خلف البوابات، والغياب يرجع الحتمي — والقرار في الإيصال بلا أي قيمة مفتاح |
 | `zyko ask / chat / route / serve` | البوابة والتوجيه متعدد المزوّدين |
 
 القائمة الكاملة: [docs/API.md](docs/API.md).
