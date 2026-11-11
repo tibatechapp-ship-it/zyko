@@ -1,3 +1,49 @@
+## 0.23.0 — the coverage round closes the study's two honest gaps, and daad runs in CI for real
+
+### The coverage round: the three deepest gaps in the study are closed
+
+Study §6 item 5 named the weakest coverage units; this cycle writes the
+tests, not the excuses — every new test pins a documented branch with its
+Arabic message or its machine contract, no network, no models:
+
+- `zyko.orchestrator.run` 79.1% → **99%** (2 lines missing): missing-path
+  Arabic refusals, directory review, structurally refused broken-syntax fix,
+  injected guardian/tool exceptions (documented, never raised), the seven
+  step-summary branches, transpile failure contracts (OSError, nonzero exit
+  with and without detail), and the verify refusals — 29 new tests.
+- `zyko.cli.commands` 85.0% → **94%** (42 lines missing): `route --json`
+  with a real prompt estimate, chat EOF, hidden-prompt hash-key refusal,
+  policy show/redact on the builtin, gauntlet argument validation
+  (per-intent, negative execute, repeats<1 under the stress branch),
+  `verify --json` with an empty ledger file, `do --json` signed receipt,
+  cost over an audit log with corrupt lines skipped, the two `cache`
+  machine contracts (disabled JSON + human hint), `traces` with corrupt
+  spans and a missing filter hit, the full `new` approval flow (EOF cancel,
+  Arabic «لا» cancel, «نعم» build, FileExistsError exit 2, static-check
+  rejection exit 1, injected failing project tests exit 1), and the five
+  `py` paths against the real daad transpiler — 33 new tests.
+- `zyko.baseline.gate` 84.1% → **88%** (22 lines missing): victim-file
+  selection, bytes trees, the binary-only anchor (documented zero-reviewed
+  state), the full W1→W4 anchor cycle proving regression detection and
+  improvement announcement, injected update failure, and cross-run
+  structural determinism of the whole gate — 8 new tests.
+- **Full-suite measured coverage: 94.19% → 95%** (777 → 684 missing
+  statements) with daad installed.
+
+### daad runs in CI: the 12 documented skips close on the truth leg
+
+Study §6 item 4: the optional daad gateway tests were skip-documented
+because CI never installed the language. The `metrics-truth` leg now
+installs daad **pinned to v0.2.0 by tag** (`daad @ git+…@v0.2.0`) —
+deterministic, not floating — and runs its gateway tests for real; every
+other leg keeps the honest documented skip. The single remaining skip is
+BestOfBrain-absence — documented, not daad.
+
+**Test count: 2119 collected — 2118 passed + 1 documented skip, 0 failures —
+ruff clean. README badge and line truth-synced from this run's junit
+(2118/1); the site badges caught rotting again (tests 2024, coverage 94%)
+and are synced (2118 / 95%).**
+
 # Changelog
 
 ## 0.22.0 — the whole mind classifies and plans, templates hit 100/100, huge files get reviewed, and every number is told honestly
