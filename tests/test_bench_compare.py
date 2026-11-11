@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -88,11 +89,16 @@ def test_competitor_runs_real_command(tmp_path: Path) -> None:
 
 
 def test_competitor_missing_binary_documented(tmp_path: Path) -> None:
-    """أداة غير موجودة ⇒ فشل موثق عربيًا (رمز 127 عبر الصدفة) — لا رقم ولا انهيار."""
+    """أداة غير موجودة ⇒ فشل موثق عربيًا برمز الخروج الحرفي — لا رقم ولا انهيار.
+
+    رمز الخروج لثنائية مفقودة يختلف بحكم المنصة (127 اصطلاح صدفات POSIX؛
+    ويندوز يخرج برمز 1 من الصدفة) — العقد الصادق: الرمز يُوثَّق كما خرج
+    حرفيًا بلا افتراض منصة ولا رقم مفبرك.
+    """
     report = run_compare(_target(tmp_path), competitor_cmd="zyko-no-such-tool {path}", runs=2)
     assert not report.competitor.ran
     error = report.competitor.error_ar or ""
-    assert ("رمز 127" in error) or ("فشل تشغيل المنافس" in error)
+    assert re.search(r"خرج برمز \d+", error), f"لا رمز خروج موثق: {error}"
     assert "لا رقم مفبرك" in error
 
 

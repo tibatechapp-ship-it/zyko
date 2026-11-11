@@ -16,6 +16,9 @@
 from zyko.orchestrator.brain_route import (
     ALLOWED_TASKS,
     BRAIN_TOOLS,
+    CLASSIFIABLE_TASKS,
+    classify_with_brain,
+    parse_brain_classification,
     parse_brain_plan,
     plan_with_brain,
     planner_prompt,
@@ -34,6 +37,7 @@ from zyko.orchestrator.swarm import SwarmResult, TaskResult, swarm
 __all__ = [
     "ALLOWED_TASKS",
     "BRAIN_TOOLS",
+    "CLASSIFIABLE_TASKS",
     "Classification",
     "CompressedContext",
     "FileSlice",
@@ -45,8 +49,10 @@ __all__ = [
     "TaskResult",
     "TaskType",
     "classify",
+    "classify_with_brain",
     "compress",
     "extract_context",
+    "parse_brain_classification",
     "parse_brain_plan",
     "plan_with_brain",
     "planner_prompt",

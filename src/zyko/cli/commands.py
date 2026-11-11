@@ -633,11 +633,21 @@ def cmd_do(args: Any) -> int:
 
     classification = classify(goal)
     if brain_choice:
-        # تخطيط دماغ حقيقي خلف البوابات والتحقق الحتمي — الرجوع آمن دائماً.
+        # دماغ حقيقي خلف البوابات والتحقق الحتمي — التصنيف ثم التخطيط،
+        # والرجوع آمن وموثق في كل خطوة (الجدول الحتمي هو الأساس دائماً).
         from zyko.ai.cli import build_brain
-        from zyko.orchestrator import plan_with_brain
+        from zyko.orchestrator import classify_with_brain, plan_with_brain
 
-        plan, planner_note = plan_with_brain(goal, build_brain(args), context=context)
+        brain = build_brain(args)
+        classification, classify_note = classify_with_brain(goal, brain)
+        print(
+            ui.info(classify_note)
+            if classification.classifier is not None
+            else ui.warn(classify_note)
+        )
+        plan, planner_note = plan_with_brain(
+            goal, brain, context=context, classification=classification
+        )
         classification = plan.classification
         print(ui.warn(planner_note) if plan.planner == "deterministic" else ui.info(planner_note))
     else:

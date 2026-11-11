@@ -1,5 +1,45 @@
 # Changelog
 
+## Unreleased — the brain now classifies too: `--brain` covers the whole mind (classify → plan), deterministically guarded
+
+`--brain qwen|ollama` used to deepen planning only — classification stayed
+exclusively deterministic. This cycle extends the real brain to the first
+decision of the chain, under the same strict contract that made planning
+safe:
+
+- **`classify_with_brain(goal, brain)`** consults the brain with a fixed
+  Arabic prompt (`{"task": ..., "confidence": ..., "reason_ar": ...}`) and
+  validates the answer with hard deterministic rules: the task must be one
+  of the six real types (`UNKNOWN` from the brain is rejected — the
+  deterministic table is the only honest source of "didn't understand"),
+  `confidence` must be a real number in [0.0, 1.0] (missing/textual/boolean
+  rejects), matched keywords are sanitized (non-strings, empties, oversized
+  dropped — a cosmetic defect never sinks a sound decision). Any failure —
+  throwing brain, gate rejection, broken JSON, rule violation — falls back
+  to the deterministic table with an honest Arabic note; the fallback path
+  stays byte-identical (live-proven: the `d0e52368…` chain hash unchanged).
+- **`Classification.classifier`** records the decision source exactly like
+  `Plan.planner` does: `"brain:<name>"` enters `to_dict` only when a brain
+  decided — deterministic receipts keep their previous byte contract.
+- **Chain coherence is enforced**: `parse_brain_plan` now accepts the
+  classifier's decision and *rejects the whole plan* if the planner brain
+  contradicts it (classifier said REVIEW, planner proposed FIX ⇒ fallback
+  with a documented note). `plan_with_brain` accepts the precomputed
+  classification; without it the previous behavior is literal.
+- **`zyko do --brain`** now consults the classifier first, then the
+  planner, with the same brain, printing both honest outcomes; receipts
+  carry `classifier` on accepted brain decisions.
+- 16 new deterministic tests (no network): acceptance with signing,
+  keyword sanitization, every rejection branch, chain coherence, the
+  unchanged no-brain byte contract, and `cmd_do` integration with a
+  split-answer brain.
+- **Windows CI debt cleared**: the competitor-missing-binary test asserted
+  POSIX's exit code 127; Windows shells exit 1 for a missing binary. The
+  honest contract is "document the exit code verbatim" — the test now
+  accepts any `خرج برمز N` without inventing platform assumptions.
+
+**Test count: 2024 passed (13 skipped), 0 failures — ruff clean.**
+
 ## Unreleased — template quality: the signed discovery closes at 100/100 and the guard threshold doubles to 70
 
 Gauntlet+ self-review (previous cycle) had signed an honest discovery: the

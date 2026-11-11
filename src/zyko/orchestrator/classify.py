@@ -115,21 +115,32 @@ _LATIN_EDGE = r"(?<![a-z0-9]){0}(?![a-z0-9])"
 
 @dataclass(frozen=True)
 class Classification:
-    """قرار التصنيف الحتمي — مجمّد وقابل للتسلسل JSON."""
+    """قرار التصنيف — مجمّد وقابل للتسلسل JSON.
+
+    ``classifier`` يوثّق مصدر القرار: ``None`` (الافتراضي — الجدول الحتمي
+    بلا نموذج) أو ``"brain:<اسم>"`` (تصنيف دماغ حقيقي اجتاز التحقق الحتمي
+    الصارم). الحقل يدخل ``to_dict`` فقط عند تصنيف دماغ — فتبقى قرارات
+    المسار الحتمي متطابقة بالبايت مع عقدها السابق، على مثال حقل
+    ``planner`` في الخطة.
+    """
 
     task: TaskType
     confidence: float
     matched_keywords: tuple[str, ...]
     alternatives: tuple[TaskType, ...]
+    classifier: str | None = None
 
     def to_dict(self) -> dict:
         """ممثل JSON كامل — مفاتيح ثابتة وقيم قابلة للتسلسل بالبايت."""
-        return {
+        payload: dict = {
             "task": self.task.value,
             "confidence": self.confidence,
             "matched_keywords": list(self.matched_keywords),
             "alternatives": [t.value for t in self.alternatives],
         }
+        if self.classifier is not None:
+            payload["classifier"] = self.classifier
+        return payload
 
 
 def normalize(text: str) -> str:

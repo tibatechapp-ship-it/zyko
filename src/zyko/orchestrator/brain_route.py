@@ -35,9 +35,12 @@ from zyko.orchestrator.route import Plan, Step, route
 __all__ = [
     "ALLOWED_TASKS",
     "BRAIN_TOOLS",
+    "CLASSIFIABLE_TASKS",
     "MAX_BRAIN_PATH_LEN",
     "MAX_BRAIN_REASON_LEN",
     "MAX_BRAIN_STEPS",
+    "classify_with_brain",
+    "parse_brain_classification",
     "parse_brain_plan",
     "plan_with_brain",
     "planner_prompt",
@@ -66,6 +69,16 @@ _PROMPT_TEMPLATE = """أنت مخطِّط مهام داخل zyko. صنّف هد�
 - FIX: خطوتان review ثم fix على المسار نفسه.
 - المسار ملف أو مجلد موجود فعلاً — لا تختلق مسارًا أبدًا.
 - reason_ar عربي قصير لكل خطوة.
+الهدف: {goal}"""
+
+_CLASSIFIER_PROMPT = """أنت مصنّف مهام داخل zyko. النوع المسموح واحد فقط من هذه الستة:
+REVIEW (مراجعة)، FIX (إصلاح)، GENERATE (توليد)، TRANSPILE (ترجمة)، VERIFY (تحقق إيصال)، ANALYZE (تحليل).
+أجب بـ JSON صالح وحده — بلا شرح وبلا أسوار كود وبلا أي نص قبله أو بعده — بهذا الشكل:
+{{"task": "REVIEW", "confidence": 0.9, "reason_ar": "سبب عربي قصير"}}
+قواعد ملزمة:
+- confidence رقم بين 0.0 و1.0 يعبّر عن ثقتك بالنوع المختار.
+- إن لم تفهم الهدف تمامًا أجب UNKNOWN وثقة 0.0.
+- reason_ar عربي قصير يشرح الاختيار.
 الهدف: {goal}"""
 
 
@@ -109,7 +122,103 @@ def _clean_step_value(value: Any, *, max_len: int) -> str | None:
     return value
 
 
-def parse_brain_plan(text: str, brain_name: str) -> Plan | None:
+# الأنواع القابلة للتصنيف من دماغ — UNKNOWN ممنوع عليه: الدماغ مُستشار
+# ليفهم لا ليعتل؛ إن قال UNKNOWN رجعنا للجدول الحتمي مع ملاحظة صادقة.
+CLASSIFIABLE_TASKS: frozenset[str] = frozenset(
+    {"REVIEW", "FIX", "GENERATE", "TRANSPILE", "VERIFY", "ANALYZE"}
+)
+MAX_CLASSIFIER_REASON_LEN = 300
+MAX_CLASSIFIER_KEYWORDS = 8
+MAX_CLASSIFIER_KEYWORD_LEN = 64
+
+
+def parse_brain_classification(text: str, brain_name: str) -> Classification | None:
+    """حوّل نص الدماغ إلى تصنيف موثّق — أو None إن أخفق أي تحقق حتمي.
+
+    القواعد الصارمة:
+    - ``task`` واحد من ``CLASSIFIABLE_TASKS`` — UNKNOWN من الدماغ رفض (والجدول
+      الحتمي هو من يقرر UNKNOWN أصلاً بلا استشارة).
+    - ``confidence`` رقم حقيقي (لا نص ولا منطقي) في ‎[0.0, 1.0] — مفقود ⇒ رفض.
+    - ``matched_keywords`` اختياري: قائمة نصوص قصيرة — فسادها يُهمل لعُطب
+      تجميلي لا يُسقط قراراً سليمًا.
+    التصنيف الناجح يحمل ``classifier="brain:<اسم>"`` ليقرأ الإيصال من أين
+    جاء القرار بصدق.
+    """
+    obj = _extract_json_object(str(text or ""))
+    if obj is None:
+        return None
+    task = obj.get("task")
+    if not isinstance(task, str) or task not in CLASSIFIABLE_TASKS:
+        return None
+    confidence = obj.get("confidence")
+    if isinstance(confidence, bool) or not isinstance(confidence, (int, float)):
+        return None
+    if not (0.0 <= float(confidence) <= 1.0):
+        return None
+    raw_keywords = obj.get("matched_keywords", ())
+    keywords: tuple[str, ...] = ()
+    if isinstance(raw_keywords, list):
+        cleaned = [
+            kw
+            for kw in raw_keywords
+            if isinstance(kw, str)
+            and kw
+            and len(kw) <= MAX_CLASSIFIER_KEYWORD_LEN
+            and "\n" not in kw
+            and "\x00" not in kw
+        ][:MAX_CLASSIFIER_KEYWORDS]
+        keywords = tuple(cleaned)
+    return Classification(
+        TaskType(task),
+        float(confidence),
+        keywords,
+        (),
+        classifier=f"brain:{brain_name}",
+    )
+
+
+def classifier_prompt(goal: str) -> str:
+    """التوجيه العربي الحتمي لمصنّف الدماغ — نفس الهدف = نفس التوجيه بالبايت."""
+    return _CLASSIFIER_PROMPT.format(goal=str(goal).strip())
+
+
+def classify_with_brain(goal: str, brain: _PlannerBrain) -> tuple[Classification, str]:
+    """صنّف بالدماغ خلف التحقق الحتمي — أو رجع آمنًا للجدول الحتمي.
+
+    يعيد زوجًا: التصنيف ثم الملاحظة العربية — التصنيف إما قرار دماغ اجتاز
+    كل البوابات والتحقق الحتمي، أو قرار الجدول الحتمي الأصلي؛ والملاحظة
+    تشرح ما جرى بصدق في الحالين.
+    """
+    fallback = classify(goal)
+    brain_name = str(getattr(brain, "name", "brain") or "brain")
+
+    try:
+        proposal = brain.propose(classifier_prompt(goal))
+    except Exception as exc:  # noqa: BLE001 — خطأ الدماغ رجوع موثق لا انهيار
+        note = f"تعذّر استشارة الدماغ للتصنيف ({type(exc).__name__}) — الجدول الحتمي قرر"
+        return fallback, note
+    if not getattr(proposal, "accepted", False):
+        reasons = "؛ ".join(
+            v.details_ar
+            for v in getattr(proposal, "verdicts", ()) or ()
+            if not v.passed and v.details_ar
+        )
+        note = "اقتراح التصنيف مرفوض عند البوابات — الجدول الحتمي قرر" + (
+            f": {reasons}" if reasons else ""
+        )
+        return fallback, note
+
+    classification = parse_brain_classification(getattr(proposal, "text", "") or "", brain_name)
+    if classification is None:
+        note = "تصنيف الدماغ فشل التحقق الحتمي (نوع/ثقة) — الجدول الحتمي قرر"
+        return fallback, note
+    note = f"التصنيف من الدماغ ({brain_name}) — اجتاز البوابات والتحقق الحتمي"
+    return classification, note
+
+
+def parse_brain_plan(
+    text: str, brain_name: str, classification: Classification | None = None
+) -> Plan | None:
     """حوّل نص الدماغ إلى خطة موثّقة — أو None إن أخفق أي تحقق حتمي.
 
     التحقق بنيوي صارم (المهمة، الأدوات، التسلسل، المسار الواحد الموجود،
@@ -149,12 +258,19 @@ def parse_brain_plan(text: str, brain_name: str) -> Plan | None:
     if len(paths) != 1:
         return None
 
-    classification = Classification(TaskType(task), 1.0, (), ())
+    if classification is not None:
+        # تماسك السلسلة: خطة المخطط يجب أن تعتُد بقرار المصنّف نفسه —
+        # تنافرهما رفض للخطة كلها مع رجوع موثق عند المستدعي.
+        if classification.task.value != task:
+            return None
+        cls = classification
+    else:
+        cls = Classification(TaskType(task), 1.0, (), ())
     steps = tuple(
         Step(tool, {"path": path}, reason or _default_reason_ar(tool))
         for tool, path, reason in cleaned
     )
-    return Plan(classification, steps, 0.0, (), planner=f"brain:{brain_name}")
+    return Plan(cls, steps, 0.0, (), planner=f"brain:{brain_name}")
 
 
 def _default_reason_ar(tool: str) -> str:
@@ -171,14 +287,20 @@ def plan_with_brain(
     brain: _PlannerBrain,
     *,
     context: dict[str, Any] | None = None,
+    classification: Classification | None = None,
 ) -> tuple[Plan, str]:
     """خطّط بالدماغ خلف التحقق الحتمي — أو رجع آمنًا للمخطط الحتمي.
+
+    ``classification`` اختياري: قرار مصنّف جاهز (مثل ناتج
+    ``classify_with_brain``) يُعتمد أساسًا للرجوع ويُلزم خطة الدماغ بالتماس
+    معه؛ وغيابه يعيد السلوك السابق حرفيًا (تصنيف حتمي محلي).
 
     يعيد زوجًا: الخطة ثم الملاحظة العربية — الخطة إما خطة دماغ اجتازت كل
     البوابات والتحقق، أو الخطة الحتمية الأصلية؛ والملاحظة تشرح ما جرى
     بصدق — تُطبع للمستخدم وتُحفظ في ملاحظات الخطة نفسها.
     """
-    classification = classify(goal)
+    if classification is None:
+        classification = classify(goal)
     fallback = route(classification, context=context)
     brain_name = str(getattr(brain, "name", "brain") or "brain")
 
@@ -198,9 +320,9 @@ def plan_with_brain(
         )
         return _with_note(fallback, note), note
 
-    plan = parse_brain_plan(getattr(proposal, "text", "") or "", brain_name)
+    plan = parse_brain_plan(getattr(proposal, "text", "") or "", brain_name, classification)
     if plan is None:
-        note = "خطة الدماغ فشلت التحقق الحتمي (مهمة/أدوات/مسار) — رجوع للمخطط الحتمي"
+        note = "خطة الدماغ فشلت التحقق الحتمي (مهمة/أدوات/مسار/تماسك التصنيف) — رجوع للمخطط الحتمي"
         return _with_note(fallback, note), note
     note = f"المخطط من الدماغ ({brain_name}) — اجتاز البوابات والتحقق الحتمي"
     return _with_note(plan, note), note
