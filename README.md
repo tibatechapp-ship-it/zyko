@@ -5,8 +5,8 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.23.0-6366f1)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-2118%20passing-22c55e)](.github/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.24.0-6366f1)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-2225%20passing-22c55e)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Termux-10b981)](.github/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
@@ -19,7 +19,7 @@
 
 > توليد ← مراجعة ← إصلاح ← حارس — من بوابة واحدة، بإيصالات توجيه قابلة للتحقق، وعلى أي منصة.
 
-النسخة **0.23.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
+النسخة **0.24.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
 
 ---
 
@@ -33,7 +33,7 @@ re-computes any routing decision; byte-level determinism is a tested contract, n
 slogan). Works with **zero API keys** (deterministic brain), or a local model via
 Ollama, or any OpenAI-compatible cloud brain behind the same gates. Policy-as-code,
 MCP client+server, multi-user gateway, RAG essentials, agent crews, 2 mandatory
-dependencies, and first-class Android/Termux support. 2118 tests passing on
+dependencies, and first-class Android/Termux support. 2225 tests passing on
 Linux·macOS·Windows × Python 3.11–3.14. See [CHANGELOG](CHANGELOG.md) ·
 [Architecture](docs/ARCHITECTURE.md) · [Innovations](docs/INNOVATION.md).
 
@@ -90,6 +90,9 @@ zyko ai run --brain ollama --model <model> --goal "وصف عربي"
 
 # 6) بايثون عربية: لغة ضاد المستقلة عبر حدود عملية منفصلة
 zyko py hello.daad --run
+
+# 7) نواة العقل المستقل: الحلقة الإدراكية الكاملة بذاكرة مشروع
+zyko mind run "انشئ مشروع قائمة مهام مع واجهة سطر أوامر" -o ./جديد
 ```
 
 ---
@@ -132,6 +135,7 @@ real    0m0.828s
 | `zyko do --brain ollama --model m` | العقل كاملاً مع تخطيط دماغ حقيقي خلف البوابات — والرجوع آمن للمخطط الحتمي عند أي فشل |
 | `zyko py <file.daad>` | ترجمة/تنفيذ بايثون عربية (ضاد) |
 | `zyko ai run` | جلسة ذكاء موثقة عبر البوابات (`planner` / `ollama` / `bestof`) |
+| `zyko mind run "الهدف" -o مجلد` | **الحلقة الإدراكية الكاملة** (المرحلة A من MIND.md): إدراك ← تخطيط ← تنفيذ ← نقد ← تحسين ← ذاكرة — بإيصال حتمي وذاكرة مشروع دائمة في `.zyko/mind/` |
 | `zyko ask / chat / route / serve` | البوابة والتوجيه متعدد المزوّدين |
 
 القائمة الكاملة: [docs/API.md](docs/API.md).
@@ -144,7 +148,7 @@ Linux · Windows · macOS · Android/Termux — مصفوفة CI خضراء عل�
 
 ```bash
 pytest -q
-# 2118 passed, 1 skipped  (1 = مرشح BestOfBrain غير موجود بهذه البيئة — تخطٍ موثق لا فشل؛
+# 2225 passed, 1 skipped  (1 = مرشح BestOfBrain غير موجود بهذه البيئة — تخطٍ موثق لا فشل؛
 #                          تخطيات ضاد الـ12 أُغلقت: ساق metrics-truth تثبّت ضاد v0.2.0 وتشغّلها)
 ```
 

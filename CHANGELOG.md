@@ -1,3 +1,73 @@
+## 0.24.0 — the autonomous mind: MIND.md Phase A ships as `zyko.mind`, the six-module cognitive loop with a deterministic receipt and three-layer memory
+
+### The six cognitive modules of the study now exist as one tested package
+
+The study (`docs/MIND.md` §6.1) specified Phase A as six pure-Python
+modules over one operation boundary; every one of them was a documented
+gap until this release. `zyko.mind` closes all six with the same
+contracts as the rest of the factory — **the brain adds, the gates
+decide, the receipt tells the whole story**:
+
+- **Perception** (`mind/perception.py`): Arabic goal normalization
+  (strip + whitespace folding), classification delegated *literally* to
+  the proven `orchestrator.classify` table (no parallel table), an
+  extracted target path, and deterministic success criteria in four
+  kinds (`artifact`/`score`/`explicit`/`always`) — with the two identity
+  criteria (PII-free output, sound RTL) never dropped.
+- **Planning** (`mind/planner.py`): deterministic step tables per task
+  kind, each step with an Arabic acceptance criterion; the model core's
+  advisory text is gated (PII ← RTL, the fixed order) before it may
+  enter the plan. An unknown task or a rejected advisory aborts at the
+  plan gate with zero bytes written.
+- **Execution** (`mind/loop.py`): literal delegation only —
+  `PipelineEngine` for generation, the deterministic orchestrator
+  (classify → route → run) for existing code. No parallel path, no
+  re-implementation.
+- **Critique** (`mind/critic.py`): Reflexion without dependencies —
+  every criterion is verified against real disk artifacts (files,
+  tests dir, README, measured review score, PII scan over generated
+  texts); gaps come back as Arabic notes, and a dry run documents
+  honest skips instead of invented passes.
+- **Refinement**: when gaps remain and rounds do too, a deterministic
+  `FixerEngine` round runs over the generated project, then a second
+  critique — rounds are documented, never duplicated.
+- **Memory** (`mind/memory.py`): the three layers as specified — an
+  ephemeral session list, persistent project state in
+  `<out>/.zyko/mind/state.json`, and distilled lessons in
+  `lessons.json` (append-only, deduplicated, sorted) loaded by every
+  future session, plus a human-readable `MEMORY.md`. Determinism
+  holds: sorted keys, no timestamps, byte-identical reruns.
+
+### The unified operation boundary: `ModelCore`
+
+The study's core requirement — the model core as *one operation
+boundary* — is `mind/core.py`: a `respond()` protocol with three
+implementations. `DeterministicCore` (the default) runs with zero keys,
+zero network, zero model — the Phase A completion criterion ("the full
+loop passes in a network-free environment") is now a test, not a claim.
+`BrainCore` lifts any `zyko.ai` brain (Planner / Ollama / Qwen /
+BestOf) onto the same boundary with failures contained as documented
+verdicts, and `ScriptedCore` is the deterministic mock for tests.
+
+### Receipts, gates, and the truth numbers
+
+- `MindReceipt` carries the five gates (perceive/plan/execute/critic/
+  memory) plus the optional refine step, Arabic evidence per step,
+  file-hash proof maps, and a `chain_hash` derived from step content
+  only — same goal, same environment, same receipt by the byte
+  (`seconds_total` is documented outside the chain).
+- Input guards match the AISession contract exactly: non-string goals,
+  empty goals, over-limit goals, and non-empty output dirs are safe
+  structural failures (exit 2) that delete nothing.
+- CLI: `zyko mind run "الهدف" -o مجلد [--dry-run] [--rounds] [--json]`
+  and `zyko mind map`, wired through the same dispatch contract as
+  `zyko ai` (exit 0 accepted / 1 rejected at a gate / 2 structural).
+- **Truth numbers: 2225 passing, 1 documented skip** — 108 new tests
+  across `tests/mind/` (perception, core, planner, critic, memory,
+  loop, CLI) — all offline, all deterministic. The suite previously
+  reported 2118 passing.
+
+
 ## 0.23.0 — the coverage round closes the study's two honest gaps, and daad runs in CI for real
 
 ### The coverage round: the three deepest gaps in the study are closed
