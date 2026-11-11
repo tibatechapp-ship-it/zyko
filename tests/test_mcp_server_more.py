@@ -86,6 +86,8 @@ def test_ping_and_tools_list():
         "run_pipeline",
         "fix_workspace",
         "baseline_check",
+        "sandbox_run_tests",
+        "sandbox_patch",
     ]
 
 

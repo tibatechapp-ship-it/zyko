@@ -45,9 +45,10 @@ def call(server, name, args):
 
 def test_fix_workspace_registered_with_the_deterministic_seven():
     names = [t["name"] for t in ZYKO_TOOLS]
-    # 10 أدوات مجموعًا: ثلاثة موجّهة للطوّر (models/route/chat) + سبع حتمية بلا نموذج
+    # 12 أداة مجموعًا: ثلاثة موجّهة للطوّر (models/route/chat) + تسع حتمية بلا نموذج
     # 0.13.0: baseline_check (حارس الجودة — القراءة فقط)
-    assert len(ZYKO_TOOLS) == 10
+    # 0.27.0: sandbox_run_tests وsandbox_patch (الأولوية 3 — أدوات بعقد وتدقيق)
+    assert len(ZYKO_TOOLS) == 12
     assert [
         n
         for n in names
@@ -60,6 +61,8 @@ def test_fix_workspace_registered_with_the_deterministic_seven():
             "run_pipeline",
             "fix_workspace",
             "baseline_check",
+            "sandbox_run_tests",
+            "sandbox_patch",
         )
     ] == [
         "pii_ar_scan",
@@ -69,6 +72,8 @@ def test_fix_workspace_registered_with_the_deterministic_seven():
         "run_pipeline",
         "fix_workspace",
         "baseline_check",
+        "sandbox_run_tests",
+        "sandbox_patch",
     ]
     tool = next(t for t in ZYKO_TOOLS if t["name"] == "fix_workspace")
     assert "EXISTING" in tool["description"]
@@ -77,9 +82,9 @@ def test_fix_workspace_registered_with_the_deterministic_seven():
     assert tool["inputSchema"]["required"] == ["path"]
 
 
-def test_deterministic_tool_count_is_ten_total_seven_deterministic():
-    # 0.13.0: baseline_check انضم إلى الحتميات السبع (10 أدوات مجموعًا)
-    assert len(ZYKO_TOOLS) == 10
+def test_deterministic_tool_count_is_twelve_total_nine_deterministic():
+    # 0.27.0: sandbox_run_tests وsandbox_patch انضما إلى الحتميات (12 أداة مجموعًا)
+    assert len(ZYKO_TOOLS) == 12
     deterministic = {
         "pii_ar_scan",
         "rtl_check",
@@ -88,6 +93,8 @@ def test_deterministic_tool_count_is_ten_total_seven_deterministic():
         "run_pipeline",
         "fix_workspace",
         "baseline_check",
+        "sandbox_run_tests",
+        "sandbox_patch",
     }
     names = {t["name"] for t in ZYKO_TOOLS}
     assert deterministic <= names

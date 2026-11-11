@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -52,10 +53,16 @@ from zyko.mind.reflect import (
     reflect_note,
 )
 from zyko.pipeline.engine import MAX_DESCRIPTION_LEN, PipelineEngine
+from zyko.sandbox.contracts import PermissionContract
+from zyko.sandbox.session import ToolSession
 
 RECEIPT_SCHEMA = "zyko.mind/receipt-v1"
 DEFAULT_FAIL_UNDER = 75
 DEFAULT_ROUNDS = 2
+# argv تشغيل الاختبارات الحقيقية في جولة التحسين — أول token من القائمة
+# البيضاء المشتقة من المفسر الفعلي، والباقي ثابت موثق
+TESTS_ARGV_TAIL = ("-m", "pytest", "-q")
+MAX_DISCOVERED_TEST_FILES = 64  # سقف كشف ملفات الاختبار — فحص حتمي محدود
 
 
 # ----------------------------------------------------------------- الإيصال
@@ -196,12 +203,17 @@ class MindLoop:
         fail_under: int = DEFAULT_FAIL_UNDER,
         core_decision: CoreDecision | dict | None = None,
         budget: RetryBudget | None = None,
+        tools: ToolSession | None = None,
     ) -> None:
         self.core: ModelCore = core if core is not None else DeterministicCore()
         self.rounds = max(1, int(rounds))
         self.fail_under = int(fail_under)
         # ميزانية إعادة المحاولة: سقوف معلنة لا حدس — كل استهلاك موثق بالإيصال
         self.budget = budget if budget is not None else RetryBudget()
+        # جلسة الأدوات المعزولة (الأولوية 3): جولة التحسين تشغّل اختبارات
+        # حقيقية تحت عقد صلاحيات وسجل تدقيق — بلا جلسة يبقى السلوك
+        # الحتمي الأصلي (المُصلِّح الحتمي فقط) دون أي تغيير
+        self.tools = tools
         # قرار اختيار القلب يدخل الإيصال وسلسلة الأدلة — الكشف التلقائي
         # جزء موثق من القصة لا حدس صامت. القلب الحتمي بدون قرار يعطي {}.
         self.core_decision: dict = (
@@ -611,6 +623,80 @@ class MindLoop:
             return None
 
     # ------------------------------------------------------------ النقد والتحسين
+    # ------------------------------------------------------------ الأدوات
+    def _tools_contract_for(self, out_path: Path) -> PermissionContract:
+        """عقد أدوات مشتق لجذر الناتج — قائمة بيضاء تشمل المفسر الفعلي.
+
+        العقد المشتق يرث سقوف جلسة الأدوات (مهلة، مخرجات، حجم) ولا يرث
+        الكتابة: جولة الاختبارات تشغّل لا تُعدّل — و``allow_patch`` يبقى
+        صفرًا هنا فلا اختبار يصل إلى أداة الرقعة عبر هذا المسار.
+        """
+        base = self.tools.contract
+        interpreter = (Path(sys.executable).stem.lower() or "python").replace(".exe", "")
+        commands = tuple(dict.fromkeys((interpreter, *base.allowed_commands)))
+        return PermissionContract.for_roots(
+            out_path,
+            allow_run_tests=True,
+            allowed_commands=commands,
+            max_file_bytes=base.max_file_bytes,
+            max_output_chars=base.max_output_chars,
+            timeout_s=base.timeout_s,
+        )
+
+    def _run_real_tests(self, out_path: Path, *, write: bool):
+        """جولة التحسين تشغّل اختبارات حقيقية تحت العقد — أو توثق تخطيها.
+
+        الكشف حتمي مسقوف (``test_*.py`` و``*_test.py``)، والتشغيل عبر
+        جلسة مشتقة تشترك في سجل تدقيق الجلسة الأصلية — كل محاولة موثقة
+        في السلسلة نفسها. النتيجة خطوة موثقة في الإيصال: خروج غير صفر
+        يفشل البوابة فعلًا — الاختبارات الحقيقية حكم لا زينة.
+        """
+        if self.tools is None:
+            return None
+        if not write:
+            return MindStepRecord(
+                step="tools",
+                title_ar="الأدوات المعزولة (اختبارات حقيقية)",
+                ok=True,
+                exit_code=0,
+                details_ar="تخطٍّ — تشغيل جاف لا ينفّذ عمليات فرعية",
+            )
+        if not out_path.is_dir():
+            return MindStepRecord(
+                step="tools",
+                title_ar="الأدوات المعزولة (اختبارات حقيقية)",
+                ok=True,
+                exit_code=0,
+                details_ar="لا مجلد ناتج — لا اختبارات تُشغَّل",
+            )
+        candidates = sorted(
+            {
+                p
+                for p in out_path.rglob("*.py")
+                if p.name.startswith("test_") or p.name.endswith("_test.py")
+            }
+        )
+        if not candidates:
+            return MindStepRecord(
+                step="tools",
+                title_ar="الأدوات المعزولة (اختبارات حقيقية)",
+                ok=True,
+                exit_code=0,
+                details_ar="لا ملفات اختبار في الناتج — لا تشغيل حقيقي يُدَّعى",
+            )
+        contract = self._tools_contract_for(out_path)
+        derived = ToolSession(contract, audit_log=self.tools.audit)
+        interpreter = (Path(sys.executable).stem.lower() or "python").replace(".exe", "")
+        result = derived.run_tests(argv=[interpreter, *TESTS_ARGV_TAIL], cwd=out_path)
+        shown = min(len(candidates), MAX_DISCOVERED_TEST_FILES)
+        return MindStepRecord(
+            step="tools",
+            title_ar="الأدوات المعزولة (اختبارات حقيقية تحت عقد صلاحيات)",
+            ok=result.ok,
+            exit_code=result.exit_code,
+            details_ar=f"اختبارات حقيقية على {shown} ملف اختبار — {result.reason_ar}",
+        )
+
     def _critique(
         self, perception, out_path: Path, score_after: int | None, *, dry_run: bool = False
     ) -> CriticReport:
@@ -649,6 +735,9 @@ class MindLoop:
                 Path(fix.path).write_text(fix.fixed_source, encoding="utf-8")
                 changed_total += 1
             fixed_total += fix.fixed_count
+        tests_step = self._run_real_tests(out_path, write=not receipt.dry_run)
+        if tests_step is not None:
+            receipt.steps.append(tests_step)
         re_report = self._critique(perception, out_path, score_after, dry_run=receipt.dry_run)
         receipt.gaps_ar = re_report.gaps_ar
         receipt.steps.append(

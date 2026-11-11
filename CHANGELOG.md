@@ -1,3 +1,137 @@
+## 0.27.0 — the tools execute: sandboxed patch_file/run_tests under permission contracts, every attempt signed into a sha256-chained audit log
+
+### Priority 3 of the autonomy roadmap closes: the retry round now runs real tests, not just a deterministic fixer
+
+Until 0.26.0 the reflect/retry loop could *describe* what failed — the
+refinement round re-ran a deterministic fixer and re-critiqued. The honest
+gap said it plainly: Aider and SWE-agent feed **real test runs** back into
+the loop; ZYKO did not execute anything. This release adds the sandboxed
+tool execution layer (`zyko.sandbox`) as a first-class citizen with the
+same house contracts: deterministic by the byte, Arabic-first evidence,
+zero dependencies, and every attempt — allowed, denied, or errored —
+signed into an append-only audit trail before anything touches the disk
+or spawns a process.
+
+- **`sandbox/contracts.py` — permission contracts**: a frozen
+  `PermissionContract` answers three questions before any execution:
+  *where* (roots confinement with `resolve()`-based escape detection —
+  `..`, symlink files, symlink chains and symlinked directories that end
+  outside the roots are all rejected), *what* (`allow_patch`,
+  `allow_run_tests`, a whitelisted `allowed_commands` argv[0] list, and a
+  shell-metacharacter ban over every token — defense in depth above the
+  no-shell execution), and *how much* (file size, output chars, timeout
+  capped at a hard 120 s, patch ops per session). Hostile values are
+  clamped, never raised — the `RetryBudget` contract from 0.26.0 applied
+  to capabilities. The environment handed to subprocesses is a **whitelist**
+  (PATH/HOME/Windows leftovers + stability vars), so API keys, tokens,
+  secrets, cookies and sessions cannot cross over by any name.
+- **`sandbox/patcher.py` — `patch_file`**: unique-match replacement
+  (zero matches is an honest refusal, multiple matches is an ambiguity
+  refusal — a misleading patch is worse than a failed one) or full write
+  for new files; UTF-8-only, NUL-binary rejected, size-capped before and
+  after, and written **atomically** (temp file in the same directory +
+  `os.replace`) so no half-written file is ever observable and no orphan
+  temp survives a failure. Relative paths anchor to the contract's first
+  root — not the caller's cwd — so the same call means the same file for
+  every caller.
+- **`sandbox/runner.py` — `run_tests`**: real pytest/unittest runs under
+  the contract — argv list only (a string command is refused, never
+  split), whitelisted interpreter, scrubbed environment, hard timeout
+  (GNU exit 124 on breach, documented verdict not a crash), capped output
+  tails, and honest counters parsed from pytest/unittest summaries
+  (absent counter = no claim, never an implied zero). A `pytest.py` in the
+  run root would shadow the runner itself — it is refused *before*
+  execution; hijacking the runner is not "running tests". `..` segments
+  and absolute paths inside argv are refused so tests cannot collect
+  outside the root.
+- **`sandbox/audit.py` — the audit log**: JSONL append-only with a
+  sha256 hash chain (seq + prev_hash + recomputed hash per line); the
+  wall clock is stored but *outside the chain* — identical event
+  sequences produce byte-identical logs. `verify()` re-derives the whole
+  chain and names the first broken seq with an Arabic reason (edited
+  value, deleted line, reorder, forged append, corrupt line — all
+  caught). Detail values are deterministically capped (240 chars), and
+  anything secret-shaped (`ghp_`, `gho_`, `sk-`, AKIA, `xox*`) is masked
+  *before* it touches the disk — a token can never be laundered into the
+  audit trail even through a hostile file name.
+- **`sandbox/session.py` — `ToolSession`**: the only doorway. The audit
+  entry is written *before* execution (an attempt is documented even if
+  the process dies mid-tool), then again with the real outcome; a
+  per-session patch budget (`max_patch_ops`) denies and documents;
+  hostile objects whose `__str__` explodes become documented `ERROR`
+  results — the loop that calls the session never breaks.
+- **Mind loop integration**: `MindLoop(tools=...)` wires the session in;
+  the refine round now (a) runs the deterministic fixer as before and
+  (b) **runs the generated project's real tests** under a derived
+  read-only contract (same caps, `allow_patch=False`) sharing the same
+  audit chain — the result is a first-class `tools` gate in the receipt,
+  where red tests fail the loop honestly. Dry runs document the skip;
+  projects without tests get an honest "no test files" step, not a
+  claimed pass. Without a session the loop behaves exactly as 0.26.0.
+  The CLI exposes it as `zyko mind run --tools`, writing the audit log to
+  `<out>/.zyko/tools/audit.jsonl`.
+- **MCP surface (12 tools)**: `sandbox_run_tests` (root + fixed
+  pytest/unittest preset) and `sandbox_patch` (explicit `allow_write`
+  consent flag; absent/false = deny) — both audited under
+  `<root>/.zyko/tools/audit.jsonl`, both deterministic, both with the
+  contract's Arabic denial reasons in the JSON payload.
+- **The adversarial suite hardened the layer itself** (bugs it caught and
+  fixed before release): the audit `append` was O(n²) — it re-read the
+  whole file per signature — now O(1) via a last-entry cache with a
+  documented single-writer assumption and an explicit `reload()`;
+  a non-dict detail payload used to raise inside `append`, now it is
+  wrapped and signed; relative-path anchoring was against the process
+  cwd, now against the contract root; argv traversal (`..`/absolute
+  paths) was unrestricted, now refused.
+- **Benchmark ledger refreshed honestly**: the 0.26.0 release left the
+  baseline ledger documenting 0.25.0 (the provenance test was red);
+  regenerated at 0.27.0 against a fresh `psf/requests` clone —
+  accuracy 12/12, determinism verified.
+
+### Truth numbers
+
+- 170 new tests: 28 contracts (clamping, whitelist env, path/command
+  guards, determinism), 25 audit (chain, tamper matrix, ts-outside-chain,
+  secret masking), 24 patch (atomicity, uniqueness, caps, symlink,
+  Arabic round-trip), 21 runner (real pytest/unittest subprocesses, env
+  canary proving secrets never cross, timeout kill, shadow refusal,
+  counters honesty), 12 session (pre/post audit, budgets,
+  error-not-exception), 13 loop integration (real-test gates in the
+  receipt, audit chain growth, CLI flag), 46 adversarial/stress
+  (traversal matrix, symlink chains, seven secret-shaped env vars proven
+  non-crossing via a failing-test canary, 500-event tamper flips at
+  three positions, byte-identical chains under 50-event storms), 11 MCP.
+- Speed canaries (all green, the adversarial suite fails on regression):
+  200 patches < 10 s, 2,000 audit events + full chain verify < 3 s,
+  5,000 path checks < 2 s, 1M-char counter parse < 0.5 s,
+  20,000 entry hashes < 1 s.
+- Full suite: **2,514 passed, 19 skipped** (all daad-environment skips) —
+  up from 2,363, still zero network in tests, zero keys, zero new
+  dependencies.
+
+### Where this stands against the state of the art
+
+| Capability | Reflexion / Self-Refine | Aider | SWE-agent | LangGraph | **ZYKO 0.27.0** |
+|---|---|---|---|---|---|
+| Feedback source | the model critiques itself | lint/test errors fed back | environment signals | per-node retry policy | **deterministic guards + real test runs + measured disk evidence** |
+| External verifier | optional / self-judged | yes (tests) | yes (tests) | user-supplied | **always: PII/RTL gates, route table, sha256 evidence, and now pytest/unittest runs in the loop** |
+| Tool execution safety | n/a | cwd-limited shell | sandbox container | none by default | **permission contract: rooted paths, argv whitelist, metachar ban, whitelisted env, hard timeout, op budget** |
+| Every attempt auditable | no | chat transcript | trajectory log | checkpoints | **append-only JSONL hash chain; tamper (edit/delete/reorder/forge) detected by re-derivation** |
+| Secrets in tool environment | unmanaged | inherits shell env | container env | unmanaged | **whitelist env; secret-shaped strings masked before any disk write** |
+| Retry budget | unbounded generations | global max attempts | global max iterations | per-node RetryPolicy | **per-stage + hard total cap + per-session tool op budget, all clamped** |
+| Determinism of the loop | no | no | no | partial | **byte-identical receipts and audit chains, offline, timestamps outside the chain** |
+| Arabic-first evidence | no | no | no | no | **every guard reason, denial, and note is Arabic, RTL-checked** |
+
+The honest gap that remains: the sandbox is process-and-contract
+isolation, not an OS container — running a workspace's tests still
+executes that workspace's own code (its `conftest.py` runs with the
+contract's constraints on what crosses *from zyko*, not on what the code
+does internally), and the retry budget stays deliberately tighter than
+Aider/SWE-agent open-ended rounds for determinism and auditability —
+both knobs are contract fields, and the next frontier (real sandboxing
+via OS primitives and cross-session memory) is documented for the next
+priority.
+
 ## 0.26.0 — the loop corrects itself: reflect/retry with per-stage output guards and a retry budget, every reflection signed into the receipt
 
 ### Priority 2 of the autonomy roadmap closes: self-correction is now a documented, bounded, deterministic behavior

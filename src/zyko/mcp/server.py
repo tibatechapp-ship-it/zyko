@@ -220,6 +220,53 @@ ZYKO_TOOLS: list[dict[str, Any]] = [
             "required": ["path"],
         },
     },
+    {
+        "name": "sandbox_run_tests",
+        "description": (
+            "Run the workspace's real tests inside a sandboxed tool session: "
+            "whitelisted argv only (no shell), scrubbed environment (no secrets "
+            "cross over), hard timeout, capped output, and every attempt signed "
+            "into an append-only sha256-chained JSONL audit log under "
+            "<root>/.zyko/tools/. Deterministic; Priority 3 of the roadmap."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "root": {"type": "string", "description": "workspace root to run tests in"},
+                "command": {
+                    "type": "string",
+                    "enum": ["pytest", "unittest"],
+                    "description": "fixed preset; default pytest",
+                },
+            },
+            "required": ["root"],
+        },
+    },
+    {
+        "name": "sandbox_patch",
+        "description": (
+            "Apply a deterministic patch (unique-match replace or full write) under "
+            "an explicit permission contract: paths confined to the given root, size "
+            "caps, atomic write, and every attempt signed into the sha256-chained "
+            "audit log. Requires allow_write=true as explicit consent; absent or "
+            "false means deny. Priority 3."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "root": {"type": "string", "description": "the only writable root"},
+                "path": {"type": "string", "description": "file to patch (must be inside root)"},
+                "old_text": {"type": "string", "description": "exact text to replace (unique)"},
+                "new_text": {"type": "string", "description": "replacement text"},
+                "content": {"type": "string", "description": "full-write mode content"},
+                "allow_write": {
+                    "type": "boolean",
+                    "description": "explicit consent flag",
+                },
+            },
+            "required": ["root", "path"],
+        },
+    },
 ]
 
 
@@ -296,12 +343,79 @@ class ZykoMCPServer:
             text = self._fix_workspace_text(arguments)
         elif name == "baseline_check":
             text = self._baseline_check_text(arguments)
+        elif name == "sandbox_run_tests":
+            text = self._sandbox_run_tests_text(arguments)
+        elif name == "sandbox_patch":
+            text = self._sandbox_patch_text(arguments)
         else:
             return {
                 "content": [{"type": "text", "text": f"unknown tool '{name}'"}],
                 "isError": True,
             }
         return {"content": [{"type": "text", "text": text}], "isError": False}
+
+    # -------------------------------------------------- sandboxed tools
+    @staticmethod
+    def _sandbox_session(root: str, allow_patch: bool = False) -> Any:
+        """جلسة أدوات معزولة على جذر واحد — تدقيق تحت الجذر نفسه."""
+        from pathlib import Path as _Path
+
+        from zyko.sandbox.audit import AuditLog
+        from zyko.sandbox.contracts import PermissionContract
+        from zyko.sandbox.session import ToolSession
+
+        root_path = _Path(str(root or "")).absolute()
+        if not root_path.is_dir():
+            raise ZykoError(f"sandbox root does not exist: {root}")
+        contract = PermissionContract.for_roots(
+            root_path, allow_patch=allow_patch, allow_run_tests=True
+        )
+        audit = AuditLog(root_path / ".zyko" / "tools" / "audit.jsonl")
+        return ToolSession(contract, audit)
+
+    @classmethod
+    def _sandbox_run_tests_text(cls, arguments: dict[str, Any]) -> str:
+        """`sandbox_run_tests` — اختبارات حقيقية بعقد وتدقيق موثق."""
+        import json
+        import sys as _sys
+
+        session = cls._sandbox_session(str(arguments.get("root") or ""))
+        preset = str(arguments.get("command") or "pytest").strip().lower()
+        interpreter = (
+            _sys.executable.replace("\\", "/").split("/")[-1].replace(".exe", "") or "python"
+        )
+        argv = (
+            [interpreter, "-m", "pytest", "-q"]
+            if preset == "pytest"
+            else [interpreter, "-m", "unittest", "discover", "-q"]
+        )
+        result = session.run_tests(argv=argv, cwd=str(arguments.get("root") or ""))
+        payload = {
+            "tool": "sandbox_run_tests",
+            "result": result.to_dict(),
+            "audit": session.audit.chain_summary(),
+        }
+        return json.dumps(payload, ensure_ascii=False, indent=2)
+
+    @classmethod
+    def _sandbox_patch_text(cls, arguments: dict[str, Any]) -> str:
+        """`sandbox_patch` — رقعة بعقد صريح وموافقة allow_write."""
+        import json
+
+        allow = arguments.get("allow_write") is True
+        session = cls._sandbox_session(str(arguments.get("root") or ""), allow_patch=allow)
+        result = session.patch_file(
+            path=arguments.get("path"),
+            old_text=arguments.get("old_text"),
+            new_text=arguments.get("new_text"),
+            content=arguments.get("content"),
+        )
+        payload = {
+            "tool": "sandbox_patch",
+            "result": result.to_dict(),
+            "audit": session.audit.chain_summary(),
+        }
+        return json.dumps(payload, ensure_ascii=False, indent=2)
 
     # -------------------------------------------------- deterministic tools
     @staticmethod

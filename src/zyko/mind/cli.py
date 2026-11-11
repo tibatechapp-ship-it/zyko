@@ -40,7 +40,8 @@ def mind_map_text() -> str:
             "القلب      تلقائي من البيئة (--brain auto)     مفاتيح سحابية أو Ollama أو حتمي",
             "تنفيذ      محرك الحلقة أو المحدّد              تفويض حرفي لمحركات المصنع",
             "نقد        داخلي (حتمي على القرص)             معايير النجاح على الناتج الفعلي",
-            "تحسين      FixerEngine (جولة ثانية عند فجوات)  إصلاح موثق ثم نقد ثانٍ",
+            "تحسين      FixerEngine + أدوات معزولة (--tools) إصلاح موثق + اختبارات حقيقية",
+            "أدوات      جلسة بعقد صلاحيات وسجل تدقيق        patch_file وrun_tests موقّعة",
             "ذاكرة      <out>/.zyko/mind/                  حالة دائمة + دروس مستخلصة",
             "-" * 62,
             "أكواد الخروج: 0 مقبول · 1 مرفوض عند بوابة · 2 فشل هيكلي آمن",
@@ -73,6 +74,11 @@ def register_to(sub: argparse._SubParsersAction) -> None:
         "--model", default=None, help="اسم النموذج (يغلب الافتراضي) — مثال: qwen-plus أو qwen2.5:7b"
     )
     p.add_argument("--dry-run", action="store_true", help="تشغيل جاف — توثيق بلا كتابة")
+    p.add_argument(
+        "--tools",
+        action="store_true",
+        help="تفعيل الأدوات المعزولة: جولة التحسين تشغّل اختبارات حقيقية بسجل تدقيق",
+    )
     p.add_argument("--json", action="store_true", help="طباعة الإيصال JSON كاملًا")
 
     sub.add_parser("map", help="خريطة العقل المستقل (نص ثابت)")
@@ -113,11 +119,23 @@ def handle_mind_run(args: Any) -> int:
     except ValueError as exc:
         print(f"خطأ: {exc}", file=sys.stderr)
         return EXIT_USAGE
+    tools_session = None
+    if getattr(args, "tools", False):
+        from zyko.sandbox.audit import AuditLog
+        from zyko.sandbox.contracts import PermissionContract
+        from zyko.sandbox.session import ToolSession
+
+        out_root = Path(args.out).absolute()
+        contract = PermissionContract.for_roots(out_root, allow_run_tests=True)
+        tools_session = ToolSession(
+            contract, AuditLog(out_root / ".zyko" / "tools" / "audit.jsonl")
+        )
     loop = MindLoop(
         decision.core,
         rounds=rounds,
         fail_under=fail_under,
         core_decision=decision,
+        tools=tools_session,
     )
     receipt = loop.run(args.goal, Path(args.out), write=not dry_run)
 

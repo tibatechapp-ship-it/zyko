@@ -23,6 +23,21 @@ Three arcs run through this history:
 
 ---
 
+## v0.27.0 — the tools execute: sandboxed patch_file/run_tests under permission contracts
+
+Priority 3 of the autonomy roadmap: `zyko.sandbox` gives the cognitive loop
+real tool execution — `patch_file` (unique-match replace, atomic write,
+rooted paths) and `run_tests` (whitelisted argv, scrubbed env, hard
+timeout, honest counters) under frozen `PermissionContract`s, with every
+attempt — allowed, denied, or errored — signed into an append-only
+sha256-chained JSONL audit log whose wall clock lives outside the chain.
+`zyko mind run --tools` wires real pytest/unittest runs into the retry
+round as a first-class receipt gate; two new MCP tools expose the same
+contracts over the protocol. The adversarial suite caught and fixed three
+real bugs before release (O(n²) audit appends, non-dict detail crash,
+cwd-relative path anchoring). 170 new tests; suite at 2,514 passed. Full
+detail in [CHANGELOG.md](../CHANGELOG.md).
+
 ## v0.19.0 — BestOfBrain: brains compete, gates decide
 
 `BestOfBrain` consults candidate brains **in order** on the same goal;

@@ -1,7 +1,7 @@
 """اختبارات أداة MCP الجديدة baseline_check: العاشرة والسابعة الحتمية.
 
 العقد المُختبر هنا:
-- tools/list يعرض 10 أدوات وbaseline_check ضمنها بمخطط مدخلات سليم
+- tools/list يعرض 12 أداة وbaseline_check ضمنها بمخطط مدخلات سليم
 - الاستدعاء يقرأ فقط: لا ينشئ .zyko ولا يكتب أي شيء على القرص
 - بلا خط أساس ⇒ حالة موثقة (baseline_status=missing) لا isError
 - مسار مفقود أو فارغ ⇒ isError برسالة واضحة (اصطلاح الأدوات الحتمية)
@@ -61,10 +61,12 @@ def project(tmp_path):
     return src
 
 
-def test_tools_list_has_10_with_baseline_check():
+def test_tools_list_has_12_with_sandbox_tools():
     names = [t["name"] for t in ZYKO_TOOLS]
-    assert len(names) == 10
+    # 0.27.0: sandbox_run_tests وsandbox_patch انضما إلى القائمة (12 أداة)
+    assert len(names) == 12
     assert "baseline_check" in names
+    assert "sandbox_run_tests" in names and "sandbox_patch" in names
     tool = next(t for t in ZYKO_TOOLS if t["name"] == "baseline_check")
     assert tool["inputSchema"]["required"] == ["path"]
     props = tool["inputSchema"]["properties"]
