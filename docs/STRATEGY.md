@@ -154,3 +154,12 @@ Langfuse — shipped in 0.4.2 as a zero-dependency OTLP/JSON sink) → RAG
 essentials (embeddings, local vector store, `context=docs` — shipped in
 0.5.0 with a deterministic zero-dep default embedder) → multi-agent crews
 with governance → the 1.0 stability contract.
+
+
+## فجوات ويندوز الموثقة (قيد P2 — لا إخفاء)
+- تقطيع المسارات المطلقة في perceive/planner يفترض فواصل POSIX —
+  مسارات ويندوز (محرّكات، فواصل، مسافات) تحتاج معالجة منصوية.
+- دلالات عدّاء run_tests على ويندوز غير مكتملة.
+- اختبارات landlock الداخلية دلالات لينكس خالصة.
+القياس: 5 اختبارات متخطاة موثقاً على windows-latest — الأخضر الكامل
+على Linux/macOS × py3.11–3.14.

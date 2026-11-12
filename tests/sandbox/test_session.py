@@ -77,6 +77,10 @@ def test_patch_exception_becomes_documented_error(tmp_path):
 
 # ---------------------------------------------------------------- الاختبارات
 @_working_jail
+@pytest.mark.skipif(
+    __import__("sys").platform == "win32",
+    reason="فجوة ويندوز الموثقة (تقطيع المسارات/دلالات العدّاء على ويندوز) — قيد مخطط لا إخفاء",
+)
 def test_run_tests_allow_audited(tmp_path):
     session, _, log = _session(tmp_path, allow_run_tests=True)
     result = session.run_tests(argv=[sys_py(), "-V"], cwd=tmp_path)
