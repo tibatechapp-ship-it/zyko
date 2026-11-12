@@ -90,9 +90,7 @@ class SynthReceipt:
     @property
     def chain_hash(self) -> str:
         """بصمة السلسلة — sha256 فوق (المهمة + الحكم + الفائز)."""
-        payload = "\x1f".join(
-            [self.task, self.verdict, self.winner_expr or ""]
-        )
+        payload = "\x1f".join([self.task, self.verdict, self.winner_expr or ""])
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     def to_dict(self) -> dict[str, object]:
@@ -116,9 +114,7 @@ class SynthReceipt:
 
     def to_json(self) -> str:
         """سطر JSON واحد حتمي بالبايت — نفس الإيصال نفس البايتات."""
-        return json.dumps(
-            self.to_dict(), ensure_ascii=False, sort_keys=True, separators=(",", ":")
-        )
+        return json.dumps(self.to_dict(), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
 def _compile_contracts(exprs: tuple[str, ...]) -> list[Any]:
@@ -145,8 +141,11 @@ def _guided_seeds(spec: TaskSpec) -> list[ast.expr]:
         except SyntaxError:
             continue
         for node in ast.walk(tree):
-            if not (isinstance(node, ast.Compare) and len(node.ops) == 1
-                    and isinstance(node.ops[0], ast.Eq)):
+            if not (
+                isinstance(node, ast.Compare)
+                and len(node.ops) == 1
+                and isinstance(node.ops[0], ast.Eq)
+            ):
                 continue
             left, right = node.left, node.comparators[0]
             for a, b in ((left, right), (right, left)):
@@ -162,13 +161,11 @@ def _guided_seeds(spec: TaskSpec) -> list[ast.expr]:
     return seeds
 
 
-def _judge_point(
-    requires_code: list[Any], ns: dict[str, Any]
-) -> bool:
+def _judge_point(requires_code: list[Any], ns: dict[str, Any]) -> bool:
     """هل النقطة داخل المسبقات؟ False أو استثناء = خارج القياس."""
     for code in requires_code:
         try:
-            if not eval(code, _SAFE_GLOBALS, ns):  # noqa: S307 — نحو مُغلق ومساحة مبيّضة
+            if not eval(code, _SAFE_GLOBALS, ns):  # noqa: S307 # nosec B307 — النحو مغلق والمساحة مبيّضة والفائز لا يخرج بلا حكم الحاكم الشكلي
                 return False
         except Exception:
             return False
@@ -177,7 +174,7 @@ def _judge_point(
 
 def _safe_eval(code: Any, ns: dict[str, Any]) -> Any:
     """تقييم واحد مبيّض — الاستثناءات تعود لمُناديها كقرار مرشح."""
-    return eval(code, _SAFE_GLOBALS, ns)  # noqa: S307 — نحو مُغلق ومساحة مبيّضة
+    return eval(code, _SAFE_GLOBALS, ns)  # noqa: S307 # nosec B307 — النحو مغلق والمساحة مبيّضة والحاكم يحكم
 
 
 # مساحة الأسماء المبيّضة: بلا builtins مفتوحة — المسموح القياسي نفسه
@@ -218,8 +215,7 @@ def search(
     param_names = [p for p in spec.params if p in spec.domains]
     value_lists = [spec.domains[p] for p in param_names]
     points: list[dict[str, Any]] = [
-        dict(zip(param_names, combo))
-        for combo in itertools.product(*value_lists)
+        dict(zip(param_names, combo)) for combo in itertools.product(*value_lists)
     ]
     if not points:
         return SynthReceipt(
@@ -233,7 +229,10 @@ def search(
     constants = harvest_constants(spec.requires, spec.ensures, spec.domains)
     try:
         space = CandidateSpace(
-            spec.params, constants, max_nodes=max_nodes, budget=budget,
+            spec.params,
+            constants,
+            max_nodes=max_nodes,
+            budget=budget,
             block_beam=block_beam,
         )
     except ValueError as exc:
@@ -329,11 +328,7 @@ def search(
         winner_src = expr_source(winner)
         directives = "\n".join(spec.directives_preserved)
         params_sig = ", ".join(spec.params)
-        program = (
-            f"{directives}\n"
-            f"def {spec.name}({params_sig}):\n"
-            f"    return {winner_src}\n"
-        )
+        program = f"{directives}\ndef {spec.name}({params_sig}):\n    return {winner_src}\n"
         report = check_source(program)
         formal_summary = summarize(report)
         if report.verdict is not VerdictKind.ACCEPT:
@@ -341,9 +336,7 @@ def search(
                 task=spec.name,
                 spec_sha256=spec.sha256,
                 verdict=VERDICT_UNVERIFIABLE,
-                reason_ar=(
-                    "فائز نطري رفضه الحاكم الشكلي — لا يُسلَّم بلا حكم قبول"
-                ),
+                reason_ar=("فائز نطري رفضه الحاكم الشكلي — لا يُسلَّم بلا حكم قبول"),
                 emitted=emitted,
                 tried=tried,
                 structural_skips=structural_skips,
@@ -356,9 +349,7 @@ def search(
             task=spec.name,
             spec_sha256=spec.sha256,
             verdict=VERDICT_SYNTHESIZED,
-            reason_ar=(
-                "فائز اجتاز كل نقاط المجال وكل اللاحقات، وقبله الحاكم الشكلي"
-            ),
+            reason_ar=("فائز اجتاز كل نقاط المجال وكل اللاحقات، وقبله الحاكم الشكلي"),
             emitted=emitted,
             tried=tried,
             structural_skips=structural_skips,
@@ -438,9 +429,7 @@ def run(
             verdict=VERDICT_UNVERIFIABLE,
             reason_ar=verdict.reason_ar,
         )
-    return search(
-        verdict.spec, max_nodes=max_nodes, budget=budget, block_beam=block_beam
-    )
+    return search(verdict.spec, max_nodes=max_nodes, budget=budget, block_beam=block_beam)
 
 
 __all__ = [

@@ -13,7 +13,7 @@ import json
 import pytest
 
 from zyko.tools.formal.engine import VerdictKind, check_source
-from zyko.tools.synth.engine import SynthReceipt, run, search
+from zyko.tools.synth.engine import run
 from zyko.tools.synth.grammar import (
     DEFAULT_BUDGET,
     CandidateSpace,
@@ -36,6 +36,7 @@ DOUBLE = (
 
 
 # -*- القارئ الثلاثي ------------------------------------------------
+
 
 class TestSpecParsing:
     def test_accepts_clean_contract(self) -> None:
@@ -75,23 +76,19 @@ class TestSpecParsing:
 
     def test_result_as_param_rejected(self) -> None:
         verdict = parse_task(
-            "# zyko:ensures: result == 1\n# zyko:domain: result = [1]\n"
-            "def f(result):\n    ...\n"
+            "# zyko:ensures: result == 1\n# zyko:domain: result = [1]\ndef f(result):\n    ...\n"
         )
         assert verdict.kind is VerdictKind.REJECT
         assert "محجوز" in verdict.reason_ar
 
     def test_variadic_rejected(self) -> None:
-        verdict = parse_task(
-            "# zyko:ensures: result == 1\ndef f(*args):\n    ...\n"
-        )
+        verdict = parse_task("# zyko:ensures: result == 1\ndef f(*args):\n    ...\n")
         assert verdict.kind is VerdictKind.REJECT
         assert "متغيرة" in verdict.reason_ar
 
     def test_bad_domain_shape_rejected(self) -> None:
         verdict = parse_task(
-            "# zyko:ensures: result == x\n# zyko:domain: x = [1, 2\n"
-            "def f(x):\n    ...\n"
+            "# zyko:ensures: result == x\n# zyko:domain: x = [1, 2\ndef f(x):\n    ...\n"
         )
         assert verdict.kind is VerdictKind.REJECT
 
@@ -106,8 +103,7 @@ class TestSpecParsing:
 
     def test_domain_for_non_param_rejected(self) -> None:
         verdict = parse_task(
-            "# zyko:ensures: result == x\n# zyko:domain: y = [1]\n"
-            "def f(x):\n    ...\n"
+            "# zyko:ensures: result == x\n# zyko:domain: y = [1]\ndef f(x):\n    ...\n"
         )
         assert verdict.kind is VerdictKind.REJECT
         assert "ليست معاملاً" in verdict.reason_ar
@@ -121,8 +117,7 @@ class TestSpecParsing:
 
     def test_param_without_domain_unknown(self) -> None:
         verdict = parse_task(
-            "# zyko:ensures: result == x + y\n# zyko:domain: x = [1]\n"
-            "def f(x, y):\n    ...\n"
+            "# zyko:ensures: result == x + y\n# zyko:domain: x = [1]\ndef f(x, y):\n    ...\n"
         )
         assert verdict.kind is VerdictKind.UNKNOWN
         assert "بلا مجال" in verdict.reason_ar
@@ -143,8 +138,7 @@ class TestSpecParsing:
 
     def test_large_range_sampled_by_stride(self) -> None:
         verdict = parse_task(
-            "# zyko:ensures: result == x\n# zyko:domain: x = range(0, 128)\n"
-            "def f(x):\n    ...\n"
+            "# zyko:ensures: result == x\n# zyko:domain: x = range(0, 128)\ndef f(x):\n    ...\n"
         )
         assert verdict.kind is VerdictKind.ACCEPT
         assert verdict.spec is not None
@@ -161,6 +155,7 @@ class TestSpecParsing:
 
 
 # -*- النحو المغلق ---------------------------------------------------
+
 
 class TestGrammar:
     def test_enumeration_deterministic(self) -> None:
@@ -216,10 +211,10 @@ class TestGrammar:
         consts = harvest_constants(
             ("x >= 0",), ("result * 2 == x",), {"x": (0, 1, 2, 3, 4, 5, 6, 7)}
         )
-        assert 2 in consts          # من نص العقد
+        assert 2 in consts  # من نص العقد
         assert 0 in consts and 1 in consts
-        assert 6 in consts          # نقطة مجال داخل السقف (|v| ≤ 20، 12 قيمة)
-        assert 50 not in consts     # خارج السقفين معاً
+        assert 6 in consts  # نقطة مجال داخل السقف (|v| ≤ 20، 12 قيمة)
+        assert 50 not in consts  # خارج السقفين معاً
 
     def test_max_nodes_bounds_validated(self) -> None:
         with pytest.raises(ValueError):
@@ -230,10 +225,12 @@ class TestGrammar:
 
 def itertools_islice(iterator, n):  # noqa: N802 — اسم اختباري محلي
     from itertools import islice
+
     return islice(iterator, n)
 
 
 # -*- حلقة البحث وأحكامها الخمسة -------------------------------------
+
 
 class TestSearchVerdicts:
     def test_double_synthesized(self) -> None:
@@ -288,7 +285,7 @@ class TestSearchVerdicts:
 
     def test_string_domain_len(self) -> None:
         receipt = run(
-            '# zyko:ensures: result == len(s)\n'
+            "# zyko:ensures: result == len(s)\n"
             '# zyko:domain: s = ["a", "bb", "ccc"]\ndef size_of(s):\n    ...\n'
         )
         assert receipt.ok
@@ -334,8 +331,7 @@ class TestSearchVerdicts:
 
     def test_unverifiable_spec_verdict(self) -> None:
         receipt = run(
-            "# zyko:ensures: result == x + y\n# zyko:domain: x = [1]\n"
-            "def f(x, y):\n    ...\n"
+            "# zyko:ensures: result == x + y\n# zyko:domain: x = [1]\ndef f(x, y):\n    ...\n"
         )
         assert receipt.verdict == "unverifiable"
         assert "بلا مجال" in receipt.reason_ar
@@ -368,6 +364,7 @@ class TestSearchVerdicts:
 
 # -*- الإيصال الحتمي -------------------------------------------------
 
+
 class TestReceiptDeterminism:
     def test_receipt_bytes_identical(self) -> None:
         a = run(DOUBLE)
@@ -389,8 +386,7 @@ class TestReceiptDeterminism:
         b = run(DOUBLE)
         assert a.chain_hash == b.chain_hash
         c = run(
-            "# zyko:ensures: result == x + 1\n"
-            "# zyko:domain: x = range(0, 4)\ndef f(x):\n    ...\n"
+            "# zyko:ensures: result == x + 1\n# zyko:domain: x = range(0, 4)\ndef f(x):\n    ...\n"
         )
         assert c.chain_hash != a.chain_hash
 
@@ -411,11 +407,11 @@ class TestReceiptDeterminism:
 
 # -*- تكامل الحاكم الشكلي --------------------------------------------
 
+
 class TestFormalIntegration:
     def test_governor_rejects_bad_domain_unchanged(self) -> None:
         report = check_source(
-            "# zyko:ensures: result == x\n# zyko:domain: x = [1]\n"
-            "def f(x):\n    return x\n"
+            "# zyko:ensures: result == x\n# zyko:domain: x = [1]\ndef f(x):\n    return x\n"
         )
         assert report.verdict is VerdictKind.ACCEPT
 

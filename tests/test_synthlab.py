@@ -8,8 +8,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from zyko.benchmarks.synthlab import (
     CASES,
     CATEGORY_ORDER,
@@ -63,8 +61,7 @@ def test_lab_receipt_is_deterministic_bytes() -> None:
     from zyko.benchmarks.synthlab import _judge, _run_case
 
     payload = "\x1f".join(
-        f"{r['case_id']}\x1f{r['verdict']}\x1f{r['winner_expr'] or ''}"
-        for r in report.rows
+        f"{r['case_id']}\x1f{r['verdict']}\x1f{r['winner_expr'] or ''}" for r in report.rows
     )
     assert report.chain_hash == hashlib.sha256(payload.encode("utf-8")).hexdigest()
     # تشغيل مزدوج لحالة كاملة: الإيصال بالبايت متطابق
@@ -122,6 +119,5 @@ def test_reference_receipt_chain_is_live_truth():
     assert report.ok
     assert report.total == 60
     assert report.chain_hash == doc["chain_hash"], (
-        "بصمة المعمل الحيّ اختلفت عن المرجع — حالات المعمل تغيّرت "
-        "دلالياً بلا تجديد المرجع"
+        "بصمة المعمل الحيّ اختلفت عن المرجع — حالات المعمل تغيّرت دلالياً بلا تجديد المرجع"
     )

@@ -1,8 +1,8 @@
 """CLI المُقترِح الحتمي — أكواد خروج صادقة: 0 مُركَّب / 1 لا فائز / 2 عقد رديء.
 
-    python -m zyko.tools.synth --spec task.py
-    python -m zyko.tools.synth --spec task.py --json receipt.json --max-nodes 6
-    cat task.py | python -m zyko.tools.synth --stdin
+python -m zyko.tools.synth --spec task.py
+python -m zyko.tools.synth --spec task.py --json receipt.json --max-nodes 6
+cat task.py | python -m zyko.tools.synth --stdin
 """
 
 from __future__ import annotations
@@ -34,8 +34,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="zyko.tools.synth",
         description=(
-            "المُقترِح الحتمي: تركيب برنامج من عقود معلنة بالبحث المغلق — "
-            "بلا شبكة وبلا نموذج لغوي"
+            "المُقترِح الحتمي: تركيب برنامج من عقود معلنة بالبحث المغلق — بلا شبكة وبلا نموذج لغوي"
         ),
     )
     parser.add_argument("--spec", default=None, help="مسار ملف عقد المهمة")
@@ -71,8 +70,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         Path(args.json).write_text(receipt.to_json() + "\n", encoding="utf-8")
     tag = _TAG_BY_VERDICT.get(receipt.verdict, receipt.verdict)
-    print(f"[المُقترِح الحتمي] {tag}: مهمة {receipt.task}, "
-          f"مُعدَّد = {receipt.emitted}, مُختبَر = {receipt.tried}")
+    print(
+        f"[المُقترِح الحتمي] {tag}: مهمة {receipt.task}, "
+        f"مُعدَّد = {receipt.emitted}, مُختبَر = {receipt.tried}"
+    )
     if receipt.winner_expr:
         print(f"  الفائز: {receipt.winner_expr}")
     print(f"  {receipt.reason_ar}")

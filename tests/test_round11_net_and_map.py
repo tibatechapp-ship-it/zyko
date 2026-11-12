@@ -9,8 +9,11 @@ from __future__ import annotations
 
 import ctypes
 import functools
+import platform
 import subprocess
 from pathlib import Path
+
+import pytest
 
 from zyko.reviewer.repo_map import UNPARSEABLE_MARK, build_repo_map, symbol_summary
 from zyko.sandbox import jail
@@ -64,6 +67,10 @@ def test_net_confinement_declared_not_assumed():
         assert conf == "unconstrained"
 
 
+@pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason="Landlock خاصية نواة لينكس — jail_preexec يعيد None بصدق على غير لينكس، والقياس حكم بيئي معلن",
+)
 def test_jail_preexec_carries_net_ports_under_landlock(monkeypatch):
     """تحت landlock: المنافذ المعلنة تصل إلى دالة الابن حرفياً."""
     monkeypatch.setattr(jail, "_level_cache", jail.JAIL_LEVEL_LANDLOCK)
@@ -74,6 +81,10 @@ def test_jail_preexec_carries_net_ports_under_landlock(monkeypatch):
     assert preexec.keywords == {} and preexec.args[1] == (8642,)
 
 
+@pytest.mark.skipif(
+    platform.system() != "Linux",
+    reason="Landlock خاصية نواة لينكس — jail_preexec يعيد None بصدق على غير لينكس، والقياس حكم بيئي معلن",
+)
 def test_jail_preexec_default_denies_all_tcp(monkeypatch):
     """الافتراضي أصرم: بلا منافذ معلنة = صفر قواعد سماح شبكية."""
     monkeypatch.setattr(jail, "_level_cache", jail.JAIL_LEVEL_LANDLOCK)

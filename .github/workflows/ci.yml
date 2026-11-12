@@ -123,6 +123,7 @@ jobs:
         run: >
           pytest tests/test_tools_pii_ar.py tests/test_tools_rtl.py
           tests/test_tools_policy_mcp.py tests/test_tools_formal.py
+          tests/test_tools_synth.py
           --cov=zyko.tools --cov-report=term --cov-fail-under=85 -q
       - name: Phase-0 gate — Arabic PII sample 20/20
         run: |

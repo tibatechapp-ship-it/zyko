@@ -186,13 +186,19 @@ def _parse_domain(content: str) -> tuple[str, tuple[int, int] | list[object]] | 
 
     def _int_or_negated(e: ast.expr) -> int | None:
         """عدد صحيح حرفي أو مسبوبه — ``5`` و``-5`` كلاهما مقبولان."""
-        if isinstance(e, ast.Constant) and isinstance(e.value, int) \
-                and not isinstance(e.value, bool):
+        if (
+            isinstance(e, ast.Constant)
+            and isinstance(e.value, int)
+            and not isinstance(e.value, bool)
+        ):
             return e.value
-        if isinstance(e, ast.UnaryOp) and isinstance(e.op, ast.USub) \
-                and isinstance(e.operand, ast.Constant) \
-                and isinstance(e.operand.value, int) \
-                and not isinstance(e.operand.value, bool):
+        if (
+            isinstance(e, ast.UnaryOp)
+            and isinstance(e.op, ast.USub)
+            and isinstance(e.operand, ast.Constant)
+            and isinstance(e.operand.value, int)
+            and not isinstance(e.operand.value, bool)
+        ):
             return -e.operand.value
         return None
 
@@ -208,8 +214,12 @@ def _parse_domain(content: str) -> tuple[str, tuple[int, int] | list[object]] | 
             return -e.operand.value
         return None
 
-    if isinstance(value, ast.Call) and isinstance(value.func, ast.Name) \
-            and value.func.id == "range" and len(value.args) == 2:
+    if (
+        isinstance(value, ast.Call)
+        and isinstance(value.func, ast.Name)
+        and value.func.id == "range"
+        and len(value.args) == 2
+    ):
         lo = _int_or_negated(value.args[0])
         hi = _int_or_negated(value.args[1])
         if lo is not None and hi is not None:

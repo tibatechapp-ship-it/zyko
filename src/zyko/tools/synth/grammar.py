@@ -33,7 +33,15 @@ import itertools
 from collections.abc import Iterator
 
 CALLS_UNARY: tuple[str, ...] = (
-    "abs", "round", "int", "float", "bool", "len", "sum", "sorted", "str",
+    "abs",
+    "round",
+    "int",
+    "float",
+    "bool",
+    "len",
+    "sum",
+    "sorted",
+    "str",
 )
 CALLS_BINARY: tuple[str, ...] = ("min", "max")
 ARITH_OPS: tuple[str, ...] = ("+", "-", "*", "//", "%", "**", "/")
@@ -45,20 +53,54 @@ DEFAULT_BUDGET = 200_000
 DEFAULT_BLOCK_BEAM = 1_500  # سقف إسهام الكتلة الواحدة — شعاع مُعلن
 
 _ARITH_CLASSES: dict[str, type[ast.operator]] = {
-    "+": ast.Add, "-": ast.Sub, "*": ast.Mult, "//": ast.FloorDiv,
-    "%": ast.Mod, "**": ast.Pow, "/": ast.Div,
+    "+": ast.Add,
+    "-": ast.Sub,
+    "*": ast.Mult,
+    "//": ast.FloorDiv,
+    "%": ast.Mod,
+    "**": ast.Pow,
+    "/": ast.Div,
 }
 _CMP_CLASSES: dict[str, type[ast.cmpop]] = {
-    "<": ast.Lt, "<=": ast.LtE, ">": ast.Gt, ">=": ast.GtE,
-    "==": ast.Eq, "!=": ast.NotEq,
+    "<": ast.Lt,
+    "<=": ast.LtE,
+    ">": ast.Gt,
+    ">=": ast.GtE,
+    "==": ast.Eq,
+    "!=": ast.NotEq,
 }
 
 _ALLOWED_NODES: tuple[type[ast.AST], ...] = (
-    ast.Expression, ast.Constant, ast.Name, ast.UnaryOp, ast.USub, ast.UAdd,
-    ast.Not, ast.BinOp, ast.Add, ast.Sub, ast.Mult, ast.FloorDiv, ast.Mod,
-    ast.Pow, ast.Div, ast.Compare, ast.Lt, ast.LtE, ast.Gt, ast.GtE,
-    ast.Eq, ast.NotEq, ast.BoolOp, ast.And, ast.Or, ast.IfExp, ast.Call,
-    ast.Load, ast.List, ast.Tuple,
+    ast.Expression,
+    ast.Constant,
+    ast.Name,
+    ast.UnaryOp,
+    ast.USub,
+    ast.UAdd,
+    ast.Not,
+    ast.BinOp,
+    ast.Add,
+    ast.Sub,
+    ast.Mult,
+    ast.FloorDiv,
+    ast.Mod,
+    ast.Pow,
+    ast.Div,
+    ast.Compare,
+    ast.Lt,
+    ast.LtE,
+    ast.Gt,
+    ast.GtE,
+    ast.Eq,
+    ast.NotEq,
+    ast.BoolOp,
+    ast.And,
+    ast.Or,
+    ast.IfExp,
+    ast.Call,
+    ast.Load,
+    ast.List,
+    ast.Tuple,
 )
 
 
@@ -84,15 +126,16 @@ def harvest_constants(
         except SyntaxError:
             continue
         for node in ast.walk(tree):
-            if isinstance(node, ast.Constant) and isinstance(
-                node.value, (int, float)
-            ) and not isinstance(node.value, bool):
+            if (
+                isinstance(node, ast.Constant)
+                and isinstance(node.value, (int, float))
+                and not isinstance(node.value, bool)
+            ):
                 found.add(node.value)
     domain_consts: set[int | float] = set()
     for points in domains.values():
         for v in points:
-            if isinstance(v, (int, float)) and not isinstance(v, bool) \
-                    and abs(v) <= 20:
+            if isinstance(v, (int, float)) and not isinstance(v, bool) and abs(v) <= 20:
                 domain_consts.add(v)
     for v in sorted(domain_consts, key=lambda v: (isinstance(v, float), v))[:12]:
         found.add(v)
@@ -171,10 +214,11 @@ class CandidateSpace:
         for name in CALLS_BINARY:
             for i, j in pairs:
                 count = 0
-                for l, r in itertools.product(self._sub(i), self._sub(j)):
+                for lhs, r in itertools.product(self._sub(i), self._sub(j)):
                     yield ast.Call(
                         func=ast.Name(id=name, ctx=ast.Load()),
-                        args=[l, r], keywords=[],
+                        args=[lhs, r],
+                        keywords=[],
                     )
                     count += 1
                     if count >= self.block_beam:
@@ -184,8 +228,8 @@ class CandidateSpace:
             op_cls = _CMP_CLASSES[sym]
             for i, j in pairs:
                 count = 0
-                for l, r in itertools.product(self._sub(i), self._sub(j)):
-                    yield ast.Compare(left=l, ops=[op_cls()], comparators=[r])
+                for lhs, r in itertools.product(self._sub(i), self._sub(j)):
+                    yield ast.Compare(left=lhs, ops=[op_cls()], comparators=[r])
                     count += 1
                     if count >= self.block_beam:
                         break
@@ -194,8 +238,8 @@ class CandidateSpace:
             op_cls = _ARITH_CLASSES[sym]
             for i, j in pairs:
                 count = 0
-                for l, r in itertools.product(self._sub(i), self._sub(j)):
-                    yield ast.BinOp(left=l, op=op_cls(), right=r)
+                for lhs, r in itertools.product(self._sub(i), self._sub(j)):
+                    yield ast.BinOp(left=lhs, op=op_cls(), right=r)
                     count += 1
                     if count >= self.block_beam:
                         break
@@ -203,8 +247,8 @@ class CandidateSpace:
         for sym, op_cls in (("and", ast.And), ("or", ast.Or)):
             for i, j in pairs:
                 count = 0
-                for l, r in itertools.product(self._sub(i), self._sub(j)):
-                    yield ast.BoolOp(op=op_cls(), values=[l, r])
+                for lhs, r in itertools.product(self._sub(i), self._sub(j)):
+                    yield ast.BoolOp(op=op_cls(), values=[lhs, r])
                     count += 1
                     if count >= self.block_beam:
                         break
@@ -222,7 +266,8 @@ class CandidateSpace:
             for e in self._sub(size - 1):
                 yield ast.Call(
                     func=ast.Name(id=name, ctx=ast.Load()),
-                    args=[e], keywords=[],
+                    args=[e],
+                    keywords=[],
                 )
                 count += 1
                 if count >= self.block_beam:
@@ -237,10 +282,8 @@ class CandidateSpace:
                 for i, j in _size_pairs(cond_size):
                     count = 0
                     for v in self._sub(val_size):
-                        for l, r in itertools.product(self._sub(i), self._sub(j)):
-                            cond = ast.Compare(
-                                left=l, ops=[op_cls()], comparators=[r]
-                            )
+                        for lhs, r in itertools.product(self._sub(i), self._sub(j)):
+                            cond = ast.Compare(left=lhs, ops=[op_cls()], comparators=[r])
                             yield ast.IfExp(test=cond, body=v, orelse=v)
                             count += 1
                             if count >= self.block_beam:
@@ -281,28 +324,23 @@ class CandidateSpace:
 def structural_check(expr: ast.expr, params: tuple[str, ...]) -> None:
     """فحص بنيوي مُغلق — أي صنف خارج النحو يُرفض قبل التجميع."""
     # أسماء الدوال المُستدعاة تُعفى من فحص الأسماء — Call نفسه يفحصها أدناه
-    func_node_ids = {
-        id(n.func) for n in ast.walk(expr) if isinstance(n, ast.Call)
-    }
+    func_node_ids = {id(n.func) for n in ast.walk(expr) if isinstance(n, ast.Call)}
     for node in ast.walk(expr):
         if not isinstance(node, _ALLOWED_NODES):
-            raise StructuralViolation(
-                f"عقدة خارج النحو المغلق: {type(node).__name__}"
-            )
+            raise StructuralViolation(f"عقدة خارج النحو المغلق: {type(node).__name__}")
         if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Pow):
             rhs = node.right
-            if isinstance(rhs, ast.Constant) and isinstance(
-                rhs.value, (int, float)
-            ) and abs(rhs.value) > MAX_EXPONENT:
-                raise StructuralViolation(
-                    f"أس ثابت فوق الحرس المُعلن ({MAX_EXPONENT})"
-                )
+            if (
+                isinstance(rhs, ast.Constant)
+                and isinstance(rhs.value, (int, float))
+                and abs(rhs.value) > MAX_EXPONENT
+            ):
+                raise StructuralViolation(f"أس ثابت فوق الحرس المُعلن ({MAX_EXPONENT})")
         if isinstance(node, ast.Name) and id(node) not in func_node_ids:
             if node.id not in params and node.id != "result":
                 raise StructuralViolation(f"اسم خارج النطاق: {node.id!r}")
         if isinstance(node, ast.Call):
-            if not (isinstance(node.func, ast.Name)
-                    and node.func.id in CALLS_UNARY + CALLS_BINARY):
+            if not (isinstance(node.func, ast.Name) and node.func.id in CALLS_UNARY + CALLS_BINARY):
                 raise StructuralViolation("استدعاء خارج المسموح القياسي")
 
 

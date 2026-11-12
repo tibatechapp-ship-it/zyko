@@ -2077,9 +2077,9 @@ def build_gates():
         # «GateResult(name, True, "سليم")» إلى استدعاء بحجة واحدة —
         # TypeError حيّ في العدّة. المصنع يعيد الوسيطين الموثقين.
         def gr2(name):
-            return __import__(
-                "zyko.guardian.contracts", fromlist=["GateResult"]
-            ).GateResult(name, True, "سليم")
+            return __import__("zyko.guardian.contracts", fromlist=["GateResult"]).GateResult(
+                name, True, "سليم"
+            )
 
         a = compute_fingerprint("نص", [gr2("PIIGate"), gr2("RTLGate")])
         b = compute_fingerprint("نص", [gr2("RTLGate"), gr2("PIIGate")])

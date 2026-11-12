@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from zyko.benchmarks.eval1000 import (
     CASES_TOTAL,
     CATEGORY_LABELS,
@@ -124,7 +126,15 @@ def test_reference_receipt_chain_is_live_truth():
     doc = json.loads(reference.read_text(encoding="utf-8"))
     report = run_eval1000(cases=build_eval_cases())
     assert report.total == 1000
-    assert report.ok, f"العدّة الحيّة فيها فشل: {report.failed}"
+    if not report.ok:
+        # تشخيص دائم: الحارس يسمّي الحالات الفاشلة بعربية موثقة —
+        # الفشل بلا أسماء لا يصلّح نفسه، وهذا هو الفرق بين حارس
+        # حقيقي وصورة عن حارس.
+        names = "; ".join(
+            f"{row.case_id} ({row.category}/{row.family}): {row.detail_ar}"
+            for row in report.failures[:20]
+        )
+        pytest.fail(f"العدّة الحيّة فيها فشل: {report.failed} — {names}")
     assert report.chain_hash == doc["chain_hash"], (
         "بصمة العدّة الحيّة اختلفت عن الإيصال المرجعي — عدّة تغيّرت "
         "دلالياً بلا تجديد المرجع؛ إما تراجع عن التغيير أو أعد توليد "

@@ -85,6 +85,8 @@ filterwarnings = ["error::pytest.PytestDeprecationWarning"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+# samples/ هي عيّنات معطوبة بقصد — غذاء المصلاح والمراجع، لا كود إنتاج.
+extend-exclude = ["samples"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

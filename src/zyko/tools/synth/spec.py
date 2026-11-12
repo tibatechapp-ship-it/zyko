@@ -78,21 +78,26 @@ class SpecVerdict:
 def _is_stub_body(fn: ast.FunctionDef) -> bool:
     """جسم الهيكل: docstring ثم علامة واحدة من علامات المهمة غير المنجَزة."""
     body = list(fn.body)
-    if body and isinstance(body[0], ast.Expr) and isinstance(
-        body[0].value, ast.Constant
-    ) and isinstance(body[0].value.value, str):
+    if (
+        body
+        and isinstance(body[0], ast.Expr)
+        and isinstance(body[0].value, ast.Constant)
+        and isinstance(body[0].value.value, str)
+    ):
         body = body[1:]
     if len(body) != 1:
         return False
     node = body[0]
     if isinstance(node, ast.Pass):
         return True
-    if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) \
-            and node.value.value is Ellipsis:
+    if (
+        isinstance(node, ast.Expr)
+        and isinstance(node.value, ast.Constant)
+        and node.value.value is Ellipsis
+    ):
         return True
     if isinstance(node, ast.Raise) and isinstance(node.exc, ast.Call):
-        return isinstance(node.exc.func, ast.Name) \
-            and node.exc.func.id == "NotImplementedError"
+        return isinstance(node.exc.func, ast.Name) and node.exc.func.id == "NotImplementedError"
     if isinstance(node, ast.Raise) and isinstance(node.exc, ast.Name):
         return node.exc.id == "NotImplementedError"
     return False
@@ -119,17 +124,14 @@ def parse_task(source: str) -> SpecVerdict:
     try:
         tree = ast.parse(source)
     except SyntaxError as exc:
-        return SpecVerdict(
-            VerdictKind.REJECT, f"المصدر لا يُجمَّع أصلاً: {exc.msg}"
-        )
+        return SpecVerdict(VerdictKind.REJECT, f"المصدر لا يُجمَّع أصلاً: {exc.msg}")
 
     functions = [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
     stubs = [fn for fn in functions if _is_stub_body(fn)]
     if not stubs:
         return SpecVerdict(
             VerdictKind.REJECT,
-            "لا دالة هيكلية — المهمة دالة واحدة جسمها "
-            "raise NotImplementedError أو ... أو pass",
+            "لا دالة هيكلية — المهمة دالة واحدة جسمها raise NotImplementedError أو ... أو pass",
         )
     if len(stubs) > 1:
         names = ", ".join(sorted(fn.name for fn in stubs))
@@ -148,8 +150,7 @@ def parse_task(source: str) -> SpecVerdict:
     if fn.args.vararg or fn.args.kwarg:
         return SpecVerdict(
             VerdictKind.REJECT,
-            "معاملات متغيرة (*args/**kwargs) خارج صنف المُقترِح — "
-            "المجالات تنفرد لمعاملات مسماة فقط",
+            "معاملات متغيرة (*args/**kwargs) خارج صنف المُقترِح — المجالات تنفرد لمعاملات مسماة فقط",
         )
 
     directives = function_directives(source, fn)
@@ -193,8 +194,7 @@ def parse_task(source: str) -> SpecVerdict:
     if not ensures:
         return SpecVerdict(
             VerdictKind.UNKNOWN,
-            "عقد بلا شرط لاحق — لا شيء يُثبت، البحث بلا هدف؛ "
-            "أعلن zyko:ensures أولاً",
+            "عقد بلا شرط لاحق — لا شيء يُثبت، البحث بلا هدف؛ أعلن zyko:ensures أولاً",
         )
 
     # أي معامل تلمسه العقود بلا مجال ⇒ غير قابل للتحقق (نفس منطق الحاكم)
@@ -203,18 +203,13 @@ def parse_task(source: str) -> SpecVerdict:
         try:
             expr_tree = ast.parse(expr, mode="eval")
         except SyntaxError:
-            return SpecVerdict(
-                VerdictKind.REJECT, f"عقد غير قابل للتجميع: {expr!r}"
-            )
+            return SpecVerdict(VerdictKind.REJECT, f"عقد غير قابل للتجميع: {expr!r}")
         for node in ast.walk(expr_tree):
             if isinstance(node, ast.Name):
                 touched.add(node.id)
     touched.discard(RESULT_NAME)
     # أسماء خارج المعاملات والمسموح القياسي = رفض (عقد الحاكم نفسه)
-    outside = sorted(
-        t for t in touched
-        if t not in params and t not in ALLOWED_BUILTINS
-    )
+    outside = sorted(t for t in touched if t not in params and t not in ALLOWED_BUILTINS)
     if outside:
         return SpecVerdict(
             VerdictKind.REJECT,
