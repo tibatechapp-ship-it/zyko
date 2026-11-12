@@ -168,7 +168,14 @@ def test_applied_but_not_resolved_then_feedback_then_resolve(mini_repo):
     diff = CannedBrain([wrong_patch, follow_patch])
     loop = RepairLoop(choice, diff)
     result = loop.run(_instance(), mini_repo, "python3", runner=_tree_runner())
-    assert [a.applied for a in result.attempts] == [True, True]
+    assert [a.applied for a in result.attempts] == [True, True], (
+        "تشخيص CI: "
+        f"attempts={[(a.index, a.applied, a.stop_reason_ar) for a in result.attempts]}؛ "
+        f"f2p_failed_after={result.verdict.f2p_failed_after}؛ "
+        f"f2p_passed_after={result.verdict.f2p_passed_after}؛ "
+        f"runs_error={result.verdict.runs_error_ar}؛ "
+        f"resolved_env={result.verdict.resolved_env}؛ resolved_strict={result.verdict.resolved_strict}"
+    )
     assert result.attempts[0].stop_reason_ar == "متابعة — رجعية الاختبارات بُنيت"
     assert result.resolved_env
     # رجعية الاختبارات فيها العقدة الفاشلة نفسها
