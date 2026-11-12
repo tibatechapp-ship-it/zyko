@@ -18,6 +18,7 @@ def test_full_session_accepted_with_receipt_files(tmp_path: Path) -> None:
     receipt = session.run(CLEAN_GOAL, tmp_path / "proj", write=True)
     assert receipt.ok, receipt.to_md()
     assert [s.step for s in receipt.steps] == [
+        "mode",
         "plan",
         "generate",
         "baseline_update",

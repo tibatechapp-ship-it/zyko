@@ -1,3 +1,24 @@
+## 0.34.0 — session-mode auto-detection and the live guard bug the audit caught
+
+### Wave 10: the session decides its mode deterministically — and the audit's live bug dies
+
+- **`ai.session.detect_session_mode` — اكتشاف نمط الجلسة آليًا**: النمط
+  كان يتطلب علماً صريحاً دائماً (`factory` افتراضيًا)، وهدف «راجع وأصلح
+  ملفاً قائماً» بلا علم كان يذهب للمصنع. الآن المستخرج الحتمي نفسه الذي
+  يعمل في `zyko do` يستخرج المسار من الهدف: **مسار ملف موجود على القرص ⇒
+  existing**، وإلا factory — لا تخمين على غياب، والعلم الصريح يغلب الكشف
+  دائماً، وقرار الكشف بسببه العربي يدخل الإيصال (خطوة `mode`) فيصير جزءًا
+  من سلسلة الأدلة لا حدساً صامتاً.
+- **العلة الحية التي وجدها التدقيق — ماتت**: حرس مجلد الإخراج كان يمنع
+  كل مجلد غير فارغ في وضع الكتابة *قبل* توزيع النمط — فجلسة النمط
+  القائم لم تستطع العمل على أي مشروع حقيقي أبداً (كل مشروع غير فارغ).
+  الحرس الآن عقد المصنع حصراً؛ النمط القائم يعمل على مجلد المشروع
+  الحقيقي ويوثّق ذلك. اختبار انحلال العلة مباشر (`test_live_bug_regression_existing_write_on_nonempty_project`).
+- **9 اختبارات جديدة** + تحديث توقعات الخطوات في اختبارات الجلسة القائمة
+  (الإيصال يحمل خطوة `mode` الأولى الآن — قرار موثق لا صمت).
+
+pyproject/CITATION/version.py/README/EVAL: 0.33.0 → 0.34.0.
+
 ## 0.33.0 — the extended repair brain: a failure-feeding loop inside the same contracts — the first strict resolution on a real public instance
 
 ### Wave 9: treat the documented Round-8 failures with a loop, not a slogan

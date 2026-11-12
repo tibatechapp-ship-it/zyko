@@ -189,7 +189,7 @@ def test_cli_existing_mode_dry_run_json(tmp_path: Path, capsys: pytest.CaptureFi
     assert payload["ok"] is True
     steps = {s["step"] for s in payload["steps"]}
     assert "orchestrator" in steps
-    assert "التصنيف FIX" in payload["steps"][1]["details_ar"]
+    assert "التصنيف FIX" in payload["steps"][2]["details_ar"]
 
 
 def test_cli_invalid_mode_is_usage_error() -> None:

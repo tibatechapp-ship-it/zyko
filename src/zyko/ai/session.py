@@ -43,6 +43,40 @@ from zyko.pipeline.engine import MAX_DESCRIPTION_LEN, PipelineEngine
 DEFAULT_FAIL_UNDER = 75
 SESSION_MODES: tuple[str, ...] = ("factory", "existing")
 EXISTING_GATE_TITLE = "بوابة التنفيذ الحتمي (orchestrator على الكود القائم)"
+MODE_GATE_TITLE = "بوابة اكتشاف النمط (حتمية من الهدف والقرص)"
+
+
+def detect_session_mode(desc: str, out_dir: str | Path) -> tuple[str, str]:
+    """اكتشاف نمط الجلسة آليًا — حتمي من الهدف والقرص (جولة 10).
+
+    العلة الحية التي وجدها التدقيق: النمط كان يتطلب علمًا صريحًا دائمًا
+    (``factory`` الافتراضي)، وهدف «راجع وأصلح ملفًا قائمًا» على مشروع
+    حقيقي كان يذهب للمصنع — أو يُحجب بحرس مجلد الإخراج المفروض على
+    المصنع. العقد هنا:
+
+    1. المستخرج الحتمي نفسه الذي يعمل في ``zyko do`` (``extract_context``)
+       يستخرج المسار من الهدف — مسار ملف **موجود على القرص** ⇒
+       ``existing`` (نية واضحة: كود قائم).
+    2. لا مسار، أو مسار غير موجود ⇒ ``factory`` — لا تخمين على غياب.
+    3. علم المتصل الصريح يغلب الكشف دائمًا (يبقى ``AISession(mode=…)``
+       كما هو) — الكشف يملأ الفراغ لا أنهي العقد.
+
+    يعيد ``(النمط، السبب_العربي)`` — السبب يدخل الإيصال فيصير القرار
+    جزءًا من سلسلة الأدلة لا حدسًا صامتًا.
+    """
+    from zyko.orchestrator import extract_context
+
+    context = extract_context(desc)
+    target = str(context.get("path") or "").strip()
+    if target:
+        if Path(target).is_file():
+            return "existing", (
+                f"الهدف يحدد ملفاً قائماً على القرص ({target}) — النمط existing بقرار حتمي"
+            )
+        return "factory", (
+            f"الهدف يذكر مساراً غير موجود على القرص ({target}) — النمط factory بقرار حتمي"
+        )
+    return "factory", "الهدف لا يحدد ملفاً قائماً — النمط factory الافتراضي بقرار حتمي"
 
 
 class AISession:
@@ -54,9 +88,10 @@ class AISession:
         *,
         rounds: int = 1,
         fail_under: int = DEFAULT_FAIL_UNDER,
-        mode: str = "factory",
+        mode: str | None = None,
     ) -> None:
-        if mode not in SESSION_MODES:
+        # ``None`` = اكتشاف آلي عند التشغيل (جولة 10) — الصريح يغلب الكشف دائمًا
+        if mode is not None and mode not in SESSION_MODES:
             raise ValueError(
                 f"نمط جلسة غير معروف: {mode!r} — الأنماط المعروفة: {'، '.join(SESSION_MODES)}"
             )
@@ -123,7 +158,25 @@ class AISession:
                 "حرس المدخلات",
                 f"الهدف طويل جدًا ({len(desc)} محرفًا) — الحد {MAX_DESCRIPTION_LEN} محرفًا",
             )
-        if write and out_path.exists() and any(out_path.iterdir()):
+        # ---- 0ب) بوابة اكتشاف النمط: حتمية من الهدف والقرص — الصريح يغلب
+        if self.mode is not None:
+            mode, mode_reason = self.mode, f"النمط صريح من المتصل ({self.mode}) — الكشف لا يعمل"
+        else:
+            mode, mode_reason = detect_session_mode(desc, out_path)
+        receipt.add(
+            StepRecord(
+                step="mode",
+                title_ar=MODE_GATE_TITLE,
+                ok=True,
+                exit_code=0,
+                details_ar=mode_reason,
+            )
+        )
+
+        # ---- 0ج) حرس مجلد الإخراج — على المصنع فقط: مجلد المشروع القائم
+        # هو مكان العمل نفسه في النمط existing (العلة الحية وجدها التدقيق:
+        # الحرس كان يحجب كل مشروع حقيقي غير فارغ في وضع الكتابة)
+        if mode == "factory" and write and out_path.exists() and any(out_path.iterdir()):
             return self._structural_block(
                 receipt,
                 "out",
@@ -161,7 +214,7 @@ class AISession:
         )
 
         # ---- 2) بوابة العمل: مصنع مشاريع (factory) أو تنفيذ على كود قائم (existing)
-        if self.mode == "existing":
+        if mode == "existing":
             return self._run_existing(receipt, desc, out_path, write=write, started=started)
 
         # ---- 2ب) بوابة التوليد: تفويض حرفي لمحرك الحلقة (بلا إعادة تنفيذ)
