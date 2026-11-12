@@ -77,6 +77,10 @@ def mini_repo(tmp_path):
     repo.mkdir()
     (repo / "src.py").write_text("value = 1\n", encoding="utf-8")
     (repo / "alt.py").write_text("alt = 1\n", encoding="utf-8")
+    # اختبار pytest الداخلي معزول تكوينياً: pytest.ini محلي يوقف مشي rootdir
+    # للأعلى — داخل مستودع CI سيلتقي pyproject الخاص بالمشروع (addopts/
+    # asyncio_mode/testpaths) ويظهر سلوك مختلف عمّا يُقاس محلياً في /tmp.
+    (repo / "pytest.ini").write_text("[pytest]\n", encoding="utf-8")
     (repo / "test_level.py").write_text(
         "def test_value():\n    from src import value\n    assert value == 2\n",
         encoding="utf-8",
