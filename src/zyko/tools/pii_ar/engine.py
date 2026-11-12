@@ -415,6 +415,17 @@ class PIIScanner:
 
     @staticmethod
     def _resolve_overlaps(findings: list[Finding]) -> list[Finding]:
+        """Resolve overlapping findings sorted by position.
+
+        قاعدة التداخل الموثقة (جولة 13):
+          1. الأولوية المعلنة (PRIORITY) تحسم التداخل الجزئي.
+          2. **الاحتواء الصارم**: رقم كامل مُتحقق رياضيًا (valid=True،
+             هاتف/آيبان/بطاقة) يغلب أي إيجاب أقصر محتوى كليًا داخله —
+             جوال مصر الدولي ``+20 1234567890`` كان يلتهمه «هوية سعودية»
+             مُستخرَج من الأرقام نفسها بلا سياق، فأفقد النص هاتفًا
+             صحيحًا لأن أولوية الهوية أعلى رقميًا. الرقم المُتحقَق
+             بالبنية الكاملة لا تقصّه أرقام فرعية منه.
+        """
         findings.sort(key=lambda f: (f.start, -(f.end - f.start), -f.confidence))
         picked: list[Finding] = []
         for f in findings:
@@ -422,6 +433,16 @@ class PIIScanner:
                 picked.append(f)
                 continue
             prev = picked[-1]
+            # الاحتواء الصارم: f داخل prev بالكامل، وprev رقم مُتحقَّق
+            if (
+                f.start >= prev.start
+                and f.end <= prev.end
+                and (f.start, f.end) != (prev.start, prev.end)
+                and prev.valid is True
+                and prev.type in ("phone", "iban", "bank_card")
+                and f.type in ("phone", "iban", "bank_card", "national_id")
+            ):
+                continue  # الرقم الفرعي المشتق يُسقط لصالح المُتحقَّق الكامل
             f_key = _finding_priority(f)
             p_key = _finding_priority(prev)
             if f_key > p_key:

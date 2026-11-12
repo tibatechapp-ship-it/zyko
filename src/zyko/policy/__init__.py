@@ -4,6 +4,7 @@ from zyko.policy.engine import (
     BUILTIN_PATTERNS,
     PolicyDecision,
     PolicyEngine,
+    Redactor,
     builtin_default_policy,
     load_policy,
 )

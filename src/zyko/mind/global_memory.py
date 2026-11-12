@@ -465,14 +465,16 @@ class GlobalMemory:
         """
         data = self._read_lessons()
         existing_texts = [str(lesson["text"]) for lesson in data.get("lessons", [])]
-        existing = set(existing_texts)
+        # إزالة التكرار على المعنى (جولة 13): المفتاح نصّ مطبّع — التشكيل
+        # والتطويل لا يفردان درسًا موجودًا في نسخة حرفية أخرى له
+        existing_keys = {normalize_text(t) for t in existing_texts}
         fresh: list[str] = []
         for lesson in lessons or ():
             if lesson is None:
                 continue  # لا درس من العدم — يقفز لا يتحول إلى "None"
             text = _clamp(_scrub(str(lesson)), MAX_LESSON_CHARS)
-            if text and text not in existing:
-                existing.add(text)
+            if text and normalize_text(text) not in existing_keys:
+                existing_keys.add(normalize_text(text))
                 fresh.append(text)
         if not fresh:
             return ()

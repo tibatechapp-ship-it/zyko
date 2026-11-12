@@ -51,7 +51,9 @@ _FORMATS: dict[str, re.Pattern[str]] = {
         r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
     ),
     "ipv4": re.compile(r"^(\d{1,3}\.){3}\d{1,3}$"),
-    "hostname": re.compile(r"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})?$"),
+    "hostname": re.compile(
+        r"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+    ),
 }
 
 

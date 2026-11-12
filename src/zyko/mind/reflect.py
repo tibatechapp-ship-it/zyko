@@ -38,6 +38,7 @@ from typing import TYPE_CHECKING
 from zyko.ai.brains import GateVerdict
 from zyko.tools.pii_ar import scan as pii_scan
 from zyko.tools.rtl.core import RTLChecker
+from zyko.tools.rtl import BIDI_CONTROL_RE
 
 if TYPE_CHECKING:  # الاستيراد الدائري يُكسر في الفحص النوعي فقط
     from zyko.mind.perception import Perception
@@ -83,17 +84,19 @@ class GuardReport:
 
 
 def normalize_stage(name: object) -> str:
-    """طبّع اسم المرحلة: نص، إزالة فراغات الطرفين، طي الفراغات، سقف محارف.
+    """طبّع اسم المرحلة: نص، إزالة فراغات الطرفين، طي الفراغات، سقف محارف، طي حالة الأحرف.
 
     أسماء المراحل مفاتيح الميزانية — الاسم العدوي (فارغ، غير نصي، طويل
-    بلا حد، محارف تحكم) يُطبَّع هنا في نقطة واحدة فلا يفتح خانة ميزانية
-    جديدة ولا يخرج من السقوف إطلاقًا.
+    بلا حد، محارف تحكم، أو اختلاف حالة أحرف فقط) يُطبَّع هنا في نقطة
+    واحدة فلا يفتح خانة ميزانية جديدة ولا يخرج من السقوف إطلاقًا.
+    طي الحالة (جولة 13): «PLAN» و«plan» مفتاح واحد — الاختلاف في الحالة
+    وحده كان يفتح خانة ميزانية موازية خارج أي سقف معلن.
     """
     text = str(name).strip() if name is not None else ""
     folded = " ".join(text.split())
     if not folded:
         return _MIRSALE_STAGE
-    return folded[:MAX_STAGE_NAME_CHARS]
+    return folded.casefold()[:MAX_STAGE_NAME_CHARS]
 
 
 @dataclass(frozen=True)
@@ -149,6 +152,9 @@ class RetryBudget:
             self.total_cap = max(0, int(total_cap))
         except (TypeError, ValueError):
             self.total_cap = 0
+        # عقد موثق (جولة 13): الافتراضي 8 هو حماية الحلقة؛ أما التجاوز
+        # الصريح فيُحترم كما هو — مختبر الأداء يبني ميزانيات ضخمة عمدًا
+        # (test_budget_100k) والتفاوت السالب/الغير عددي يُقيَّد للصفر.
         self._used: dict[str, int] = {}
         self.total_used = 0
 
@@ -344,6 +350,16 @@ def guard_feedback(feedback: object, gaps: tuple[str, ...] = ()) -> GuardReport:
             guard="feedback",
             ok=False,
             reason_ar=f"مرفوض: {len(rtl_errors)} خطأ اتجاه في الملاحظة",
+        )
+    # محارف الاتجاه الخفية (جولة 13): فاحص النص لا يرفضها عند lang=text
+    # بينما RTLGate يرفضها في أي اقتراح — الملاحظة تعود مدخلًا للحلقة
+    # فتُفحص بعقد البوابة نفسه: تلاعب العرض لا يمر أي ممرّ.
+    hidden_bidi = BIDI_CONTROL_RE.findall(text)
+    if hidden_bidi:
+        return GuardReport(
+            guard="feedback",
+            ok=False,
+            reason_ar=f"مرفوض: {len(hidden_bidi)} محرف اتجاه خفي في الملاحظة — تلاعب بعرض النص",
         )
     if len(text) > MAX_FEEDBACK_CHARS:
         # السقف عقد على النثر لا على المعنى: بايتات الفجوات المحفوظة
