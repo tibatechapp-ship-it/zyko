@@ -628,18 +628,9 @@ def build_extra_jail():
     def fn_wrap_empty():
         reset_detection_cache()
         got = wrap_argv((), ("/tmp",))
-        level = jail_level()
-        if level != "bwrap":
-            return (
-                (True, "بلا bwrap: فراغ يعود None")
-                if got is None
-                else (False, "argv فارغ أعاد غلافًا")
-            )
-        return (
-            (True, "تحت bwrap: فراغ يعود None")
-            if got is None
-            else (False, "argv فارغ أعاد غلافًا تحت bwrap")
-        )
+        # العقد واحد: فراغ يعود بلا غلاف على أي مستوى — والسلسلة
+        # الناجحة ثابتة البايت لا تتقلب بين بيئة وأخرى.
+        return (True, "فراغ يعود بلا غلاف") if got is None else (False, "argv فارغ أعاد غلافًا")
 
     cases.append(("غلاف", "argv فارغ يعود بلا غلاف", fn_wrap_empty))
 
@@ -681,9 +672,10 @@ def build_extra_jail():
         reset_detection_cache()
         got = wrap_argv(("python", "x.py"), ("/nonexistent-eval-zz",))
         level = jail_level()
-        if level != "bwrap":
-            return (True, "جذر غائب بلا غلاف") if got is None else (False, "غلاف فوق جذور غائبة")
-        return True, "تحت bwrap غلاف يُبنى أو None — المستوى معلن"
+        # العقد واحد: جذور غائبة لا تفجر الغلاف — None بلا bwrap،
+        # وغلاف أو None تحت bwrap، والسلسلة الناجحة واحدة للجميع.
+        ok = got is None if level != "bwrap" else True
+        return (True, "جذر غائب لا يفجر الغلاف") if ok else (False, "غلاف فوق جذور غائبة")
 
     cases.append(("غلاف", "جذور غائبة لا تفجر الغلاف", fn_wrap_missing_roots))
 

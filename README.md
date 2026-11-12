@@ -150,7 +150,7 @@ real    0m0.828s
 
 ```bash
 PYTHONPATH=src python3 -m zyko.benchmarks.eval1000 --run
-# 1000/1000 حالة ناجحة — بصمة السلسلة: c3910dbb57acdee5…
+# 1000/1000 حالة ناجحة — بصمة السلسلة: f69ba9abf1ed1142…
 ```
 
 الأرشيف الكامل: [docs/EVAL1000.md](docs/EVAL1000.md).

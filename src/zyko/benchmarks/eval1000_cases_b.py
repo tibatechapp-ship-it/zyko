@@ -1322,8 +1322,10 @@ def build_jail():
 
     def fn_abi_type():
         abi = landlock_abi()
+        # القيمة الحية (0 على نواة قديمة، 4+ على حديثة) في الإيصال لا في
+        # البصمة — وإلا اختلفت البصمة بين بيئة وأخرى.
         return (
-            (True, f"ABI={abi}")
+            (True, "ABI عدد صحيح غير سالب")
             if isinstance(abi, int) and abi >= 0
             else (False, f"ABI غير سليم: {abi}")
         )
@@ -1422,15 +1424,13 @@ def build_jail():
         reset_detection_cache()
         argv = wrap_argv(("python", "x.py"), ("/tmp",))
         level = jail_level()
-        if level != "bwrap":
-            expect_none = argv is None
-            return (
-                (True, "بلا bwrap لا غلاف") if expect_none else (False, "غلاف مرّ بلا مستوى bwrap")
-            )
+        # العقد واحد بلا تقسيم بيئي: الغلاف يلتزم المستوى المعلن —
+        # يغلّف تحت bwrap ويعود None غيره، والسلسلة الناجحة ثابتة.
+        ok = (argv is None) if level != "bwrap" else bool(argv and argv[0].endswith("bwrap"))
         return (
-            (True, "غلاف bwrap موثق")
-            if argv and argv[0].endswith("bwrap")
-            else (False, "مستوى bwrap بلا غلاف!")
+            (True, "الغلاف يلتزم المستوى المعلن")
+            if ok
+            else (False, f"مستوى {level} وغلاف {argv is not None}")
         )
 
     cases.append(("غلاف", "wrap_argv يلتزم المستوى المعلن", fn_wrap_argv_none))
@@ -1438,14 +1438,13 @@ def build_jail():
     def fn_wrap_argv_hostile():
         reset_detection_cache()
         argv = wrap_argv(None, ("/tmp",))  # type: ignore[arg-type]
-        level = jail_level()
-        if level != "bwrap":
-            return (
-                (True, "عدوي خارج المستوى يعود None")
-                if argv is None
-                else (False, "مدخل عدوي أنتج غلافًا")
-            )
-        return True, "عدوي تحت bwrap يعود None أيضًا"
+        # العدوي يعود None على أي مستوى — بلا غلاف يُبنى من مدخل عدوي،
+        # والسلسلة الناجحة ثابتة البايت على كل بيئة.
+        return (
+            (True, "العدوي يعود None بلا إخلال")
+            if argv is None
+            else (False, "مدخل عدوي أنتج غلافًا")
+        )
 
     cases.append(("غلاف", "wrap_argv على مدخل عدوي", fn_wrap_argv_hostile))
 
