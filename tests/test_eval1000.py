@@ -132,7 +132,7 @@ def test_reference_receipt_chain_is_live_truth():
         # حقيقي وصورة عن حارس.
         names = "; ".join(
             f"{row.case_id} ({row.category}/{row.family}): {row.detail_ar}"
-            for row in report.failures[:20]
+            for row in report.failures()[:20]
         )
         pytest.fail(f"العدّة الحيّة فيها فشل: {report.failed} — {names}")
     assert report.chain_hash == doc["chain_hash"], (
