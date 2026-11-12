@@ -2073,7 +2073,14 @@ def build_gates():
     cases.append(("بصمة", "نصوص مختلفة بصمات مختلفة", fn_fingerprint_diff))
 
     def fn_fingerprint_order():
-        gr2 = __import__("zyko.guardian.contracts", fromlist=["GateResult"]).GateResult
+        # العلة المُصلَحة (0.39.0): إعادة الترتيب بالـruff أسقطت وسطي
+        # «GateResult(name, True, "سليم")» إلى استدعاء بحجة واحدة —
+        # TypeError حيّ في العدّة. المصنع يعيد الوسيطين الموثقين.
+        def gr2(name):
+            return __import__(
+                "zyko.guardian.contracts", fromlist=["GateResult"]
+            ).GateResult(name, True, "سليم")
+
         a = compute_fingerprint("نص", [gr2("PIIGate"), gr2("RTLGate")])
         b = compute_fingerprint("نص", [gr2("RTLGate"), gr2("PIIGate")])
         return (

@@ -5,8 +5,8 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.38.0-6366f1)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-2757%20passing-22c55e)](.github/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.39.0-6366f1)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-2816%20passing-22c55e)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Termux-10b981)](.github/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
@@ -19,7 +19,7 @@
 
 > توليد ← مراجعة ← إصلاح ← حارس — من بوابة واحدة، بإيصالات توجيه قابلة للتحقق، وعلى أي منصة.
 
-النسخة **0.38.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
+النسخة **0.39.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
 
 ---
 
@@ -33,7 +33,7 @@ re-computes any routing decision; byte-level determinism is a tested contract, n
 slogan). Works with **zero API keys** (deterministic brain), or a local model via
 Ollama, or any OpenAI-compatible cloud brain behind the same gates. Policy-as-code,
 MCP client+server, multi-user gateway, RAG essentials, agent crews, 2 mandatory
-dependencies, and first-class Android/Termux support. 2757 tests passing on
+dependencies, and first-class Android/Termux support. 2816 tests passing on
 Linux·macOS·Windows × Python 3.11–3.14. See [CHANGELOG](CHANGELOG.md) ·
 [Architecture](docs/ARCHITECTURE.md) · [Innovations](docs/INNOVATION.md).
 
@@ -155,6 +155,25 @@ PYTHONPATH=src python3 -m zyko.benchmarks.eval1000 --run
 
 الأرشيف الكامل: [docs/EVAL1000.md](docs/EVAL1000.md).
 
+**المُقترِح الحتمي (0.39.0):** zyko يكتب برامج صحيحة **بلا شبكة وبلا نموذج لغوي** — مهمة بعقود معلنة، بحث مُغلق حتمي بالبايت، تنفيذ مبيّض على نقاط المجال، والفائز لا يخرج بلا حكم الحاكم الشكلي:
+
+```python
+# zyko:requires: x >= 0
+# zyko:ensures: result * 2 == x
+# zyko:domain: x = range(0, 8)
+def double(x):
+    raise NotImplementedError
+```
+
+```bash
+PYTHONPATH=src python3 -m zyko.tools.synth --spec task.py
+# [المُقترِح الحتمي] مُركَّب ومُحكَم — الفائز: x / 2
+PYTHONPATH=src python3 -m zyko.benchmarks.synthlab --run
+# 60/60 حالة ناجحة — بصمة السلسلة: da44c50bcff7d91d…
+```
+
+الأحكام الخمسة صادقة: `synthesized` / `exhausted` (برهان غياب داخل الصنف) / `budget` (غير مكتمل بصدق) / `invalid_spec` / `unverifiable`. التوثيق الكامل: [docs/SYNTH.md](docs/SYNTH.md).
+
 ---
 
 ## المنصات والاختبارات
@@ -163,7 +182,7 @@ Linux · Windows · macOS · Android/Termux — مصفوفة CI خضراء عل�
 
 ```bash
 pytest -q
-# 2757 passed, 22 skipped  (التخطيات موثقة بيئيًا: مزودات شبكة ودماغات غير مثبتة
+# 2816 passed, 22 skipped  (التخطيات موثقة بيئيًا: مزودات شبكة ودماغات غير مثبتة
 #                          في هذه البيئة — تخطٍّ لا فشل؛ تخطيات ضاد الـ12 أُغلقت:
 #                          ساق metrics-truth تثبّت ضاد v0.2.0 وتشغّلها)
 ```
@@ -176,7 +195,7 @@ pytest -q
 - [الدراسة الشاملة مقابل الأعلى — 2026-11-11](docs/STUDY_2026-11-11.md)
 - [سجل الإصدارات الكامل](docs/HISTORY.md) · [CHANGELOG](CHANGELOG.md)
 - [مرجع API](docs/API.md) · [المعمارية](docs/ARCHITECTURE.md) · [دليل المزوّدين](docs/PROVIDERS.md)
-- [العقل](docs/MIND.md) · [الاستراتيجية](docs/STRATEGY.md)
+- [العقل](docs/MIND.md) · [الاستراتيجية](docs/STRATEGY.md) · [المُقترِح الحتمي](docs/SYNTH.md)
 
 ## الحوكمة
 

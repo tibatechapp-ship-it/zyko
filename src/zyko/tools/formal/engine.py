@@ -183,14 +183,18 @@ def _parse_domain(content: str) -> tuple[str, tuple[int, int] | list[object]] | 
         return None
     name = expr.targets[0].id
     value = expr.value
-    if (
-        isinstance(value, ast.Call)
-        and isinstance(value.func, ast.Name)
-        and value.func.id == "range"
-        and len(value.args) == 2
-        and all(isinstance(a, ast.Constant) and isinstance(a.value, int) for a in value.args)
-    ):
-        return name, ("range", value.args[0].value, value.args[1].value)
+
+    def _int_or_negated(e: ast.expr) -> int | None:
+        """عدد صحيح حرفي أو مسبوبه — ``5`` و``-5`` كلاهما مقبولان."""
+        if isinstance(e, ast.Constant) and isinstance(e.value, int) \
+                and not isinstance(e.value, bool):
+            return e.value
+        if isinstance(e, ast.UnaryOp) and isinstance(e.op, ast.USub) \
+                and isinstance(e.operand, ast.Constant) \
+                and isinstance(e.operand.value, int) \
+                and not isinstance(e.operand.value, bool):
+            return -e.operand.value
+        return None
 
     def _literal_value(e: ast.expr) -> object | None:
         if isinstance(e, ast.Constant) and isinstance(e.value, (int, float, str)):
@@ -203,6 +207,13 @@ def _parse_domain(content: str) -> tuple[str, tuple[int, int] | list[object]] | 
         ):
             return -e.operand.value
         return None
+
+    if isinstance(value, ast.Call) and isinstance(value.func, ast.Name) \
+            and value.func.id == "range" and len(value.args) == 2:
+        lo = _int_or_negated(value.args[0])
+        hi = _int_or_negated(value.args[1])
+        if lo is not None and hi is not None:
+            return name, ("range", lo, hi)
 
     if isinstance(value, (ast.List, ast.Tuple)):
         extracted = [_literal_value(e) for e in value.elts]
@@ -431,6 +442,11 @@ def summarize(report: FormalReport) -> dict[str, object]:
     }
 
 
+# أسماء عامة للشراكة الطبقية: المُقترِح الحتمي (zyko.tools.synth) يعيد
+# استخدام المُحلِّلات نفسها بلا نسخ — محرّك توجيه واحد في المستودع كله.
+function_directives = _source_directives_for
+parse_domain_shape = _parse_domain
+
 __all__ = [
     "ALLOWED_BUILTINS",
     "ContractFinding",
@@ -438,5 +454,7 @@ __all__ = [
     "VerdictKind",
     "check_source",
     "evidence_lines",
+    "function_directives",
+    "parse_domain_shape",
     "summarize",
 ]

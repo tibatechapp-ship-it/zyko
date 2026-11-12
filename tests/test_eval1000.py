@@ -103,3 +103,30 @@ def test_stop_on_first_fail_is_diagnostic_door():
     assert report.total == 1  # توقف عند الأول
     report_full = run_eval1000(cases=cases)
     assert report_full.total == 2
+
+
+def test_reference_receipt_chain_is_live_truth():
+    """حارس الحقيقة المرجعية: التشغيل الكامل الحيّ يطابق الإيصال المرجعي.
+
+    العلة التي دفعت هذا الحارس: إعادة ترتيب بالـruff أسقطت وسطي
+    استدعاء GateResult في الحالة E-0342 فصار العدّة 999/1000 بلا أن
+    يلتقطها شيء — الإيصال المرجعي في benchmarks/results/ يُقارن الآن
+    بالتشغيل الحيّ، وأي انحراف دلالي في العدّة يفشل هنا فوراً.
+    """
+    import json
+    from pathlib import Path
+
+    from zyko.benchmarks.eval1000 import build_eval_cases, run_eval1000
+
+    reference = Path(__file__).resolve().parents[1] / (
+        "benchmarks/results/eval1000_2026-11-12.json"
+    )
+    doc = json.loads(reference.read_text(encoding="utf-8"))
+    report = run_eval1000(cases=build_eval_cases())
+    assert report.total == 1000
+    assert report.ok, f"العدّة الحيّة فيها فشل: {report.failed}"
+    assert report.chain_hash == doc["chain_hash"], (
+        "بصمة العدّة الحيّة اختلفت عن الإيصال المرجعي — عدّة تغيّرت "
+        "دلالياً بلا تجديد المرجع؛ إما تراجع عن التغيير أو أعد توليد "
+        "المرجع في نفس التغيير"
+    )
