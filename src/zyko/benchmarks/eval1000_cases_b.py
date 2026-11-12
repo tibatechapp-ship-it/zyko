@@ -29,6 +29,7 @@ from zyko.sandbox.contracts import (
     sensitive_paths_in_roots,
 )
 from zyko.sandbox.jail import (
+    _bwrap_works,
     jail_establishment_ok,
     jail_level,
     landlock_abi,
@@ -1349,20 +1350,17 @@ def build_jail():
         """الصدق البنيوي: الإعلان يطابق الإقامة الفعلية لا ظهور الواجهة."""
         abi = landlock_abi()
         net = net_confinement()
-        import shutil
-
-        has_bwrap = shutil.which("bwrap") is not None
         established = jail_establishment_ok()
         if abi >= 4 and established:
             expect = "landlock-net"
-        elif has_bwrap:
+        elif _bwrap_works():
             expect = "bwrap-net"
         else:
             expect = "unconstrained"
         return (
             (True, "الإعلان يطابق الواقع")
             if net == expect
-            else (False, f"ABI={abi} bwrap={has_bwrap} لكن net={net} بدل {expect}")
+            else (False, f"ABI={abi} bwrap={_bwrap_works()} لكن net={net} بدل {expect}")
         )
 
     cases.append(("صدق", "إعلان الشبكة يطابق قدرات النواة", fn_honesty_pair))
@@ -1370,12 +1368,14 @@ def build_jail():
     def fn_level_consistency():
         abi = landlock_abi()
         level = jail_level()
-        if abi >= 1:
+        # العقد: المستوى المُعلن يطابق القدرة الفعلية المقاسة — لا ظهور
+        # الواجهة: landlock يُشترط إقامة حقيقية، وبwrap يُشترط عمل فعلي.
+        if abi >= 1 and jail_establishment_ok():
             expect = "landlock"
+        elif _bwrap_works():
+            expect = "bwrap"
         else:
-            import shutil
-
-            expect = "bwrap" if shutil.which("bwrap") else "none"
+            expect = "none"
         return (
             (True, "المستوى يطابق النواة")
             if level == expect

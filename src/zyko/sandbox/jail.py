@@ -225,8 +225,15 @@ def jail_level() -> str:
             # الإقامة تُمضى بروبة حقيقية: الكشف يرى الواجهة، والإقامة
             # قد تُحجب بسياسات seccomp في حاويات CI — والابن الذي يفشل
             # في القيد يخرج 126 وكل العدّة تموت خلفه، فالحسم عند
-            # الكشف لا عند أول تشغيل.
-            _level_cache = JAIL_LEVEL_LANDLOCK if jail_establishment_ok() else JAIL_LEVEL_NONE
+            # الكشف لا عند أول تشغيل. وفشل الإقامة لا يُسقط إلى none
+            # قبل سؤال bwrap: الغلاف أصرم إن عمل — الخيار الأقوى
+            # المتاح يُعلن لا الخيار الأول المتعطل.
+            if jail_establishment_ok():
+                _level_cache = JAIL_LEVEL_LANDLOCK
+            elif _bwrap_works():
+                _level_cache = JAIL_LEVEL_BWRAP
+            else:
+                _level_cache = JAIL_LEVEL_NONE
         elif _bwrap_works():
             _level_cache = JAIL_LEVEL_BWRAP
         else:
