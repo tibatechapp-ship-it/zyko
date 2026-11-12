@@ -1,3 +1,27 @@
+## 0.35.0 — the network reaches the kernel and the brain sees symbols, not blind paths
+
+### Wave 11: close the documented network gap and give the choice brain a semantic map
+
+- **حصر الشبكة يصل النواة (Landlock ABI v4، نواة ‎6.7+)**: فجوة الشبكة
+  الموثقة منذ 0.29.0 أُغلقت بنيوياً — تحت ABI ≥ 4 تُبنى مجموعة القواعد
+  بـ16 بايت مع ``handled_access_scoped`` (bind/connect TCP) وكل TCP
+  محجوب افتراضياً إلا المنافذ المعلنة صراحة في ``net_ports`` (قواعد
+  ``LANDLOCK_RULE_NET_PORT`` مرتبة، التصريح لا الافتراض الصامت).
+  تحت نواة أقدم تبقى الفجوة **معلنة** في ``net_confinement()``
+  (``landlock-net``/``bwrap-net``/``unconstrained``) — نمط 0.29.0
+  نفسه: القوة تُكتشف لا تُدّعى، والبنية حجمها حسب ABI المكتشف (8/16
+  بايت) فلا نواة قديمة تنكسر.
+- **الخريطة الدلالية للمستودع** (`zyko.reviewer.repo_map`): سطر لكل
+  ملف بايثون متعقّب يوثّق رموزه (أصناف ودوال بتوقيعها، كلمة-مفتاحية
+  args شاملة) — حتمية بالبايت، بلا اعتماديات، وسقوف معلنة، والفشل
+  موثق في سطره (غير قابل للتحليل/بلا رموز/مفقود/كبير).
+- **الخريطة تُلحق بطلب اختيار الملف** في حلقة الجولة 9: العقل يرى
+  «من يسكن أين» لا مسارات عمياء — العلة الموثقة (اختيار الجار الأشهر
+  في 2674 و2148) لها علاجها البنيوي الآن.
+- 11 اختباراً جديداً بنيوياً وسلوكياً بلا شبكة ولا نواة جديدة مطلوبة.
+
+pyproject/CITATION/version.py/README/EVAL: 0.34.0 → 0.35.0.
+
 ## 0.34.0 — session-mode auto-detection and the live guard bug the audit caught
 
 ### Wave 10: the session decides its mode deterministically — and the audit's live bug dies

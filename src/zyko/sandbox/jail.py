@@ -95,13 +95,42 @@ _WRITE_BASE = (
 _ACCESS_REFER = 1 << 11  # ABI v2 — إعادة تربية الارتباطات بين الأدلة
 _ACCESS_TRUNCATE = 1 << 12  # ABI v3 — البتر بلا فتح كتابة
 
+# الشبكة (ABI v4 — نواة ‎6.7+): حصر TCP bind/connect — جولة 11
+_ACCESS_NET_BIND_TCP = 1 << 16
+_ACCESS_NET_CONNECT_TCP = 1 << 17
+_NET_SCOPE = _ACCESS_NET_BIND_TCP | _ACCESS_NET_CONNECT_TCP
+_RULE_NET_PORT = 3  # landlock_rule_type — قاعدة منفذ شبكي
+
 _libc: ctypes.CDLL | None = None
 
 
 class _RulesetAttr(ctypes.Structure):
-    """landlock_ruleset_attr — الواجهة المباشرة للنواة."""
+    """landlock_ruleset_attr — ABI v1–v3: ملفات فقط (8 بايت)."""
 
     _fields_ = [("handled_access_fs", ctypes.c_uint64)]
+
+
+class _RulesetAttrNet(ctypes.Structure):
+    """landlock_ruleset_attr — ABI v4+: ملفات + نطاق الشبكة (16 بايت).
+
+    حجم البنية يُسقف حسب ABI المكتشف: نواة أقدم ترفض 16 بايت بـ EINVAL
+    — فالحصر الشبكي يُبنى فقط حين تعلن النواة ABI ≥ 4، والفجوة تُعلن لا
+    تُخمّن (نمط 0.29.0 نفسه).
+    """
+
+    _fields_ = [
+        ("handled_access_fs", ctypes.c_uint64),
+        ("handled_access_scoped", ctypes.c_uint64),
+    ]
+
+
+class _NetPortAttr(ctypes.Structure):
+    """landlock_net_port_attr — قاعدة منفذ مسموح (ABI v4)."""
+
+    _fields_ = [
+        ("allowed_access", ctypes.c_uint64),
+        ("port", ctypes.c_uint16),
+    ]
 
 
 class _PathBeneathAttr(ctypes.Structure):
@@ -243,8 +272,28 @@ def _handled_access(abi: int) -> int:
     return handled
 
 
-def _landlock_restrict(allowed: tuple[str, ...]) -> None:
-    """قيّد العملية الحالية: الكتابة داخل الجذور فقط — استدعاءات مباشرة.
+def _net_scope(abi: int) -> int:
+    """نطاق الشبكة المتعامل معه — صفر تحت ABI v4، وbind/connect فوقها.
+
+    الحصر الشبكي افتراضي أصرم: من يقيد، يُحجب كل TCP — ومن يحتاج منافذ
+    يععلنها في ``net_ports`` فتُضاف قواعد سماح مرتبة حتمياً.
+    """
+    return _NET_SCOPE if abi >= 4 else 0
+
+
+def _ruleset_struct(abi: int, handled: int) -> tuple[Any, int]:
+    """بنية مجموعة القواعد بحسب ABI — 8 بايت للملفات، 16 مع الشبكة."""
+    if abi >= 4:
+        return _RulesetAttrNet(handled, _net_scope(abi)), ctypes.sizeof(_RulesetAttrNet)
+    return _RulesetAttr(handled), ctypes.sizeof(_RulesetAttr)
+
+
+def _landlock_restrict(allowed: tuple[str, ...], *, net_ports: tuple[int, ...] = ()) -> None:
+    """قيّد العملية الحالية: الكتابة داخل الجذور فقط + الشبكة محصورة — استدعاءات مباشرة.
+
+    تحت ABI v4 تُحجب كل اتصالات/bind TCP إلا المنافذ المعلنة في
+    ``net_ports`` (قواعد سماح مرتبة، كل منفذ قاعدة NET_PORT واحدة) —
+    وتحت ABI أقدم تبقى الشبكة كما كانت: فجوة معلنة لا ثغرة مخفية.
 
     تُستدعى داخل الابن (post-fork/pre-exec) حيث الخيط وحيد والنواة
     بلا اتصال بالأصل؛ أي فشل هنا استثناء يلتقطه ``_restrict_child``
@@ -259,11 +308,11 @@ def _landlock_restrict(allowed: tuple[str, ...]) -> None:
         raise OSError("Landlock غير مدعوم في هذه النواة")
     libc = _libc_handle()
     handled = _handled_access(abi)
-    ruleset = _RulesetAttr(handled)
+    ruleset, ruleset_size = _ruleset_struct(abi, handled)
     fd = libc.syscall(
         nr_create,
         ctypes.byref(ruleset),
-        ctypes.c_size_t(ctypes.sizeof(ruleset)),
+        ctypes.c_size_t(ruleset_size),
         ctypes.c_uint(0),
     )
     if fd < 0:
@@ -288,6 +337,17 @@ def _landlock_restrict(allowed: tuple[str, ...]) -> None:
                     raise OSError(ctypes.get_errno(), "landlock_add_rule فشل")
             finally:
                 os.close(root_fd)
+        for port in sorted(set(int(p) for p in net_ports)):
+            net_rule = _NetPortAttr(_ACCESS_NET_CONNECT_TCP, port)
+            rc = libc.syscall(
+                nr_add,
+                ctypes.c_int(fd),
+                ctypes.c_int(_RULE_NET_PORT),
+                ctypes.byref(net_rule),
+                ctypes.c_uint(0),
+            )
+            if rc != 0:
+                raise OSError(ctypes.get_errno(), f"landlock_add_rule(NET_PORT {port}) فشل")
         if libc.prctl(_PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0:
             raise OSError(ctypes.get_errno(), "PR_SET_NO_NEW_PRIVS فشل")
         if libc.syscall(nr_restrict, ctypes.c_int(fd), ctypes.c_uint(0)) != 0:
@@ -296,14 +356,14 @@ def _landlock_restrict(allowed: tuple[str, ...]) -> None:
         os.close(fd)
 
 
-def _restrict_child(allowed: tuple[str, ...]) -> None:
+def _restrict_child(allowed: tuple[str, ...], net_ports: tuple[int, ...]) -> None:
     """دالة preexec — تقييد النواة أو الإغلاق الموثق، لا ثالث.
 
     الفشل المغلق: وسم عربي على stderr ثم ``os._exit(126)`` — الابن
     لا يعمل بلا عزل على مضاربة الهدوء، والناتج 126 موثق في الإيصال.
     """
     try:
-        _landlock_restrict(allowed)
+        _landlock_restrict(allowed, net_ports=net_ports)
     except BaseException:  # noqa: BLE001 — preexec لا يرمي: يغلق لا يهرب
         try:
             os.write(2, _STDERR_MARK + b"\n")
@@ -312,9 +372,15 @@ def _restrict_child(allowed: tuple[str, ...]) -> None:
         os._exit(_EXIT_JAIL_FAIL)
 
 
-def jail_preexec(roots: object) -> Callable[[], None] | None:
+def jail_preexec(
+    roots: object,
+    *,
+    net_ports: tuple[int, ...] = (),
+) -> Callable[[], None] | None:
     """دالة عزل لـ ``subprocess`` أو None — بحسب المستوى المكتشَف.
 
+    تحت landlock ABI v4 الشبكة محصورة تلقائياً: كل TCP محجوب إلا
+    المنافذ المعلنة في ``net_ports`` (تصريح صريح لا افتراض صامت).
     تُمرَّر كما هي إلى ``preexec_fn`` حيث landlock هو المستوى النشط؛
     وbwrap يُطبَّق بتغليف ``argv`` لا بـ preexec (مسار مختلف تماماً)،
     وnone يعيد None — الصدق معلن في كل مسار.
@@ -324,7 +390,23 @@ def jail_preexec(roots: object) -> Callable[[], None] | None:
     if jail_level() != JAIL_LEVEL_LANDLOCK:
         return None
     allowed = write_roots(roots)
-    return functools.partial(_restrict_child, allowed)
+    return functools.partial(_restrict_child, allowed, net_ports)
+
+
+def net_confinement() -> str:
+    """مستوى حصر الشبكة الفعلي — معلن لا مفترض (جولة 11).
+
+    ``landlock-net``: نواة ABI ≥ 4 وكل TCP محجوب إلا المنافذ المعلنة؛
+    ``bwrap-net``: شبكة مقطوعة كلياً تحت التغليف الكامل (أصرم)؛
+    ``unconstrained``: فجوة موثقة تحت نواة قديمة أو بلا عزل — تُعلن
+    في الإيصالات كما يُعلن ``jail_level()``.
+    """
+    level = jail_level()
+    if level == JAIL_LEVEL_LANDLOCK:
+        return "landlock-net" if landlock_abi() >= 4 else "unconstrained"
+    if level == JAIL_LEVEL_BWRAP:
+        return "bwrap-net"
+    return "unconstrained"
 
 
 # ------------------------------------------------------------ bwrap
@@ -404,6 +486,7 @@ __all__ = [
     "jail_level",
     "jail_preexec",
     "landlock_abi",
+    "net_confinement",
     "reset_detection_cache",
     "sensitive_overlays",
     "wrap_argv",

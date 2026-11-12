@@ -168,6 +168,7 @@ class RepairLoop:
         *,
         max_attempts: int = MAX_ATTEMPTS_DEFAULT,
         max_files: int = MAX_FILES_DEFAULT,
+        map_lines: tuple[str, ...] | None = None,
     ) -> None:
         if max_attempts < 1 or max_attempts > 8:
             raise ValueError(f"الميزانية خارج العقد (1–8): {max_attempts}")
@@ -177,6 +178,8 @@ class RepairLoop:
         self.diff_brain = diff_brain
         self.max_attempts = max_attempts
         self.max_files = max_files
+        # جولة 11: الخريطة الدلالية تُبنى مرة وتُلحق بكل طلب اختيار
+        self.map_lines = map_lines
 
     # ------------------------------------------------------------- الحرس
     def _check_contract(self, patch: str) -> tuple[bool, str]:
@@ -237,7 +240,9 @@ class RepairLoop:
             feedback_sha = _sha16(feedback) if feedback else ""
             suffix = f"\n\nرجعية المحاولة السابقة:\n{feedback}" if (feedback and index > 1) else ""
 
-            choice = self.choice_brain.propose(build_choice_request(instance, tree) + suffix)
+            choice = self.choice_brain.propose(
+                build_choice_request(instance, tree, map_lines=self.map_lines) + suffix
+            )
             chosen = parse_choice(choice.text, tree) if choice.accepted else None
             choices.append(chosen)
             if chosen is None:

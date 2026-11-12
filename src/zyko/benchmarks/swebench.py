@@ -644,14 +644,27 @@ class SWEBrain:
                                               details_ar="استجابة سليمة"),))
 
 
-def build_choice_request(instance: SWEInstance, tree: tuple[str, ...]) -> str:
-    """طلب اختيار الملف: التقرير + عقد الفشل + شجرة مسارات مرتبة."""
+def build_choice_request(
+    instance: SWEInstance,
+    tree: tuple[str, ...],
+    *,
+    map_lines: tuple[str, ...] | None = None,
+) -> str:
+    """طلب اختيار الملف: التقرير + عقد الفشل + شجرة مرتبة + خريطة دلالية اختيارية.
+
+    ``map_lines`` (جولة 11): سطور ``repo_map`` — العقل يرى رموز كل ملف
+    لا مسارات عمياء، فيختار صاحب العلة لا الجار الأشهر. الخريطة إثراء
+    لا استبدال: الشجرة تبقى المرجع الذي يُحكى عليه ``parse_choice``.
+    """
     failing = "\n".join(instance.fail_to_pass[:24]) or "(لا عقد معلومة)"
-    return (
+    request = (
         f"التقرير:\n{instance.problem_statement}\n\n"
         f"عقد الفشل (اختبارات يجب أن تمر):\n{failing}\n\n"
         f"شجرة ملفات المصدر:\n" + "\n".join(tree)
     )
+    if map_lines:
+        request += "\n\nخريطة المستودع الدلالية (رموز كل ملف):\n" + "\n".join(map_lines)
+    return request
 
 
 def parse_choice(reply: str, tree: tuple[str, ...]) -> str | None:
