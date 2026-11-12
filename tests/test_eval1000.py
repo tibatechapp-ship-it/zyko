@@ -135,8 +135,19 @@ def test_reference_receipt_chain_is_live_truth():
             for row in report.failures()[:20]
         )
         pytest.fail(f"العدّة الحيّة فيها فشل: {report.failed} — {names}")
-    assert report.chain_hash == doc["chain_hash"], (
-        "بصمة العدّة الحيّة اختلفت عن الإيصال المرجعي — عدّة تغيّرت "
-        "دلالياً بلا تجديد المرجع؛ إما تراجع عن التغيير أو أعد توليد "
-        "المرجع في نفس التغيير"
-    )
+    if report.chain_hash != doc["chain_hash"]:
+        # تشخيص البصمة: تسمية الصفوف المختلفة بين الحيّ والمرجع —
+        # بصمة تختلف بلا اسم لا تصلح نفسها، وكل صف في المرجع موثق
+        # بالتفصيل فيصير الفرق مرئياً لا حَساً في سداسي عشري.
+        ref_rows = {row["case_id"]: row["detail_ar"] for row in doc["rows"]}
+        diffs = []
+        for row in report.rows:
+            ref_detail = ref_rows.get(row.case_id)
+            if ref_detail is not None and ref_detail != row.detail_ar:
+                diffs.append(f"{row.case_id}: مرجع=«{ref_detail}» حيّ=«{row.detail_ar}»")
+        shown = "; ".join(diffs[:10]) or "التفاصيل متطابقة — الفرق في الترتيب أو عدداً مفقوداً"
+        pytest.fail(
+            "بصمة العدّة الحيّة اختلفت عن الإيصال المرجعي — عدّة تغيّرت "
+            "دلالياً بلا تجديد المرجع؛ إما تراجع عن التغيير أو أعد توليد "
+            f"المرجع في نفس التغيير. الصفوف المختلفة: {shown}"
+        )
