@@ -244,10 +244,17 @@ def test_sensitive_overlays_empty_for_clean_tree(tmp_path):
 
 
 def test_wrap_argv_carries_overlays_after_root_binds(tmp_path):
-    """التراكب بعد ربط الجذر — البعد الذي يفوز عليه في التركيب."""
+    """التراكب بعد ربط الجذر — البعد الذي يفوز عليه في التركيب.
+
+    تركيب الغلاف الموثق: بوابات الجذر (--bind) ثم تراكب الحساسية
+    (--ro-bind على /dev/null) ثم «--» ثم الأوامر — والترتيب هنا عقد:
+    التراكب الأخير يفوز على ربط الجذر.
+    """
     if jail.jail_level() != jail.JAIL_LEVEL_BWRAP:
         pytest.skip("bwrap ليس المستوى النشط هنا — التراكب موثق في sensitive_overlays")
     (tmp_path / ".env").write_text("TOKEN=x", encoding="utf-8")
     wrapped = jail.wrap_argv(["python", "-c", "pass"], (str(tmp_path),))
     assert wrapped is not None
-    assert wrapped.index("--ro-bind", wrapped.index("/dev/null")) < wrapped.index("--")
+    root_bind = wrapped.index("--bind")  # ربط الجذر الأول
+    overlay = wrapped.index("--ro-bind", root_bind)  # تراكب الحساسية بعده
+    assert root_bind < overlay < wrapped.index("--")

@@ -1026,8 +1026,12 @@ def build_kernel_core():
 
     def fn_backend():
         got = backend()
+        # البصمة لا تعرف البيئة: «python أو rust» يختلف بين الأجهزة،
+        # فسلسلة النجاح ثابتة والقيمة الحية في الإيصال لا في البصمة.
         return (
-            (True, f"النواة: {got}") if got in ("python", "rust") else (False, f"نواة غريبة: {got}")
+            (True, "النواة من الفهرس الثنائي")
+            if got in ("python", "rust")
+            else (False, f"نواة غريبة: {got}")
         )
 
     cases.append(("بنية", "backend من الفهرس الثنائي", fn_backend))

@@ -160,10 +160,21 @@ def test_no_counters_means_no_claims(tmp_path):
 
 
 def test_missing_command_documented_not_raised(tmp_path):
+    """أمر غائب: فشل موثق بالعربي لا استثناء خارج — على أي مستوى عزل.
+
+    بلا غلاف: exec نفسه يرمي OSError فيُوثّق «فشل قبل البدء»؛ وتحت
+    غلاف bwrap: الغلاف هو من يشغّل فيخرج بخطى موثقة لا استثناء —
+    والعقد واحد في الحالتين: لا استثناء يهرب، والفشل عربي معلن.
+    """
     contract = _contract(tmp_path, allowed_commands=("لا-يوجد-على-النظام-هذا",))
     result = run_tests(contract, argv=["لا-يوجد-على-النظام-هذا", "-q"])
     assert not result.ok
-    assert "فشل قبل البدء" in result.reason_ar
+    assert result.reason_ar  # توثيق عربي غير فارغ في كل الحالات
+    if _jail_mod.jail_level() == _jail_mod.JAIL_LEVEL_BWRAP:
+        # تحت الغلاف: bwrap يفشل في exec الغائب — خروج موثق لا استثناء للعملية
+        assert result.exit_code != 0
+    else:
+        assert "فشل قبل البدء" in result.reason_ar
 
 
 # ---------------------------------------------------------------- المخرجات

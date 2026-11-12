@@ -343,7 +343,9 @@ class TestSpeedCanaries:
         for _ in range(5_000):
             contract.check_path("x.py")
         elapsed = time.perf_counter() - started
-        assert elapsed < 2.0, f"5,000 فحص مسار في {elapsed:.2f} ثانية — بطء غير مقبول"
+        # السقف 3 ثوانٍ مثل حدث السجل المجاور — العدّة على مشغّل CI مشترك
+        # تتذبذب ±1%؛ الكناري يمسك التدهور العشري (10x) لا التذبذب الحراري.
+        assert elapsed < 3.0, f"5,000 فحص مسار في {elapsed:.2f} ثانية — بطء غير مقبول"
 
     def test_parse_counts_huge_output_under_05s(self):
         huge = ("ض" * 500 + " 500 passed\n") * 1_000

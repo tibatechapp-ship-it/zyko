@@ -1333,16 +1333,18 @@ def build_jail():
     def fn_level_enum():
         level = jail_level()
         ok = level in ("landlock", "bwrap", "none")
-        return (
-            (True, f"المستوى {level} من الفهرس") if ok else (False, f"مستوى خارج الفهرس: {level}")
-        )
+        # السلسلة الناجحة ثابتة البايت — القيمة المتغيرة تعيش في الإيصال
+        # لا في البصمة، وإلا اختلفت البصمة بين بيئة وأخرى.
+        return (True, "المستوى من الفهرس الثلاثي") if ok else (False, f"مستوى خارج الفهرس: {level}")
 
     cases.append(("اكتشاف", "jail_level من الفهرس الثلاثي", fn_level_enum))
 
     def fn_net_enum():
         net = net_confinement()
         ok = net in ("landlock-net", "bwrap-net", "unconstrained")
-        return (True, f"الشبكة {net} معلنة") if ok else (False, f"حالة شبكة خارج الفهرس: {net}")
+        return (
+            (True, "الشبكة من الفهرس الثلاثي") if ok else (False, f"حالة شبكة خارج الفهرس: {net}")
+        )
 
     cases.append(("اكتشاف", "net_confinement من الفهرس الثلاثي", fn_net_enum))
 

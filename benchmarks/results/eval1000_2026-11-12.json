@@ -121,7 +121,7 @@
       "verdict_ar": "قوة"
     }
   },
-  "chain_hash": "f4bbc06b96a1a81973a82b1a1ad20df373f1fad397887eb7f48ff4358821e6ea",
+  "chain_hash": "c3910dbb57acdee5cf277123d257cfcfd640a5b1d41f9e50711d176eb0f49f90",
   "failed": 0,
   "kind": "eval1000",
   "ok": true,
@@ -4298,7 +4298,7 @@
     {
       "case_id": "E-0522",
       "category": "jail",
-      "detail_ar": "المستوى none من الفهرس",
+      "detail_ar": "المستوى من الفهرس الثلاثي",
       "family": "اكتشاف",
       "ok": true,
       "title_ar": "jail_level من الفهرس الثلاثي"
@@ -4306,7 +4306,7 @@
     {
       "case_id": "E-0523",
       "category": "jail",
-      "detail_ar": "الشبكة unconstrained معلنة",
+      "detail_ar": "الشبكة من الفهرس الثلاثي",
       "family": "اكتشاف",
       "ok": true,
       "title_ar": "net_confinement من الفهرس الثلاثي"
@@ -7706,7 +7706,7 @@
     {
       "case_id": "E-0948",
       "category": "kernel-core",
-      "detail_ar": "النواة: python",
+      "detail_ar": "النواة من الفهرس الثنائي",
       "family": "بنية",
       "ok": true,
       "title_ar": "backend من الفهرس الثنائي"

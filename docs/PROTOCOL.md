@@ -14,7 +14,7 @@
 | المرجع الداخلي | `python scripts/make_bench_baseline.py /tmp/requests-test/src/requests/models.py benchmarks/results/baseline_<تاريخ>.json` | `benchmarks/results/baseline_2026-11-11.json` | غلاف بإصدار + بصمة هدف |
 | معمل الإصلاح | `python -c "from zyko.benchmarks.repair import run_repair_lab; …"` | سجل داخل الإيصال | سلسلة sha256 |
 | SWE-bench-Lite (بروتوكول v1/v2/v3) | `python3 scripts/run_swebench_lite.py --out <وثيقة>.json` | `benchmarks/results/swebench_lite*.json` | `chain_hash` 16 محرفًا |
-| مختبر التقييم الكبير (جولة 13) | `PYTHONPATH=src python3 -m zyko.benchmarks.eval1000 --run --json benchmarks/results/eval1000_<تاريخ>.json` | `benchmarks/results/eval1000_2026-11-12.json` | `chain_hash` — 1000/1000، بصمة `f4bbc06b96a1a819…` |
+| مختبر التقييم الكبير (جولة 13) | `PYTHONPATH=src python3 -m zyko.benchmarks.eval1000 --run --json benchmarks/results/eval1000_<تاريخ>.json` | `benchmarks/results/eval1000_2026-11-12.json` | `chain_hash` — 1000/1000، بصمة `c3910dbb57acdee5…` |
 
 كل وثيقة نتائج تحمل: البروتوكول بالاسم، والنموذج بلصقه المعلن، والبيئة
 (py3.9 معزولة لكل حالة، httpbin محلي معلن)، والخلاصة، والمحاولات مفصلة،

@@ -5,7 +5,7 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.39.0-6366f1)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.40.0-6366f1)](CHANGELOG.md)
 [![Tests](https://img.shields.io/badge/tests-2816%20passing-22c55e)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Termux-10b981)](.github/workflows/ci.yml)
@@ -19,7 +19,7 @@
 
 > توليد ← مراجعة ← إصلاح ← حارس — من بوابة واحدة، بإيصالات توجيه قابلة للتحقق، وعلى أي منصة.
 
-النسخة **0.39.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
+النسخة **0.40.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
 
 ---
 
@@ -150,7 +150,7 @@ real    0m0.828s
 
 ```bash
 PYTHONPATH=src python3 -m zyko.benchmarks.eval1000 --run
-# 1000/1000 حالة ناجحة — بصمة السلسلة: f4bbc06b96a1a819…
+# 1000/1000 حالة ناجحة — بصمة السلسلة: c3910dbb57acdee5…
 ```
 
 الأرشيف الكامل: [docs/EVAL1000.md](docs/EVAL1000.md).
