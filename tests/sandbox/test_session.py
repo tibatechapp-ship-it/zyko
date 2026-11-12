@@ -4,9 +4,22 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
+# تخطٍ موثق: النواة تعلن Landlock لكن إقامته تفشل في حاويات CI — بروبة إقامة تقرر.
+from zyko.sandbox import jail as _jail_mod
 from zyko.sandbox.audit import AuditLog
 from zyko.sandbox.contracts import PermissionContract
 from zyko.sandbox.session import ToolSession
+
+_jail_broken = (
+    _jail_mod.jail_level() == _jail_mod.JAIL_LEVEL_LANDLOCK
+    and not _jail_mod.jail_establishment_ok()
+)
+_working_jail = pytest.mark.skipif(
+    _jail_broken,
+    reason="إقامة الحبس النواتي تفشل في هذه البيئة (seccomp الحاوية يحجب Landlock) — تخطٍ موثق لا فشل",
+)
 
 
 def _session(tmp_path, *, audit=True, **kw):
@@ -50,6 +63,7 @@ def test_patch_ops_budget_enforced_and_audited(tmp_path):
 def test_patch_exception_becomes_documented_error(tmp_path):
     """أداة تدمّر نفسها بالمدخل — الجلسة تحولها ERROR موثق لا استثناء."""
     session, _, log = _session(tmp_path, allow_patch=True)
+
     # مسار كائن عدوي يفجّر str()/Path في العمق — المحاولة تُدقَّق ولا يخرج استثناء
     class Boom:
         def __str__(self) -> str:
@@ -62,6 +76,7 @@ def test_patch_exception_becomes_documented_error(tmp_path):
 
 
 # ---------------------------------------------------------------- الاختبارات
+@_working_jail
 def test_run_tests_allow_audited(tmp_path):
     session, _, log = _session(tmp_path, allow_run_tests=True)
     result = session.run_tests(argv=[sys_py(), "-V"], cwd=tmp_path)

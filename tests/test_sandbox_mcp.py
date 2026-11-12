@@ -102,7 +102,7 @@ def test_run_tests_no_shell_no_env_secrets(server, monkeypatch, tmp_path):
     (tmp_path / "test_env.py").write_text(
         "import os\n\n\ndef test_env():\n"
         "    for v in os.environ.values():\n"
-        "        assert v != " + "\"" + "v" * 40 + "\"\n",
+        "        assert v != " + '"' + "v" * 40 + '"\n',
         encoding="utf-8",
     )
     payload = _payload(call(server, "sandbox_run_tests", {"root": str(tmp_path)}))
@@ -114,8 +114,11 @@ def test_patch_denied_without_consent(server, tmp_path):
     f = tmp_path / "app.py"
     f.write_text("أصل\n", encoding="utf-8")
     payload = _payload(
-        call(server, "sandbox_patch", {"root": str(tmp_path), "path": "app.py",
-                                       "old_text": "أصل", "new_text": "معدّل"})
+        call(
+            server,
+            "sandbox_patch",
+            {"root": str(tmp_path), "path": "app.py", "old_text": "أصل", "new_text": "معدّل"},
+        )
     )
     assert payload["result"]["ok"] is False
     assert f.read_text(encoding="utf-8") == "أصل\n"  # القرص لم يُمس
@@ -125,9 +128,17 @@ def test_patch_with_explicit_consent_applies(server, tmp_path):
     f = tmp_path / "app.py"
     f.write_text("أصل\n", encoding="utf-8")
     payload = _payload(
-        call(server, "sandbox_patch", {"root": str(tmp_path), "path": "app.py",
-                                       "old_text": "أصل", "new_text": "معدّل",
-                                       "allow_write": True})
+        call(
+            server,
+            "sandbox_patch",
+            {
+                "root": str(tmp_path),
+                "path": "app.py",
+                "old_text": "أصل",
+                "new_text": "معدّل",
+                "allow_write": True,
+            },
+        )
     )
     assert payload["result"]["ok"] is True
     assert f.read_text(encoding="utf-8") == "معدّل\n"
@@ -135,16 +146,17 @@ def test_patch_with_explicit_consent_applies(server, tmp_path):
 
 def test_patch_consent_true_but_outside_root_denied(server, tmp_path):
     payload = _payload(
-        call(server, "sandbox_patch", {"root": str(tmp_path), "path": "../خارج.py",
-                                       "content": "hi", "allow_write": True})
+        call(
+            server,
+            "sandbox_patch",
+            {"root": str(tmp_path), "path": "../خارج.py", "content": "hi", "allow_write": True},
+        )
     )
     assert payload["result"]["ok"] is False
 
 
 def test_patch_denial_also_audited(server, tmp_path):
-    _payload(
-        call(server, "sandbox_patch", {"root": str(tmp_path), "path": "a.py", "content": "x"})
-    )
+    _payload(call(server, "sandbox_patch", {"root": str(tmp_path), "path": "a.py", "content": "x"}))
     audit_file = tmp_path / ".zyko" / "tools" / "audit.jsonl"
     blob = audit_file.read_text(encoding="utf-8")
     assert "DENY" in blob

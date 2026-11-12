@@ -1,7 +1,7 @@
 """CLI الحاكم الشكلي — أكواد خروج صادقة: 0 قبول / 1 رفض / 2 تعذّر التحقق.
 
-    python -m zyko.tools.formal مسار_الملف.py
-    python -m zyko.tools.formal --stdin < proposal.py
+python -m zyko.tools.formal مسار_الملف.py
+python -m zyko.tools.formal --stdin < proposal.py
 """
 
 from __future__ import annotations
@@ -50,8 +50,10 @@ def main(argv: list[str] | None = None) -> int:
             VerdictKind.REJECT: "رفض",
             VerdictKind.UNKNOWN: "تعذّر التحقق",
         }[report.verdict]
-        print(f"[الحاكم الشكلي] {tag}: دوال بعقود = {report.functions_with_contracts}, "
-              f"توجيهات = {report.directives_checked}")
+        print(
+            f"[الحاكم الشكلي] {tag}: دوال بعقود = {report.functions_with_contracts}, "
+            f"توجيهات = {report.directives_checked}"
+        )
         for line in evidence_lines(report):
             print(f"  - {line}")
     if report.verdict is VerdictKind.ACCEPT:

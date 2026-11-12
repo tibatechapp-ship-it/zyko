@@ -387,9 +387,10 @@ def jail_establishment_ok() -> bool:
     global _ESTABLISHMENT_PROBE
     if _ESTABLISHMENT_PROBE is None:
         try:
+            probe_root = tempfile.mkdtemp(prefix="zyko-jail-probe-")
             probe = subprocess.run(  # nosec B603 — ابن البروب: argv ثابت بلا مدخل
                 [sys.executable, "-c", "import sys; sys.exit(0)"],
-                preexec_fn=jail_preexec((os.getcwd(),)),
+                preexec_fn=jail_preexec((probe_root,)),
                 capture_output=True,
                 timeout=60,
             )

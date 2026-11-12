@@ -98,15 +98,15 @@ def feedback_from_failed_tests(failed_ids: tuple[str, ...]) -> str:
 class LoopAttempt:
     """محاولة واحدة داخل الحلقة — كل ما جرى بالبايت."""
 
-    index: int                     # 1, 2, 3 … — ترتيب معلن
-    feedback_sha16: str            # بصمة الرجعية التي بُني عليها الطلب (فارغة للمحاولة الأولى)
+    index: int  # 1, 2, 3 … — ترتيب معلن
+    feedback_sha16: str  # بصمة الرجعية التي بُني عليها الطلب (فارغة للمحاولة الأولى)
     file_choice: str | None
     patch_sha16: str
-    accepted: bool                 # اجتازت البوابات + الحرس؟
+    accepted: bool  # اجتازت البوابات + الحرس؟
     contract_reason_ar: str
     applied: bool
     apply_error_ar: str | None
-    stop_reason_ar: str            # لماذا واصلت أو انصرفت بعد هذه المحاولة
+    stop_reason_ar: str  # لماذا واصلت أو انصرفت بعد هذه المحاولة
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -128,7 +128,7 @@ class RepairLoopResult:
 
     instance_id: str
     attempts: tuple[LoopAttempt, ...]
-    verdict: SWEVerdict            # حكم آخر حالة قابلة للحكم (مطبقة وقِيست)
+    verdict: SWEVerdict  # حكم آخر حالة قابلة للحكم (مطبقة وقِيست)
     file_choices: tuple[str | None, ...]
     chain_hash: str = ""
     note_ar: str = ""
@@ -217,22 +217,34 @@ class RepairLoop:
         base_f2p = base_verdict.f2p_failed_at_base if base_verdict else ()
         base_p2p = base_verdict.p2p_failed_at_base if base_verdict else ()
         verdict = SWEVerdict(
-            instance_id=instance.instance_id, patch_applied=False, apply_error_ar=None,
+            instance_id=instance.instance_id,
+            patch_applied=False,
+            apply_error_ar=None,
             f2p_failed_at_base=tuple(sorted(base_f2p)),
             p2p_failed_at_base=tuple(sorted(base_p2p)),
-            f2p_passed_after=(), f2p_failed_after=(), p2p_failed_after=(),
-            runs_error_ar=None, attempts_note_ar="لم تُطبَّق أي رقعة في الميزانية",
+            f2p_passed_after=(),
+            f2p_failed_after=(),
+            p2p_failed_after=(),
+            runs_error_ar=None,
+            attempts_note_ar="لم تُطبَّق أي رقعة في الميزانية",
         )
         choices: list[str | None] = []
         feedback: str | None = None
 
         if not tree:
-            attempts.append(LoopAttempt(
-                index=1, feedback_sha16="", file_choice=None, patch_sha16="",
-                accepted=False, contract_reason_ar="لا شجرة مصدر — المستودع غير مهيأ",
-                applied=False, apply_error_ar=None,
-                stop_reason_ar="انصراف — لا شجرة",
-            ))
+            attempts.append(
+                LoopAttempt(
+                    index=1,
+                    feedback_sha16="",
+                    file_choice=None,
+                    patch_sha16="",
+                    accepted=False,
+                    contract_reason_ar="لا شجرة مصدر — المستودع غير مهيأ",
+                    applied=False,
+                    apply_error_ar=None,
+                    stop_reason_ar="انصراف — لا شجرة",
+                )
+            )
             return self._result(instance, attempts, verdict, choices)
 
         for index in range(1, self.max_attempts + 1):
@@ -246,68 +258,124 @@ class RepairLoop:
             chosen = parse_choice(choice.text, tree) if choice.accepted else None
             choices.append(chosen)
             if chosen is None:
-                attempts.append(LoopAttempt(
-                    index=index, feedback_sha16=feedback_sha, file_choice=None,
-                    patch_sha16="", accepted=False,
-                    contract_reason_ar="اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
-                    applied=False, apply_error_ar=None,
-                    stop_reason_ar="نهاية الميزانية — لا ملف صالح" if last else "انصراف — لا ملف صالح للمحاولة القادمة",
-                ))
+                attempts.append(
+                    LoopAttempt(
+                        index=index,
+                        feedback_sha16=feedback_sha,
+                        file_choice=None,
+                        patch_sha16="",
+                        accepted=False,
+                        contract_reason_ar="اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+                        applied=False,
+                        apply_error_ar=None,
+                        stop_reason_ar="نهاية الميزانية — لا ملف صالح"
+                        if last
+                        else "انصراف — لا ملف صالح للمحاولة القادمة",
+                    )
+                )
                 break
 
             content = (workdir / chosen).read_text(encoding="utf-8", errors="replace")
-            diff_reply = self.diff_brain.propose(build_diff_request(instance, chosen, content) + suffix)
+            diff_reply = self.diff_brain.propose(
+                build_diff_request(instance, chosen, content) + suffix
+            )
             if not diff_reply.accepted:
-                attempts.append(LoopAttempt(
-                    index=index, feedback_sha16=feedback_sha, file_choice=chosen,
-                    patch_sha16="", accepted=False,
-                    contract_reason_ar="الرقعة رُفضت ببوابة (PII أو RTL)",
-                    applied=False, apply_error_ar=None,
-                    stop_reason_ar="نهاية الميزانية — البوابات رفضت" if last else "انصراف — البوابات رفضت اقتراحاً بلا رجعية ممكنة",
-                ))
+                attempts.append(
+                    LoopAttempt(
+                        index=index,
+                        feedback_sha16=feedback_sha,
+                        file_choice=chosen,
+                        patch_sha16="",
+                        accepted=False,
+                        contract_reason_ar="الرقعة رُفضت ببوابة (PII أو RTL)",
+                        applied=False,
+                        apply_error_ar=None,
+                        stop_reason_ar="نهاية الميزانية — البوابات رفضت"
+                        if last
+                        else "انصراف — البوابات رفضت اقتراحاً بلا رجعية ممكنة",
+                    )
+                )
                 break
 
             patch = extract_diff(diff_reply.text, fallback_path=chosen)
             if patch is None:
-                feedback = feedback_from_apply_error("لا رقعة موحدة في الرد — أعد الرقعة في كتلة ```diff كاملة الأجزاء")
-                attempts.append(LoopAttempt(
-                    index=index, feedback_sha16=feedback_sha, file_choice=chosen,
-                    patch_sha16="", accepted=True,
-                    contract_reason_ar="لا رقعة موحدة في الرد",
-                    applied=False, apply_error_ar=None,
-                    stop_reason_ar="نهاية الميزانية — لا رقعة" if last else "متابعة — رجعية الصيغة بُنيت",
-                ))
+                feedback = feedback_from_apply_error(
+                    "لا رقعة موحدة في الرد — أعد الرقعة في كتلة ```diff كاملة الأجزاء"
+                )
+                attempts.append(
+                    LoopAttempt(
+                        index=index,
+                        feedback_sha16=feedback_sha,
+                        file_choice=chosen,
+                        patch_sha16="",
+                        accepted=True,
+                        contract_reason_ar="لا رقعة موحدة في الرد",
+                        applied=False,
+                        apply_error_ar=None,
+                        stop_reason_ar="نهاية الميزانية — لا رقعة"
+                        if last
+                        else "متابعة — رجعية الصيغة بُنيت",
+                    )
+                )
                 continue
 
             allowed, reason = self._check_contract(patch)
             if not allowed:
                 feedback = feedback_from_contract(reason)
-                attempts.append(LoopAttempt(
-                    index=index, feedback_sha16=feedback_sha, file_choice=chosen,
-                    patch_sha16=_sha16(patch), accepted=False,
-                    contract_reason_ar=reason, applied=False, apply_error_ar=None,
-                    stop_reason_ar="نهاية الميزانية — الحرس رفض" if last else "متابعة — رجعية الحرس بُنيت",
-                ))
+                attempts.append(
+                    LoopAttempt(
+                        index=index,
+                        feedback_sha16=feedback_sha,
+                        file_choice=chosen,
+                        patch_sha16=_sha16(patch),
+                        accepted=False,
+                        contract_reason_ar=reason,
+                        applied=False,
+                        apply_error_ar=None,
+                        stop_reason_ar="نهاية الميزانية — الحرس رفض"
+                        if last
+                        else "متابعة — رجعية الحرس بُنيت",
+                    )
+                )
                 continue
 
             applied, apply_reason = apply_candidate(workdir, patch, runner)
             if not applied:
                 feedback = feedback_from_apply_error(apply_reason)
-                attempts.append(LoopAttempt(
-                    index=index, feedback_sha16=feedback_sha, file_choice=chosen,
-                    patch_sha16=_sha16(patch), accepted=True,
-                    contract_reason_ar=reason, applied=False,
-                    apply_error_ar=apply_reason,
-                    stop_reason_ar="نهاية الميزانية — التطبيق فشل" if last else "متابعة — رجعية التطبيق بُنيت",
-                ))
+                attempts.append(
+                    LoopAttempt(
+                        index=index,
+                        feedback_sha16=feedback_sha,
+                        file_choice=chosen,
+                        patch_sha16=_sha16(patch),
+                        accepted=True,
+                        contract_reason_ar=reason,
+                        applied=False,
+                        apply_error_ar=apply_reason,
+                        stop_reason_ar="نهاية الميزانية — التطبيق فشل"
+                        if last
+                        else "متابعة — رجعية التطبيق بُنيت",
+                    )
+                )
                 continue
 
             # الرقعة مطبقة — قياس بعد مباشر بعقد الجولة 8 (لا تطبيق ثانوي)
             all_ids = tuple(sorted(set(instance.fail_to_pass) | set(instance.pass_to_pass)))
-            after = run_ids(workdir, all_ids, python_bin, env_extra=env_extra,
-                            timeout_s=timeout_s, runner=runner, extra_args=extra_args)
-            f2p_after_failed = frozenset(f for f in after.failed_ids if f in set(instance.fail_to_pass))
-            p2p_after_failed = frozenset(f for f in after.failed_ids if f in set(instance.pass_to_pass))
+            after = run_ids(
+                workdir,
+                all_ids,
+                python_bin,
+                env_extra=env_extra,
+                timeout_s=timeout_s,
+                runner=runner,
+                extra_args=extra_args,
+            )
+            f2p_after_failed = frozenset(
+                f for f in after.failed_ids if f in set(instance.fail_to_pass)
+            )
+            p2p_after_failed = frozenset(
+                f for f in after.failed_ids if f in set(instance.pass_to_pass)
+            )
             verdict = SWEVerdict(
                 instance_id=instance.instance_id,
                 patch_applied=True,
@@ -322,12 +390,21 @@ class RepairLoop:
                 contract_reason_ar=reason,
                 attempts_note_ar=f"الحلقة طبّقت عند المحاولة {index}",
             )
-            attempts.append(LoopAttempt(
-                index=index, feedback_sha16=feedback_sha, file_choice=chosen,
-                patch_sha16=_sha16(patch), accepted=True,
-                contract_reason_ar=reason, applied=True, apply_error_ar=None,
-                stop_reason_ar="انصراف — حلّ" if (verdict.resolved_env or verdict.resolved_strict) else "متابعة — رجعية الاختبارات بُنيت",
-            ))
+            attempts.append(
+                LoopAttempt(
+                    index=index,
+                    feedback_sha16=feedback_sha,
+                    file_choice=chosen,
+                    patch_sha16=_sha16(patch),
+                    accepted=True,
+                    contract_reason_ar=reason,
+                    applied=True,
+                    apply_error_ar=None,
+                    stop_reason_ar="انصراف — حلّ"
+                    if (verdict.resolved_env or verdict.resolved_strict)
+                    else "متابعة — رجعية الاختبارات بُنيت",
+                )
+            )
 
             if verdict.resolved_env or verdict.resolved_strict:
                 break
@@ -335,7 +412,9 @@ class RepairLoop:
                 break
             if last:
                 break
-            feedback = feedback_from_failed_tests(verdict.f2p_failed_after or tuple(after.failed_ids))
+            feedback = feedback_from_failed_tests(
+                verdict.f2p_failed_after or tuple(after.failed_ids)
+            )
 
         return self._result(instance, attempts, verdict, choices)
 
@@ -352,7 +431,9 @@ class RepairLoop:
             "attempts": [a.to_dict() for a in attempts],
             "verdict": verdict.to_dict(),
         }
-        chain = hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()[:16]
+        chain = hashlib.sha256(
+            json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        ).hexdigest()[:16]
         return RepairLoopResult(
             instance_id=instance.instance_id,
             attempts=tuple(attempts),

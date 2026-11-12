@@ -128,9 +128,7 @@ def test_stable_env_vars_present(tmp_path):
 def test_timeout_kills_run_and_documents(tmp_path):
     _write_tests(
         tmp_path,
-        "import time\n"
-        "def test_hangs():\n"
-        "    time.sleep(60)\n",
+        "import time\ndef test_hangs():\n    time.sleep(60)\n",
     )
     contract = _contract(tmp_path, timeout_s=2.0)
     result = run_tests(contract, argv=[PY, "-m", "pytest", "-q"], cwd=tmp_path)
@@ -146,9 +144,7 @@ def test_unittest_counts_parsed(tmp_path):
         "    def test_passes(self):\n        self.assertTrue(True)\n",
         encoding="utf-8",
     )
-    result = run_tests(
-        _contract(tmp_path), argv=[PY, "-m", "unittest", "-v"], cwd=tmp_path
-    )
+    result = run_tests(_contract(tmp_path), argv=[PY, "-m", "unittest", "-v"], cwd=tmp_path)
     assert result.passed == 1
     # الخروج 0 لأن الاختبار الأخضر
     assert result.ok
@@ -157,9 +153,7 @@ def test_unittest_counts_parsed(tmp_path):
 def test_no_counters_means_no_claims(tmp_path):
     """أمر لا ينتج عدّادات — الأمانة: بلا ادعاء نجاح عددي."""
     (tmp_path / "script.py").write_text("print('لا اختبارات هنا')\n", encoding="utf-8")
-    result = run_tests(
-        _contract(tmp_path), argv=[PY, "script.py"], cwd=tmp_path
-    )
+    result = run_tests(_contract(tmp_path), argv=[PY, "script.py"], cwd=tmp_path)
     assert result.ok  # خروج 0
     assert result.passed is None and result.failed is None
     assert "بلا عدّادات" in result.reason_ar
@@ -175,9 +169,7 @@ def test_missing_command_documented_not_raised(tmp_path):
 # ---------------------------------------------------------------- المخرجات
 def test_output_tails_capped(tmp_path):
     (tmp_path / "test_noisy.py").write_text(
-        "import sys\n"
-        "def test_noisy():\n"
-        "    print('ض' * 50_000)\n",
+        "import sys\ndef test_noisy():\n    print('ض' * 50_000)\n",
         encoding="utf-8",
     )
     contract = _contract(tmp_path, max_output_chars=500)

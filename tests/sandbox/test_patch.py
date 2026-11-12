@@ -22,7 +22,9 @@ def test_replace_unique_match_writes(tmp_path):
     f.write_text("def add(a, b):\n    return a + b\n", encoding="utf-8")
     result = patch_file(
         _write_contract(tmp_path),
-        path=f, old_text="return a + b", new_text="return a + b + 0",
+        path=f,
+        old_text="return a + b",
+        new_text="return a + b + 0",
     )
     assert result.ok and result.changed and result.mode == "replace"
     assert f.read_text(encoding="utf-8") == "def add(a, b):\n    return a + b + 0\n"
@@ -30,7 +32,9 @@ def test_replace_unique_match_writes(tmp_path):
 
 
 def test_write_mode_creates_new_file(tmp_path):
-    result = patch_file(_write_contract(tmp_path), path=tmp_path / "new" / "x.py", content="print('جديد')\n")
+    result = patch_file(
+        _write_contract(tmp_path), path=tmp_path / "new" / "x.py", content="print('جديد')\n"
+    )
     assert result.ok and result.mode == "write" and result.changed
     assert (tmp_path / "new" / "x.py").read_text(encoding="utf-8") == "print('جديد')\n"
 
@@ -74,8 +78,10 @@ def test_patch_denied_outside_roots(tmp_path):
 
 def test_replace_missing_file_rejected(tmp_path):
     result = patch_file(
-        _write_contract(tmp_path), path=tmp_path / "مفقود.py",
-        old_text="a", new_text="b",
+        _write_contract(tmp_path),
+        path=tmp_path / "مفقود.py",
+        old_text="a",
+        new_text="b",
     )
     assert not result.ok and "غير موجود" in result.reason_ar
 
@@ -100,8 +106,11 @@ def test_mixed_modes_rejected(tmp_path):
     f = tmp_path / "app.py"
     f.write_text("نص", encoding="utf-8")
     result = patch_file(
-        _write_contract(tmp_path), path=f,
-        old_text="نص", new_text="جديد", content="أيضاً",
+        _write_contract(tmp_path),
+        path=f,
+        old_text="نص",
+        new_text="جديد",
+        content="أيضاً",
     )
     assert not result.ok and "خلط" in result.reason_ar
 
@@ -161,21 +170,25 @@ def test_non_utf8_file_rejected_for_replace(tmp_path):
 def test_arabic_content_roundtrip(tmp_path):
     """النص العربي يعبر الرقعة بلا تحريف — ترميز واحد UTF-8 في كل الاتجاهات."""
     f = tmp_path / "عربي.py"
-    f.write_text("message = \"مرحباً بالعالم\"\n", encoding="utf-8")
+    f.write_text('message = "مرحباً بالعالم"\n', encoding="utf-8")
     result = patch_file(
-        _write_contract(tmp_path), path=f,
-        old_text="مرحباً بالعالم", new_text="أهلاً بكم",
+        _write_contract(tmp_path),
+        path=f,
+        old_text="مرحباً بالعالم",
+        new_text="أهلاً بكم",
     )
     assert result.ok
-    assert f.read_text(encoding="utf-8") == "message = \"أهلاً بكم\"\n"
+    assert f.read_text(encoding="utf-8") == 'message = "أهلاً بكم"\n'
 
 
 def test_multiline_replace(tmp_path):
     f = tmp_path / "app.py"
     f.write_text("def a():\n    pass\n\ndef b():\n    pass\n", encoding="utf-8")
     result = patch_file(
-        _write_contract(tmp_path), path=f,
-        old_text="def a():\n    pass\n", new_text="def a():\n    return 1\n",
+        _write_contract(tmp_path),
+        path=f,
+        old_text="def a():\n    pass\n",
+        new_text="def a():\n    return 1\n",
     )
     assert result.ok
     assert "return 1" in f.read_text(encoding="utf-8")
@@ -189,7 +202,11 @@ def test_result_to_dict_deterministic(tmp_path):
     import json
 
     once = json.dumps(a.to_dict(), ensure_ascii=False, sort_keys=True)
-    twice = json.dumps(patch_file(_write_contract(tmp_path), path=tmp_path / "app2.py", content="جديد").to_dict(), ensure_ascii=False, sort_keys=True)
+    twice = json.dumps(
+        patch_file(_write_contract(tmp_path), path=tmp_path / "app2.py", content="جديد").to_dict(),
+        ensure_ascii=False,
+        sort_keys=True,
+    )
     assert isinstance(json.loads(once), dict) and isinstance(json.loads(twice), dict)
     keys = list(a.to_dict())
     assert keys == sorted(keys)
@@ -222,7 +239,9 @@ def test_symlink_inside_root_resolved_not_replaced(tmp_path):
 def test_patch_denied_on_secret_store_replace(tmp_path):
     secret = tmp_path / ".env"
     secret.write_text("TOKEN=x\n", encoding="utf-8")
-    result = patch_file(_write_contract(tmp_path), path=secret, old_text="TOKEN=x", new_text="TOKEN=y")
+    result = patch_file(
+        _write_contract(tmp_path), path=secret, old_text="TOKEN=x", new_text="TOKEN=y"
+    )
     assert not result.ok
     assert "حساس" in result.reason_ar
     assert secret.read_text(encoding="utf-8") == "TOKEN=x\n"  # لم تُقرأ ولا تُرقَّع

@@ -66,15 +66,47 @@ _TOKEN = re.compile(r"[0-9A-Za-z\u0600-\u06FF]+")
 # ويُخزن جنبًا إلى جنب — القمع الصامت يهدم معنى الدرسين معًا.
 # الرموز بصيغتها المطبوعة (التشكيل أزيله normalize_text) وباللغتين
 # معًا — المستودع عربي أولًا لكن الدروس تعبر اللغات.
-_POLARITY_NEGATIVE = frozenset({
-    "never", "avoid", "dont", "not", "no", "without",
-    "لا", "أبدًا", "أبدا", "ابداً", "ابدا", "تجنب", "تجنّب",
-    "تجنبا", "بلا", "بدون", "لن", "ممنوع", "يُمنع", "يمنع",
-})
-_POLARITY_POSITIVE = frozenset({
-    "always", "should", "must", "prefer", "recommended",
-    "دائمًا", "دائما", "دوماً", "دوما", "يجب", "ينبغي", "يفضل", "نوصي",
-})
+_POLARITY_NEGATIVE = frozenset(
+    {
+        "never",
+        "avoid",
+        "dont",
+        "not",
+        "no",
+        "without",
+        "لا",
+        "أبدًا",
+        "أبدا",
+        "ابداً",
+        "ابدا",
+        "تجنب",
+        "تجنّب",
+        "تجنبا",
+        "بلا",
+        "بدون",
+        "لن",
+        "ممنوع",
+        "يُمنع",
+        "يمنع",
+    }
+)
+_POLARITY_POSITIVE = frozenset(
+    {
+        "always",
+        "should",
+        "must",
+        "prefer",
+        "recommended",
+        "دائمًا",
+        "دائما",
+        "دوماً",
+        "دوما",
+        "يجب",
+        "ينبغي",
+        "يفضل",
+        "نوصي",
+    }
+)
 _TOPIC_SIMILAR_THRESHOLD = 0.5  # تشابه الموضوع فوقه مع قطبية معاكسة = تناقض موثق
 
 
@@ -306,11 +338,15 @@ class GlobalMemory:
             "goal_sha256": goal_digest(goal),
             "gaps": gaps_int,
             "kind": _clamp(_scrub(str(kind or "")), MAX_KIND_CHARS) or "غير-مصنّف",
-            "lessons_learned": max(0, int(lessons_learned)) if str(lessons_learned).strip().lstrip("-").isdigit() else 0,
+            "lessons_learned": max(0, int(lessons_learned))
+            if str(lessons_learned).strip().lstrip("-").isdigit()
+            else 0,
             "ok": ok_bool,
             "outcome_ar": _clamp(_scrub(str(outcome_ar)), MAX_OUTCOME_CHARS) or "بلا خلاصة موثقة",
             "project": _clamp(_scrub(str(project or "")), MAX_PROJECT_CHARS) or "مشروع-غير-مسماة",
-            "reflections": max(0, int(reflections)) if str(reflections).strip().lstrip("-").isdigit() else 0,
+            "reflections": max(0, int(reflections))
+            if str(reflections).strip().lstrip("-").isdigit()
+            else 0,
         }
         digest = entry_hash(seq, prev_hash, fields)
         entry = SessionEntry(
@@ -405,17 +441,23 @@ class GlobalMemory:
                 )
             if int(raw["seq"]) != expected_seq:
                 return LedgerVerifyReport(
-                    False, count, expected_seq,
+                    False,
+                    count,
+                    expected_seq,
                     f"ترقيم مكسور: المتوقع {expected_seq} والواقع {raw.get('seq')}",
                 )
             if str(raw["prev_hash"]) != prev_hash:
                 return LedgerVerifyReport(
-                    False, count, expected_seq,
+                    False,
+                    count,
+                    expected_seq,
                     f"سلسلة مقطوعة عند الجلسة {expected_seq} — prev_hash لا يطابق",
                 )
             if recalc != str(raw["hash"]):
                 return LedgerVerifyReport(
-                    False, count, expected_seq,
+                    False,
+                    count,
+                    expected_seq,
                     f"هاش الجلسة {expected_seq} لا يطابق المحتوى — عدل أو حذف",
                 )
             prev_hash = str(raw["hash"])
@@ -448,12 +490,14 @@ class GlobalMemory:
         out: list[dict] = []
         for c in data.get("conflicts", []):
             existing_seq, incoming_seq = int(c["existing_seq"]), int(c["incoming_seq"])
-            out.append({
-                "existing_seq": existing_seq,
-                "existing_text": seq_text.get(existing_seq, ""),
-                "incoming_seq": incoming_seq,
-                "incoming_text": seq_text.get(incoming_seq, ""),
-            })
+            out.append(
+                {
+                    "existing_seq": existing_seq,
+                    "existing_text": seq_text.get(existing_seq, ""),
+                    "incoming_seq": incoming_seq,
+                    "incoming_text": seq_text.get(incoming_seq, ""),
+                }
+            )
         out.sort(key=lambda item: (item["existing_seq"], item["incoming_seq"]))
         return tuple(out)
 
@@ -506,7 +550,8 @@ class GlobalMemory:
             # ميتة، فلا يبقى إلا ما يحيل إلى دروس حية بالفعل.
             surviving = {int(item["seq"]) for item in merged}
             conflicts = [
-                c for c in conflicts
+                c
+                for c in conflicts
                 if c["existing_seq"] in surviving and c["incoming_seq"] in surviving
             ]
         payload = {
@@ -543,7 +588,12 @@ class GlobalMemory:
         # لا يعاد استخدام تسلسل ولا يقفز فجوات بلا داعٍ.
         max_seq = max((int(item["seq"]) for item in cleaned), default=0)
         next_seq = max(max_seq + 1, int(data.get("next_seq") or 1))
-        return {"schema": LESSONS_SCHEMA, "next_seq": next_seq, "lessons": cleaned, "conflicts": _normalize_conflicts(data.get("conflicts"))}
+        return {
+            "schema": LESSONS_SCHEMA,
+            "next_seq": next_seq,
+            "lessons": cleaned,
+            "conflicts": _normalize_conflicts(data.get("conflicts")),
+        }
 
     # ------------------------------------------------------------ الاسترجاع
     def recall(self, query: object, limit: int = MAX_QUERY_RESULTS) -> tuple[str, ...]:

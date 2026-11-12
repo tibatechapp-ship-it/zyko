@@ -40,8 +40,21 @@ RESULT_NAME = "result"
 
 # المسموح استخدامه داخل تعابير العقود — مجموعة مقفلة، لا أسماء مفتوحة
 ALLOWED_BUILTINS: frozenset[str] = frozenset(
-    {"min", "max", "abs", "len", "round", "sum", "sorted", "any", "all",
-     "int", "float", "str", "bool"}
+    {
+        "min",
+        "max",
+        "abs",
+        "len",
+        "round",
+        "sum",
+        "sorted",
+        "any",
+        "all",
+        "int",
+        "float",
+        "str",
+        "bool",
+    }
 )
 
 
@@ -88,10 +101,10 @@ def _directive_parts(comment_text: str) -> tuple[str, str] | None:
     stripped = comment_text.strip()
     if not stripped.startswith(DIRECTIVE_PREFIX):
         return None
-    body = stripped[len(DIRECTIVE_PREFIX):].strip()
+    body = stripped[len(DIRECTIVE_PREFIX) :].strip()
     for kind in (REQUIRES_DIRECTIVE, ENSURES_DIRECTIVE, DOMAIN_DIRECTIVE):
         if body.startswith(kind + ":"):
-            content = body[len(kind) + 1:].strip()
+            content = body[len(kind) + 1 :].strip()
             return kind, content
     return None
 
@@ -162,22 +175,32 @@ def _parse_domain(content: str) -> tuple[str, tuple[int, int] | list[object]] | 
     if len(body) != 1:
         return None
     expr = body[0]
-    if not (isinstance(expr, ast.Assign) and len(expr.targets) == 1
-            and isinstance(expr.targets[0], ast.Name)):
+    if not (
+        isinstance(expr, ast.Assign)
+        and len(expr.targets) == 1
+        and isinstance(expr.targets[0], ast.Name)
+    ):
         return None
     name = expr.targets[0].id
     value = expr.value
-    if isinstance(value, ast.Call) and isinstance(value.func, ast.Name) \
-            and value.func.id == "range" and len(value.args) == 2 \
-            and all(isinstance(a, ast.Constant) and isinstance(a.value, int)
-                    for a in value.args):
+    if (
+        isinstance(value, ast.Call)
+        and isinstance(value.func, ast.Name)
+        and value.func.id == "range"
+        and len(value.args) == 2
+        and all(isinstance(a, ast.Constant) and isinstance(a.value, int) for a in value.args)
+    ):
         return name, ("range", value.args[0].value, value.args[1].value)
+
     def _literal_value(e: ast.expr) -> object | None:
         if isinstance(e, ast.Constant) and isinstance(e.value, (int, float, str)):
             return e.value
-        if isinstance(e, ast.UnaryOp) and isinstance(e.op, ast.USub) \
-                and isinstance(e.operand, ast.Constant) \
-                and isinstance(e.operand.value, (int, float)):
+        if (
+            isinstance(e, ast.UnaryOp)
+            and isinstance(e.op, ast.USub)
+            and isinstance(e.operand, ast.Constant)
+            and isinstance(e.operand.value, (int, float))
+        ):
             return -e.operand.value
         return None
 
@@ -196,11 +219,14 @@ def check_source(source: str) -> FormalReport:
     except SyntaxError as exc:
         return FormalReport(
             verdict=VerdictKind.REJECT,
-            findings=(ContractFinding(
-                function="<module>", kind=VerdictKind.REJECT,
-                reason_ar=f"الكود المُقترح لا يُجمَّع أصلاً: {exc.msg}",
-                line=exc.lineno,
-            ),),
+            findings=(
+                ContractFinding(
+                    function="<module>",
+                    kind=VerdictKind.REJECT,
+                    reason_ar=f"الكود المُقترح لا يُجمَّع أصلاً: {exc.msg}",
+                    line=exc.lineno,
+                ),
+            ),
         )
 
     functions = [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
@@ -223,22 +249,30 @@ def check_source(source: str) -> FormalReport:
             if kind == DOMAIN_DIRECTIVE:
                 parsed = _parse_domain(content)
                 if parsed is None:
-                    fn_findings.append(ContractFinding(
-                        function=fn.name, kind=VerdictKind.REJECT,
-                        reason_ar=(
-                            "شكل المجال غير مسموح — name = range(a, b) أو "
-                            "name = [قيم حرفية] فقط"
-                        ),
-                        directive=content, line=lineno,
-                    ))
+                    fn_findings.append(
+                        ContractFinding(
+                            function=fn.name,
+                            kind=VerdictKind.REJECT,
+                            reason_ar=(
+                                "شكل المجال غير مسموح — name = range(a, b) أو "
+                                "name = [قيم حرفية] فقط"
+                            ),
+                            directive=content,
+                            line=lineno,
+                        )
+                    )
                     continue
                 domain_name, domain_shape = parsed
                 if domain_name not in params:
-                    fn_findings.append(ContractFinding(
-                        function=fn.name, kind=VerdictKind.REJECT,
-                        reason_ar=f"المجال يعرّف {domain_name!r} وليست معاملاً في {fn.name!r}",
-                        directive=content, line=lineno,
-                    ))
+                    fn_findings.append(
+                        ContractFinding(
+                            function=fn.name,
+                            kind=VerdictKind.REJECT,
+                            reason_ar=f"المجال يعرّف {domain_name!r} وليست معاملاً في {fn.name!r}",
+                            directive=content,
+                            line=lineno,
+                        )
+                    )
                     continue
                 domains[domain_name] = domain_shape
             elif kind == REQUIRES_DIRECTIVE:
@@ -255,80 +289,105 @@ def check_source(source: str) -> FormalReport:
             if error is None:
                 contract_params |= names
         contract_params.discard(RESULT_NAME)
-        missing_domain = sorted(
-            p for p in contract_params
-            if p in params and p not in domains
-        )
+        missing_domain = sorted(p for p in contract_params if p in params and p not in domains)
         if missing_domain and not fn_findings:
-            fn_findings.append(ContractFinding(
-                function=fn.name, kind=VerdictKind.UNKNOWN,
-                reason_ar=(
-                    "عقود معلنة بلا مجال مدخلات معلن لـ"
-                    f"{', '.join(missing_domain)} — تعذّر التحقق السكوني؛ "
-                    "أعلن zyko:domain أو احكم بالصندوق"
-                ),
-            ))
+            fn_findings.append(
+                ContractFinding(
+                    function=fn.name,
+                    kind=VerdictKind.UNKNOWN,
+                    reason_ar=(
+                        "عقود معلنة بلا مجال مدخلات معلن لـ"
+                        f"{', '.join(missing_domain)} — تعذّر التحقق السكوني؛ "
+                        "أعلن zyko:domain أو احكم بالصندوق"
+                    ),
+                )
+            )
 
         # تجميع التعابير وتحليل أسمائها — رفض بناء أو نطاق
         for expr, lineno in requires_list:
             names, error = _expression_names(expr)
             if error:
-                fn_findings.append(ContractFinding(
-                    function=fn.name, kind=VerdictKind.REJECT,
-                    reason_ar=f"شرط مسبق مرفوض: {error}",
-                    directive=expr, line=lineno,
-                ))
+                fn_findings.append(
+                    ContractFinding(
+                        function=fn.name,
+                        kind=VerdictKind.REJECT,
+                        reason_ar=f"شرط مسبق مرفوض: {error}",
+                        directive=expr,
+                        line=lineno,
+                    )
+                )
                 continue
             outside = names - params - ALLOWED_BUILTINS
             if outside:
-                fn_findings.append(ContractFinding(
-                    function=fn.name, kind=VerdictKind.REJECT,
-                    reason_ar=(
-                        "شرط مسبق يلمس أسماء خارج معاملات الدالة: "
-                        f"{', '.join(sorted(outside))}"
-                    ),
-                    directive=expr, line=lineno,
-                ))
+                fn_findings.append(
+                    ContractFinding(
+                        function=fn.name,
+                        kind=VerdictKind.REJECT,
+                        reason_ar=(
+                            f"شرط مسبق يلمس أسماء خارج معاملات الدالة: {', '.join(sorted(outside))}"
+                        ),
+                        directive=expr,
+                        line=lineno,
+                    )
+                )
         for expr, lineno in ensures_list:
             names, error = _expression_names(expr)
             if error:
-                fn_findings.append(ContractFinding(
-                    function=fn.name, kind=VerdictKind.REJECT,
-                    reason_ar=f"شرط لاحق مرفوض: {error}",
-                    directive=expr, line=lineno,
-                ))
+                fn_findings.append(
+                    ContractFinding(
+                        function=fn.name,
+                        kind=VerdictKind.REJECT,
+                        reason_ar=f"شرط لاحق مرفوض: {error}",
+                        directive=expr,
+                        line=lineno,
+                    )
+                )
                 continue
             outside = names - params - ALLOWED_BUILTINS - {RESULT_NAME}
             if outside:
-                fn_findings.append(ContractFinding(
-                    function=fn.name, kind=VerdictKind.REJECT,
-                    reason_ar=(
-                        "شرط لاحق يلمس أسماء خارج المعاملات وresult: "
-                        f"{', '.join(sorted(outside))}"
-                    ),
-                    directive=expr, line=lineno,
-                ))
+                fn_findings.append(
+                    ContractFinding(
+                        function=fn.name,
+                        kind=VerdictKind.REJECT,
+                        reason_ar=(
+                            "شرط لاحق يلمس أسماء خارج المعاملات وresult: "
+                            f"{', '.join(sorted(outside))}"
+                        ),
+                        directive=expr,
+                        line=lineno,
+                    )
+                )
             if RESULT_NAME in params:
-                fn_findings.append(ContractFinding(
-                    function=fn.name, kind=VerdictKind.REJECT,
-                    reason_ar="result اسم محجوز للناتج — لا يجوز أن يكون معاملاً",
-                    directive=expr, line=lineno,
-                ))
+                fn_findings.append(
+                    ContractFinding(
+                        function=fn.name,
+                        kind=VerdictKind.REJECT,
+                        reason_ar="result اسم محجوز للناتج — لا يجوز أن يكون معاملاً",
+                        directive=expr,
+                        line=lineno,
+                    )
+                )
         if not ensures_list and not fn_findings:
-            fn_findings.append(ContractFinding(
-                function=fn.name, kind=VerdictKind.UNKNOWN,
-                reason_ar="عقد بلا شرط لاحق — لا شيء يُثبت، تعذّر التحقق",
-            ))
+            fn_findings.append(
+                ContractFinding(
+                    function=fn.name,
+                    kind=VerdictKind.UNKNOWN,
+                    reason_ar="عقد بلا شرط لاحق — لا شيء يُثبت، تعذّر التحقق",
+                )
+            )
 
         findings.extend(fn_findings)
 
     if contracted == 0:
         return FormalReport(
             verdict=VerdictKind.ACCEPT,
-            findings=(ContractFinding(
-                function="<module>", kind=VerdictKind.ACCEPT,
-                reason_ar="لا عقود معلنة — الحاكم الشكلي اختياري صريح، لا افتراضي صامت",
-            ),),
+            findings=(
+                ContractFinding(
+                    function="<module>",
+                    kind=VerdictKind.ACCEPT,
+                    reason_ar="لا عقود معلنة — الحاكم الشكلي اختياري صريح، لا افتراضي صامت",
+                ),
+            ),
             functions_with_contracts=0,
             directives_checked=0,
             details={"no_contracts": True},

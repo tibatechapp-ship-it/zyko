@@ -123,7 +123,7 @@ def describe(tasks):
     return f"{len(tasks)} مهمة"
 '''
 
-_A1_TESTS = '''from tasks_queue import add_task, describe
+_A1_TESTS = """from tasks_queue import add_task, describe
 
 
 def test_single_call():
@@ -138,7 +138,7 @@ def test_no_leak_between_calls():
 
 def test_describe():
     assert describe(["a", "b"]) == "2 مهمة"
-'''
+"""
 
 _A2_PARSE = '''"""batch_parse — تحويل دفعات بعنصر آمن يبتلع الأعطال العادية."""
 
@@ -157,7 +157,7 @@ def parse_batch(entries, parser):
     return out
 '''
 
-_A2_TESTS = '''import pytest
+_A2_TESTS = """import pytest
 
 from batch_parse import AbortJob, parse_batch
 
@@ -181,7 +181,7 @@ def test_regular_error_swallowed():
 
 def test_clean_pass():
     assert parse_batch(["A", "B"], _parser) == ["A", "B"]
-'''
+"""
 
 _A3_PAYLOAD = '''"""payload_parse — فك حمولة JSON مع رفض موثق للحمولة الفاسدة."""
 
@@ -196,7 +196,7 @@ def parse_payload(text):
         raise ValueError("حمولة غير صالحة")
 '''
 
-_A3_TESTS = '''import json
+_A3_TESTS = """import json
 
 import pytest
 
@@ -211,7 +211,7 @@ def test_error_chain_preserved():
     with pytest.raises(ValueError) as err:
         parse_payload("{oops")
     assert isinstance(err.value.__cause__, json.JSONDecodeError)
-'''
+"""
 
 _A4_SCAN = '''"""none_scan — إيجاد أول فراغ None دون مسّ القيم التي ترفض المقارنة."""
 
@@ -241,7 +241,7 @@ def has_gap(values):
     return find_missing(values) >= 0
 '''
 
-_A4_TESTS = '''from none_scan import Uncomparable, find_missing, has_gap
+_A4_TESTS = """from none_scan import Uncomparable, find_missing, has_gap
 
 
 def test_finds_none():
@@ -259,7 +259,7 @@ def test_uncomparable_not_compared():
 def test_has_gap():
     assert has_gap([1, None]) is True
     assert has_gap([1]) is False
-'''
+"""
 
 _A5_SETTINGS = '''"""settings_loader — تحميل إعدادات YAML من نص موثوق المصدر."""
 
@@ -271,7 +271,7 @@ def load_settings(text):
     return yaml.load(text)
 '''
 
-_A5_TESTS = '''from settings_loader import load_settings
+_A5_TESTS = """from settings_loader import load_settings
 
 
 def test_parses_map():
@@ -281,7 +281,7 @@ def test_parses_map():
 def test_parses_nested():
     data = load_settings("db:\\n  host: localhost\\n  port: 5432")
     assert data["db"]["port"] == 5432
-'''
+"""
 
 # ---- فئة ب: عيوب جودة تُصلَح آلياً دون كسر السلوك (الاختبارات تمر قبل وبعد)
 _B1_READER = '''"""config_reader — قراءة ملف إعدادات نصي."""
@@ -293,7 +293,7 @@ def read_config(path):
     return data.strip()
 '''
 
-_B1_TESTS = '''from config_reader import read_config
+_B1_TESTS = """from config_reader import read_config
 
 
 def test_reads_content(tmp_path):
@@ -307,7 +307,7 @@ def test_second_read(tmp_path):
     target.write_text("x=1\\n", encoding="utf-8")
     assert read_config(str(target)) == "x=1"
     assert read_config(str(target)) == "x=1"
-'''
+"""
 
 _B2_EXPORT = '''"""export_util — تصدير سجلات JSON بترتيب ثابت."""
 
@@ -320,7 +320,7 @@ def dump_record(record):
     return json.dumps(record, sort_keys=True)
 '''
 
-_B2_TESTS = '''from export_util import dump_record
+_B2_TESTS = """from export_util import dump_record
 
 
 def test_sorted_keys():
@@ -329,7 +329,7 @@ def test_sorted_keys():
 
 def test_nested():
     assert dump_record({"k": [1, 2]}) == '{"k": [1, 2]}'
-'''
+"""
 
 _B3_CONVERT = '''"""temp_convert — تحويلات حرارة بسيطة."""
 
@@ -341,7 +341,7 @@ def boiling_point():
     return to_celsius(212)
 '''
 
-_B3_TESTS = '''import pytest
+_B3_TESTS = """import pytest
 
 from temp_convert import boiling_point, to_celsius
 
@@ -352,7 +352,7 @@ def test_value():
 
 def test_boiling():
     assert boiling_point() == pytest.approx(100.0)
-'''
+"""
 
 _B4_DIGEST = '''"""digest_util — بصمات نصية للاستخدام غير الأمني."""
 
@@ -364,7 +364,7 @@ def fingerprint(text):
     return hashlib.md5(text.encode("utf-8")).hexdigest()
 '''
 
-_B4_TESTS = '''import re
+_B4_TESTS = """import re
 
 from digest_util import fingerprint
 
@@ -375,7 +375,7 @@ def test_hex_digest():
 
 def test_distinguishes():
     assert fingerprint("hello") != fingerprint("hellp")
-'''
+"""
 
 _B5_MATH = '''"""math_notes — عمليات حسابية صغيرة بلا توثيق (عيب بُذر عمداً)."""
 
@@ -391,7 +391,7 @@ def clamp(value, low, high):
     return max(low, min(high, value))
 '''
 
-_B5_TESTS = '''from math_notes import add, clamp, mul
+_B5_TESTS = """from math_notes import add, clamp, mul
 
 
 def test_add():
@@ -405,7 +405,7 @@ def test_mul():
 def test_clamp():
     assert clamp(5, 0, 3) == 3
     assert clamp(-1, 0, 3) == 0
-'''
+"""
 
 # ---- فئة ج: أعطال تستحق إصلاحاً بشراً — القياس الصادق هنا الكشف لا الإصلاح
 _C1_EVAL = '''"""calc_eval — حاسبة تعبيرات داخل نطاق متحكم به."""
@@ -416,7 +416,7 @@ def evaluate(expr, variables=None):
     return eval(expr, {"__builtins__": {}}, env)
 '''
 
-_C1_TESTS = '''from calc_eval import evaluate
+_C1_TESTS = """from calc_eval import evaluate
 
 
 def test_arithmetic():
@@ -425,7 +425,7 @@ def test_arithmetic():
 
 def test_literal():
     assert evaluate("2 * 4") == 8
-'''
+"""
 
 _C2_SQL = '''"""sql_builder — بناء استعلام مستخدم واحد (نصي لا تنفيذي)."""
 
@@ -434,12 +434,12 @@ def user_query(username):
     return "SELECT * FROM users WHERE name = '" + username + "'"
 '''
 
-_C2_TESTS = '''from sql_builder import user_query
+_C2_TESTS = """from sql_builder import user_query
 
 
 def test_query_shape():
     assert user_query("ali") == "SELECT * FROM users WHERE name = 'ali'"
-'''
+"""
 
 _C3_TOKEN = (  # nosec B105 — عينة بذر للعابث لا اعتمادية حقيقية
     '''"""auth_token — ترويسة تخويل بمفتاح افتراضي (سر بُذر للفحص)."""
@@ -453,7 +453,7 @@ def auth_header(key=None):
 '''
 )
 
-_C3_TESTS = '''from auth_token import API_KEY, auth_header
+_C3_TESTS = """from auth_token import API_KEY, auth_header
 
 
 def test_explicit_key():
@@ -462,7 +462,7 @@ def test_explicit_key():
 
 def test_default_key():
     assert auth_header() == {"Authorization": "Bearer " + API_KEY}
-'''
+"""
 
 _C4_FINALLY = '''"""finally_guard — قسمة آمنة تُنظف أثرها دائماً."""
 
@@ -476,7 +476,7 @@ def safe_div(a, b):
         return result
 '''
 
-_C4_TESTS = '''from finally_guard import safe_div
+_C4_TESTS = """from finally_guard import safe_div
 
 
 def test_normal_path():
@@ -485,7 +485,7 @@ def test_normal_path():
 
 def test_fraction():
     assert safe_div(1, 4) == 0.25
-'''
+"""
 
 CORPUS: tuple[RepairCase, ...] = (
     RepairCase(
@@ -698,9 +698,7 @@ def run_case(case: RepairCase, *, root: Path, timeout_s: float = _TEST_TIMEOUT_S
     module_path.write_text(case.source, encoding="utf-8")
     test_path.write_text(case.tests, encoding="utf-8")
 
-    contract = PermissionContract.for_roots(
-        case_dir, allow_run_tests=True, timeout_s=timeout_s
-    )
+    contract = PermissionContract.for_roots(case_dir, allow_run_tests=True, timeout_s=timeout_s)
     argv = ["python", "-m", "pytest", "-q", test_file]
 
     # ---- 1) الاختبارات قبل الإصلاح — الحقيقة المرجعية السلوكية
@@ -744,10 +742,14 @@ def run_case(case: RepairCase, *, root: Path, timeout_s: float = _TEST_TIMEOUT_S
             problems.append("الاختبارات لم تمر بعد الإصلاح — العلة باقية أو الإصلاح كسر السلوك")
         if set(resolved_rules) != {rid for rid, _n in case.seeded}:
             problems.append("قاعدة بذر لم تُصلَح آلياً رغم كونها ضمن القواعد الـ12")
-        resolved = tests_after_ok and not tests_before_ok and len(resolved_rules) == len(case.seeded)
+        resolved = (
+            tests_after_ok and not tests_before_ok and len(resolved_rules) == len(case.seeded)
+        )
     elif case.category == CATEGORY_QUALITY:
         if not tests_before_ok:
-            problems.append("الاختبارات فشلت قبل الإصلاح — عيب الجودة لا يبرر كسر السلوك؛ الكوربوس فاسد")
+            problems.append(
+                "الاختبارات فشلت قبل الإصلاح — عيب الجودة لا يبرر كسر السلوك؛ الكوربوس فاسد"
+            )
         if not tests_after_ok:
             problems.append("الاختبارات لم تمر بعد الإصلاح — الإصلاح كسر السلوك")
         if len(resolved_rules) != len(case.seeded):
@@ -765,11 +767,7 @@ def run_case(case: RepairCase, *, root: Path, timeout_s: float = _TEST_TIMEOUT_S
             problems.append("قاعدة بذر يدوية لم تُكشف — ثغرة في شبكة الكشف")
         if not tests_before_ok or not tests_after_ok:
             problems.append("الاختبارات فشلت على كود الفئة اليدوية — الكوربوس فاسد")
-        resolved = (
-            len(detected) == len(case.seeded)
-            and tests_before_ok
-            and tests_after_ok
-        )
+        resolved = len(detected) == len(case.seeded) and tests_before_ok and tests_after_ok
 
     return RepairRow(
         name=case.name,
@@ -815,9 +813,7 @@ class RepairReport:
 
     @property
     def detected_seeds(self) -> int:
-        return sum(
-            n for r in self.rows for rid, n in r.seeded if rid in r.detected
-        )
+        return sum(n for r in self.rows for rid, n in r.seeded if rid in r.detected)
 
     @property
     def detection_rate(self) -> float:

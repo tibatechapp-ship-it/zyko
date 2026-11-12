@@ -73,7 +73,9 @@ def canonical_json(payload: dict) -> str:
     return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
-def entry_hash(seq: int, prev_hash: str, tool: str, decision: str, reason_ar: str, detail: dict) -> str:
+def entry_hash(
+    seq: int, prev_hash: str, tool: str, decision: str, reason_ar: str, detail: dict
+) -> str:
     """بصمة الحدث — محتواه المعنوي + السلسلة، بلا زمن ولا بيئة."""
     payload = {
         "detail": detail,
@@ -171,7 +173,9 @@ class AuditLog:
         prev_hash = last.hash if last else "0" * 64
         tool_text = _scrub(str(tool or "").strip())[:64] or "أداة-غير-مسماة"
         decision_text = _scrub(str(decision or "").strip().upper())[:16] or "UNKNOWN"
-        reason_text = _scrub(" ".join(str(reason_ar or "").split()))[:MAX_REASON_CHARS] or "بلا سبب موثق"
+        reason_text = (
+            _scrub(" ".join(str(reason_ar or "").split()))[:MAX_REASON_CHARS] or "بلا سبب موثق"
+        )
         if isinstance(detail, dict):
             clean_detail = _clean_detail(dict(detail))
         elif detail is None:
@@ -272,17 +276,23 @@ class AuditLog:
                 )
             if int(raw["seq"]) != expected_seq:
                 return AuditVerifyReport(
-                    False, count, expected_seq,
+                    False,
+                    count,
+                    expected_seq,
                     f"ترقيم مكسور: المتوقع {expected_seq} والواقع {raw.get('seq')}",
                 )
             if str(raw["prev_hash"]) != prev_hash:
                 return AuditVerifyReport(
-                    False, count, expected_seq,
+                    False,
+                    count,
+                    expected_seq,
                     f"سلسلة مقطوعة عند الحدث {expected_seq} — prev_hash لا يطابق",
                 )
             if recalc != str(raw["hash"]):
                 return AuditVerifyReport(
-                    False, count, expected_seq,
+                    False,
+                    count,
+                    expected_seq,
                     f"هاش الحدث {expected_seq} لا يطابق المحتوى — عدل أو حذف",
                 )
             prev_hash = str(raw["hash"])

@@ -36,7 +36,7 @@ DEFAULT_TIMEOUT_S = 30.0  # المهلة الافتراضية بالثواني
 DEFAULT_MAX_PATCH_OPS = 32  # عمليات الرقعة القصوى لكل جلسة افتراضيًا
 
 # محارف الصدفة — تُرفض من أي token في argv (حماية عمق فوق "بلا shell")
-DENY_ARGV_CHARS = tuple(';&|<>\n\r`$(){}[]!*?"\'\\')
+DENY_ARGV_CHARS = tuple(";&|<>\n\r`$(){}[]!*?\"'\\")
 
 # مفاتيح البيئة البقاء الدنيا — قائمة بيضاء دنيا عبر المنصات
 ENV_KEEP_KEYS = ("PATH", "HOME", "LANG", "LC_ALL", "LC_CTYPE", "TMPDIR", "TZ")
@@ -66,26 +66,28 @@ DEFAULT_ALLOWED_COMMANDS = ("python", "python3", "pytest", "py")
 # (قائمة أسمية مكتشفة لا اجتهادية، وكل ``.env.*`` حساسة فلا باب
 # جانبي عبر ``.env.bak`` — إلا ``.env.example`` الوثيقة الاستثنائية:
 # أسماء متغيرات لا قيم حية).
-SENSITIVE_FILE_NAMES = frozenset({
-    ".env",
-    ".env.local",
-    ".env.production",
-    ".env.prod",
-    ".env.dev",
-    ".env.development",
-    "credentials",
-    "credentials.json",
-    "secrets.json",
-    "secrets.yaml",
-    "secrets.yml",
-    "id_rsa",
-    "id_dsa",
-    "id_ecdsa",
-    "id_ed25519",
-    ".netrc",
-    ".pgpass",
-    ".git-credentials",
-})
+SENSITIVE_FILE_NAMES = frozenset(
+    {
+        ".env",
+        ".env.local",
+        ".env.production",
+        ".env.prod",
+        ".env.dev",
+        ".env.development",
+        "credentials",
+        "credentials.json",
+        "secrets.json",
+        "secrets.yaml",
+        "secrets.yml",
+        "id_rsa",
+        "id_dsa",
+        "id_ecdsa",
+        "id_ed25519",
+        ".netrc",
+        ".pgpass",
+        ".git-credentials",
+    }
+)
 SENSITIVE_FILE_SUFFIXES = (".pem", ".key", ".p12", ".pfx", ".keystore")
 # مجلدات مخازن كاملة — تُعمى دفعة واحدة لا ملفًا ملفًا
 SENSITIVE_DIR_NAMES = frozenset({".ssh", ".aws", ".kube", ".gnupg"})

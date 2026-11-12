@@ -203,7 +203,13 @@ def test_sanitized_env_strips_secrets(monkeypatch):
     monkeypatch.setenv("MY_SECRET_TOKEN", "zzz")
     contract = PermissionContract.for_roots(".")
     env = contract.sanitized_env()
-    for name in ("ZYKO_API_KEY", "GITHUB_TOKEN", "DB_PASSWORD", "SESSION_COOKIE", "MY_SECRET_TOKEN"):
+    for name in (
+        "ZYKO_API_KEY",
+        "GITHUB_TOKEN",
+        "DB_PASSWORD",
+        "SESSION_COOKIE",
+        "MY_SECRET_TOKEN",
+    ):
         assert name not in env
     joined = json.dumps(env)
     for secret in ("sk-secret-value", "ghp_leaked", "hunter2", "abc", "zzz"):
@@ -255,7 +261,9 @@ def test_contract_is_frozen(tmp_path):
 
 
 def test_allowed_commands_deduped_and_stripped():
-    contract = PermissionContract.for_roots(".", allowed_commands=("pytest", " pytest ", "pytest", ""))
+    contract = PermissionContract.for_roots(
+        ".", allowed_commands=("pytest", " pytest ", "pytest", "")
+    )
     assert contract.allowed_commands == ("pytest",)
 
 
@@ -264,10 +272,20 @@ def test_allowed_commands_deduped_and_stripped():
 # مخزن أسرار لا ملف مشروع — والقراءة الحساسة تُرفض حتى داخل الجذور.
 def test_is_sensitive_file_catches_named_stores(tmp_path):
     for name in (
-        ".env", ".env.bak", ".env.staging", ".env.local",
-        "id_rsa", "id_ed25519", "credentials.json",
-        "secrets.yaml", ".netrc", ".pgpass", ".git-credentials",
-        "server.pem", "privkey.key", "bundle.p12",
+        ".env",
+        ".env.bak",
+        ".env.staging",
+        ".env.local",
+        "id_rsa",
+        "id_ed25519",
+        "credentials.json",
+        "secrets.yaml",
+        ".netrc",
+        ".pgpass",
+        ".git-credentials",
+        "server.pem",
+        "privkey.key",
+        "bundle.p12",
     ):
         assert is_sensitive_file(tmp_path / name), name
 

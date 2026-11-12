@@ -136,7 +136,8 @@ class FormalGate:
             return GateResult(
                 self.gate_name,
                 True,
-                "العقود المعلنة سليمة سكونياً" if report.functions_with_contracts
+                "العقود المعلنة سليمة سكونياً"
+                if report.functions_with_contracts
                 else "لا عقود معلنة — الحاكم اختياري صريح",
                 summary,
             )

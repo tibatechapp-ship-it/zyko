@@ -106,7 +106,9 @@ def _make_repo(tmp_path: Path) -> Path:
 
 
 def test_symbol_summary_sorted_with_signatures():
-    summary = symbol_summary("class B: pass\nclass A: pass\ndef zeta(): pass\ndef alpha(x, y=1): pass\n")
+    summary = symbol_summary(
+        "class B: pass\nclass A: pass\ndef zeta(): pass\ndef alpha(x, y=1): pass\n"
+    )
     assert summary == "class A؛ class B؛ def alpha(x, y)؛ def zeta()"
     assert symbol_summary("not python (:") is None
     assert symbol_summary("X = 1\n") == ""  # ملف سليم بلا رموز — فراغ موثق
@@ -147,9 +149,14 @@ def test_choice_request_includes_map_lines():
     from zyko.benchmarks.swebench import SWEInstance, build_choice_request
 
     inst = SWEInstance(
-        instance_id="x", repo="r", base_commit="b" * 40, version="1",
-        problem_statement="ع", test_patch="t",
-        fail_to_pass=("a::b",), pass_to_pass=(),
+        instance_id="x",
+        repo="r",
+        base_commit="b" * 40,
+        version="1",
+        problem_statement="ع",
+        test_patch="t",
+        fail_to_pass=("a::b",),
+        pass_to_pass=(),
     )
     request = build_choice_request(inst, ("models.py",), map_lines=("models.py :: class Response",))
     assert "خريطة المستودع الدلالية" in request and "class Response" in request

@@ -56,7 +56,7 @@ def mind_map_text() -> str:
             '  zyko mind "انشئ مشروع قائمة مهام مع واجهة سطر أوامر" -o ./جديد',
             '  zyko mind "اصلح الملف src/app.py" -o ./جلسة --dry-run   # تشغيل جاف',
             '  zyko mind "انشئ مشروع ملاحظات مع اختبارات" -o ./ن --rounds 2',
-            '  zyko mind memory --json   # الذاكرة العابرة: دفتر موقّع + تدقيق من الرأس',
+            "  zyko mind memory --json   # الذاكرة العابرة: دفتر موقّع + تدقيق من الرأس",
         ]
     )
 
@@ -137,7 +137,11 @@ def handle_mind_memory(args: Any) -> int:
         print(f"الجلسات الموثقة: {data['sessions']} (مكتملة بلا فجوات: {data['sessions_ok']})")
         print(f"الدروس العابرة للمشاريع: {data['lessons']}")
         print(f"آخر جلسة: seq={data['last_seq']} — {data['last_outcome_ar'] or 'لا جلسات بعد'}")
-        verdict = "سلسلة سليمة ✅" if data["verify_ok"] else f"سلسلة مكسورة ❌ — {data['verify_reason_ar']}"
+        verdict = (
+            "سلسلة سليمة ✅"
+            if data["verify_ok"]
+            else f"سلسلة مكسورة ❌ — {data['verify_reason_ar']}"
+        )
         print(f"تدقيق الدفتر: {verdict}")
         if data["lessons"]:
             print(_LINE)

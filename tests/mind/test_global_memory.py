@@ -29,12 +29,21 @@ GOAL = "انشئ مشروع قائمة مهام مع واجهة سطر أوام�
 def _feed(mem: GlobalMemory) -> None:
     """تغذية موحدة — نفس التسلسل بالضبط لاختبارات الحتمية."""
     mem.record_session(
-        goal="ابنِ مشروع قائمة مهام", project="proj-a", kind="build",
-        ok=True, lessons_learned=2, gaps=0, ts=1000.0,
+        goal="ابنِ مشروع قائمة مهام",
+        project="proj-a",
+        kind="build",
+        ok=True,
+        lessons_learned=2,
+        gaps=0,
+        ts=1000.0,
     )
     mem.record_session(
-        goal="اصلح الملف المعطوب", project="proj-b", kind="fix",
-        ok=False, gaps=1, ts=2000.0,
+        goal="اصلح الملف المعطوب",
+        project="proj-b",
+        kind="fix",
+        ok=False,
+        gaps=1,
+        ts=2000.0,
     )
     mem.learn(["قياس قبل الإصلاح", "دروس: قياس قبل الإصلاح"])
 
@@ -224,12 +233,16 @@ class TestGlobalLessons:
         mem.lessons_path.parent.mkdir(parents=True)
         mem.lessons_path.write_text(
             json.dumps(
-                {"schema": LESSONS_SCHEMA, "next_seq": 3, "lessons": [
-                    {"seq": 1, "text": "درس سليم"},
-                    {"seq": 2, "text": "   "},
-                    {"seq": 3},
-                    "نص وليس كائنًا",
-                ]},
+                {
+                    "schema": LESSONS_SCHEMA,
+                    "next_seq": 3,
+                    "lessons": [
+                        {"seq": 1, "text": "درس سليم"},
+                        {"seq": 2, "text": "   "},
+                        {"seq": 3},
+                        "نص وليس كائنًا",
+                    ],
+                },
                 ensure_ascii=False,
             ),
             encoding="utf-8",
@@ -369,7 +382,9 @@ class TestByteDeterminism:
         _feed(m1)
         _feed(m2)
         for name in ("sessions.jsonl", "lessons.json", "MEMORY.md"):
-            assert (tmp_path / "a" / name).read_bytes() == (tmp_path / "b" / name).read_bytes(), name
+            assert (tmp_path / "a" / name).read_bytes() == (tmp_path / "b" / name).read_bytes(), (
+                name
+            )
 
     def test_replay_same_hash_chain(self, tmp_path):
         m1, m2 = GlobalMemory(tmp_path / "a"), GlobalMemory(tmp_path / "b")
@@ -506,6 +521,7 @@ class TestAdversarial:
         mem.ledger_path.write_text(lines[1] + "\n", encoding="utf-8")
         report = mem.verify()
         assert not report.ok  # seq=2 يبدأ السجل → ترقيم مكسور فورًا
+
 
 # =================================================== مضاد النسيان
 # المستعار من nexus-core: «دائمًا» مقابل «أبدًا» على الموضوع نفسه

@@ -9,10 +9,24 @@ from __future__ import annotations
 
 import sys
 
+import pytest
+
 from zyko.mind.loop import MindLoop
+
+# تخطٍ موثق: النواة تعلن Landlock لكن إقامته تفشل في حاويات CI — بروبة إقامة تقرر.
+from zyko.sandbox import jail as _jail_mod
 from zyko.sandbox.audit import AuditLog
 from zyko.sandbox.contracts import PermissionContract
 from zyko.sandbox.session import ToolSession
+
+_jail_broken = (
+    _jail_mod.jail_level() == _jail_mod.JAIL_LEVEL_LANDLOCK
+    and not _jail_mod.jail_establishment_ok()
+)
+_working_jail = pytest.mark.skipif(
+    _jail_broken,
+    reason="إقامة الحبس النواتي تفشل في هذه البيئة (seccomp الحاوية يحجب Landlock) — تخطٍ موثق لا فشل",
+)
 
 
 def _tools(out, **kw):
@@ -55,6 +69,7 @@ class TestStepUnit:
         step = self._loop(tmp_path)._run_real_tests(tmp_path / "مفقود", write=True)
         assert step.ok and "لا مجلد ناتج" in step.details_ar
 
+    @_working_jail
     def test_green_tests_pass_gate(self, tmp_path):
         (tmp_path / "test_ok.py").write_text("def test_ok():\n    assert True\n", encoding="utf-8")
         step = self._loop(tmp_path)._run_real_tests(tmp_path, write=True)

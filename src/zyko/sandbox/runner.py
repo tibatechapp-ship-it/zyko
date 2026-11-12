@@ -144,26 +144,47 @@ def run_tests(
     tokens, reason = contract.check_command(argv)
     if tokens is None:
         return TestRunResult(
-            ok=False, exit_code=2, timed_out=False, passed=None, failed=None,
-            errors=None, skipped=None, command="",
-            stdout_tail="", stderr_tail="",
+            ok=False,
+            exit_code=2,
+            timed_out=False,
+            passed=None,
+            failed=None,
+            errors=None,
+            skipped=None,
+            command="",
+            stdout_tail="",
+            stderr_tail="",
             reason_ar=f"حارس الأمر رفض — {reason}",
         )
     # 2) دليل العمل داخل الجذور + حارس ملف الظل
     cwd_path, cwd_reason = contract.check_path(str(cwd) if cwd is not None else contract.roots[0])
     if cwd_path is None:
         return TestRunResult(
-            ok=False, exit_code=2, timed_out=False, passed=None, failed=None,
-            errors=None, skipped=None, command=" ".join(tokens),
-            stdout_tail="", stderr_tail="",
+            ok=False,
+            exit_code=2,
+            timed_out=False,
+            passed=None,
+            failed=None,
+            errors=None,
+            skipped=None,
+            command=" ".join(tokens),
+            stdout_tail="",
+            stderr_tail="",
             reason_ar=f"حارس الدليل رفض — {cwd_reason}",
         )
     for shadow in _RUNNER_SHADOW_FILES:
         if (cwd_path / shadow).is_file():
             return TestRunResult(
-                ok=False, exit_code=2, timed_out=False, passed=None, failed=None,
-                errors=None, skipped=None, command=" ".join(tokens),
-                stdout_tail="", stderr_tail="",
+                ok=False,
+                exit_code=2,
+                timed_out=False,
+                passed=None,
+                failed=None,
+                errors=None,
+                skipped=None,
+                command=" ".join(tokens),
+                stdout_tail="",
+                stderr_tail="",
                 reason_ar=f"«{shadow}» في جذر التشغيل يظلّل المشغّل الحقيقي — رفض قبل التنفيذ",
             )
     # 3) التنفيذ: argv قائمة، بيئة بيضاء، مهلة من العقد، وحصر الكتابة بالنواة
@@ -196,18 +217,29 @@ def run_tests(
     except subprocess.TimeoutExpired as exc:
         timed_out = True
         exit_code = _TIMEOUT_EXIT
-        stdout = (exc.stdout or b"").decode("utf-8", errors="replace") if isinstance(
-            exc.stdout, bytes
-        ) else (exc.stdout or "")
-        stderr = (exc.stderr or b"").decode("utf-8", errors="replace") if isinstance(
-            exc.stderr, bytes
-        ) else (exc.stderr or "")
+        stdout = (
+            (exc.stdout or b"").decode("utf-8", errors="replace")
+            if isinstance(exc.stdout, bytes)
+            else (exc.stdout or "")
+        )
+        stderr = (
+            (exc.stderr or b"").decode("utf-8", errors="replace")
+            if isinstance(exc.stderr, bytes)
+            else (exc.stderr or "")
+        )
         stderr += f"\n[zyko] تجاوز المهلة {timeout} ثانية — أُنهي بالقوة"
     except OSError as exc:
         return TestRunResult(
-            ok=False, exit_code=2, timed_out=False, passed=None, failed=None,
-            errors=None, skipped=None, command=command_text,
-            stdout_tail="", stderr_tail="",
+            ok=False,
+            exit_code=2,
+            timed_out=False,
+            passed=None,
+            failed=None,
+            errors=None,
+            skipped=None,
+            command=command_text,
+            stdout_tail="",
+            stderr_tail="",
             reason_ar=f"التشغيل فشل قبل البدء — {type(exc).__name__}",
         )
     passed, failed, errors, skipped = _parse_counts(stdout + "\n" + stderr)
@@ -216,22 +248,24 @@ def run_tests(
     if timed_out:
         reason_ar = f"تجاوز المهلة ({timeout} ثانية) — أُنهي بالقوة، لا حكم على الاختبارات"
     elif ok:
-        counts = "، ".join(
-            f"{label} {value}"
-            for label, value in (
-                ("نجح", passed), ("فشل", failed), ("أخطاء", errors)
+        counts = (
+            "، ".join(
+                f"{label} {value}"
+                for label, value in (("نجح", passed), ("فشل", failed), ("أخطاء", errors))
+                if value is not None
             )
-            if value is not None
-        ) or "بلا عدّادات مستخلصة"
+            or "بلا عدّادات مستخلصة"
+        )
         reason_ar = f"الاختبارات خضراء (خروج 0) — {counts}"
     else:
-        counts = "، ".join(
-            f"{label} {value}"
-            for label, value in (
-                ("فشل", failed), ("أخطاء", errors), ("نجح", passed)
+        counts = (
+            "، ".join(
+                f"{label} {value}"
+                for label, value in (("فشل", failed), ("أخطاء", errors), ("نجح", passed))
+                if value is not None
             )
-            if value is not None
-        ) or "بلا عدّادات مستخلصة"
+            or "بلا عدّادات مستخلصة"
+        )
         reason_ar = f"الاختبارات حمراء (خروج {exit_code}) — {counts}"
     return TestRunResult(
         ok=ok,

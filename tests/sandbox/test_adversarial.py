@@ -16,11 +16,23 @@ import time
 
 import pytest
 
+# تخطٍ موثق: النواة تعلن Landlock لكن إقامته تفشل في حاويات CI
+# (سياسات seccomp تحجب landlock_add_rule) — بروبة إقامة حقيقية تقرر.
+from zyko.sandbox import jail as _jail_mod
 from zyko.sandbox.audit import AuditLog, entry_hash
 from zyko.sandbox.contracts import PermissionContract
 from zyko.sandbox.patcher import patch_file
 from zyko.sandbox.runner import _parse_counts, run_tests
 from zyko.sandbox.session import ToolSession
+
+_jail_broken = (
+    _jail_mod.jail_level() == _jail_mod.JAIL_LEVEL_LANDLOCK
+    and not _jail_mod.jail_establishment_ok()
+)
+_working_jail = pytest.mark.skipif(
+    _jail_broken,
+    reason="إقامة الحبس النواتي تفشل في هذه البيئة (seccomp الحاوية يحجب Landlock) — تخطٍ موثق لا فشل",
+)
 
 PY = sys.executable.replace("\\", "/").split("/")[-1].replace(".exe", "") or "python"
 
@@ -157,11 +169,19 @@ class TestSecretContainment:
             assert secret not in blob
         assert log.verify().ok
 
+    @_working_jail
     def test_secrets_in_env_never_reach_subprocess(self, monkeypatch, tmp_path):
         canary = "هذا-سر-حساس-لا-يعبر"
         for i, name in enumerate(
-            ("MY_API_KEY", "MY_TOKEN_2", "SECRET_VALUE", "AWS_SECRET_ACCESS_KEY",
-             "DATABASE_PASSWORD", "AUTH_COOKIE", "GITHUB_TOKEN")
+            (
+                "MY_API_KEY",
+                "MY_TOKEN_2",
+                "SECRET_VALUE",
+                "AWS_SECRET_ACCESS_KEY",
+                "DATABASE_PASSWORD",
+                "AUTH_COOKIE",
+                "GITHUB_TOKEN",
+            )
         ):
             monkeypatch.setenv(name, f"{canary}-{i}")
         (tmp_path / "test_leak.py").write_text(
@@ -252,8 +272,9 @@ class TestAuditHardeningUnderFire:
             lines = path.read_text(encoding="utf-8").splitlines()
             target = json.loads(lines[position])
             target["reason_ar"] += " مزوّر"
-            lines[position] = json.dumps(target, ensure_ascii=False, sort_keys=True,
-                                         separators=(",", ":"))
+            lines[position] = json.dumps(
+                target, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+            )
             path.write_text("\n".join(lines) + "\n", encoding="utf-8")
             assert not log.verify().ok, position
 
@@ -277,7 +298,9 @@ class TestDeterminismUnderFire:
             tree.mkdir()
             (tree / "app.py").write_text("قيمة = 1\n", encoding="utf-8")
             contract = PermissionContract.for_roots(tree, allow_patch=True)
-            result = patch_file(contract, path=tree / "app.py", old_text="قيمة = 1", new_text="قيمة = 2")
+            result = patch_file(
+                contract, path=tree / "app.py", old_text="قيمة = 1", new_text="قيمة = 2"
+            )
             results.append(result.sha_after)
         assert results[0] == results[1]
 
@@ -357,6 +380,7 @@ class TestSpeedCanaries:
 class TestRunnerRobustness:
     """التشغيل تحت ظروف غير مُثالية — موثق لا منكسر."""
 
+    @_working_jail
     def test_unicode_output_survives(self, tmp_path):
         (tmp_path / "test_ar.py").write_text(
             "def test_ar():\n    assert 'مرحبا' == 'مرحبا'\n", encoding="utf-8"
@@ -365,6 +389,7 @@ class TestRunnerRobustness:
         result = run_tests(contract, argv=[PY, "-m", "pytest", "-q"], cwd=tmp_path)
         assert result.ok and result.passed == 1
 
+    @_working_jail
     def test_crashing_tests_are_documented_failure(self, tmp_path):
         (tmp_path / "test_crash.py").write_text(
             "import os\n\n\ndef test_crash():\n    os._exit(3)\n", encoding="utf-8"
@@ -378,7 +403,9 @@ class TestRunnerRobustness:
         (tmp_path / "test_noise.py").write_text(
             "def test_noise():\n    print('مرحباً' * 5_000)\n", encoding="utf-8"
         )
-        contract = PermissionContract.for_roots(tmp_path, allow_run_tests=True, max_output_chars=300)
+        contract = PermissionContract.for_roots(
+            tmp_path, allow_run_tests=True, max_output_chars=300
+        )
         result = run_tests(contract, argv=[PY, "-m", "pytest", "-q"], cwd=tmp_path)
         assert isinstance(result.stdout_tail, str)
         blob = json.dumps(result.to_dict(), ensure_ascii=False)
@@ -387,7 +414,13 @@ class TestRunnerRobustness:
 
 def test_audit_entry_hash_is_real_sha256():
     digest = entry_hash(1, "0" * 64, "t", "ALLOW", "سبب", {})
-    assert digest == hashlib.sha256(
-        ('{"decision":"ALLOW","detail":{},"prev_hash":"' + "0" * 64
-         + '","reason_ar":"سبب","schema":"zyko.audit.v1","seq":1,"tool":"t"}').encode("utf-8")
-    ).hexdigest()
+    assert (
+        digest
+        == hashlib.sha256(
+            (
+                '{"decision":"ALLOW","detail":{},"prev_hash":"'
+                + "0" * 64
+                + '","reason_ar":"سبب","schema":"zyko.audit.v1","seq":1,"tool":"t"}'
+            ).encode("utf-8")
+        ).hexdigest()
+    )

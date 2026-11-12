@@ -258,7 +258,11 @@ def apply_candidate(workdir: Path, patch: str, runner: Runner) -> tuple[bool, st
         patch = patch + "\n"
     check_run = runner(
         ["git", "apply", "--check", "--whitespace=nowarn", "-"],
-        cwd=str(workdir), input=patch, capture_output=True, text=True, timeout=30,
+        cwd=str(workdir),
+        input=patch,
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     if getattr(check_run, "returncode", 1) != 0:
         detail = (getattr(check_run, "stderr", "") or "").strip().splitlines()
@@ -266,7 +270,11 @@ def apply_candidate(workdir: Path, patch: str, runner: Runner) -> tuple[bool, st
         return False, f"فشل فحص التطبيق: {reason}"
     apply_run = runner(
         ["git", "apply", "--whitespace=nowarn", "-"],
-        cwd=str(workdir), input=patch, capture_output=True, text=True, timeout=30,
+        cwd=str(workdir),
+        input=patch,
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     if getattr(apply_run, "returncode", 1) != 0:
         detail = (getattr(apply_run, "stderr", "") or "").strip().splitlines()
@@ -318,28 +326,49 @@ def run_ids(
     ``pytest-timeout``) — تُعلن في الوثيقة لا تُخمّن.
     """
     if not ids:
-        return TestRun(exit_code=0, passed_count=None, failed_ids=(),
-                       error_ar="لا عقد لتشغيلها — قائمة فارغة")
+        return TestRun(
+            exit_code=0, passed_count=None, failed_ids=(), error_ar="لا عقد لتشغيلها — قائمة فارغة"
+        )
     env = dict(os.environ)
     env.update(env_extra or {})
     try:
         proc = runner(
-            [python_bin, "-m", "pytest", *ids, "--tb=no", "-q", "-rf",
-             "-p", "no:cacheprovider", "--no-header", *extra_args],
-            cwd=str(workdir), env=env, capture_output=True, text=True,
+            [
+                python_bin,
+                "-m",
+                "pytest",
+                *ids,
+                "--tb=no",
+                "-q",
+                "-rf",
+                "-p",
+                "no:cacheprovider",
+                "--no-header",
+                *extra_args,
+            ],
+            cwd=str(workdir),
+            env=env,
+            capture_output=True,
+            text=True,
             timeout=timeout_s,
         )
     except subprocess.TimeoutExpired:
-        return TestRun(exit_code=-1, passed_count=None, failed_ids=(),
-                       error_ar=f"تجاوز المهلة ({timeout_s:.0f}s) — أُوقِف")
+        return TestRun(
+            exit_code=-1,
+            passed_count=None,
+            failed_ids=(),
+            error_ar=f"تجاوز المهلة ({timeout_s:.0f}s) — أُوقِف",
+        )
     except FileNotFoundError:
-        return TestRun(exit_code=-1, passed_count=None, failed_ids=(),
-                       error_ar=f"المفسّر غير موجود: {python_bin}")
+        return TestRun(
+            exit_code=-1,
+            passed_count=None,
+            failed_ids=(),
+            error_ar=f"المفسّر غير موجود: {python_bin}",
+        )
     stdout = proc.stdout or ""
     failed_ids = [
-        match.group(1)
-        for line in stdout.splitlines()
-        if (match := _FAILED_LINE.match(line))
+        match.group(1) for line in stdout.splitlines() if (match := _FAILED_LINE.match(line))
     ]
     passed_match = _SUMMARY_PASSED.search(stdout)
     return TestRun(
@@ -436,8 +465,15 @@ def evaluate_instance(
     البيئة نفسها تعطي الفشل المتوقع قبل أي ذكاء).
     """
     all_ids = tuple(sorted(set(instance.fail_to_pass) | set(instance.pass_to_pass)))
-    base = run_ids(workdir, all_ids, python_bin, env_extra=env_extra,
-                   timeout_s=timeout_s, runner=runner, extra_args=extra_args)
+    base = run_ids(
+        workdir,
+        all_ids,
+        python_bin,
+        env_extra=env_extra,
+        timeout_s=timeout_s,
+        runner=runner,
+        extra_args=extra_args,
+    )
     if base.error_ar is not None and base.exit_code < 0:
         # مهلة أو مفسّر مفقود — لا أساس فلا حكم
         return SWEVerdict(
@@ -502,8 +538,15 @@ def evaluate_instance(
             attempts_note_ar="git apply رفض الرقعة — لم تُطبَّق",
         )
 
-    after = run_ids(workdir, all_ids, python_bin, env_extra=env_extra,
-                    timeout_s=timeout_s, runner=runner, extra_args=extra_args)
+    after = run_ids(
+        workdir,
+        all_ids,
+        python_bin,
+        env_extra=env_extra,
+        timeout_s=timeout_s,
+        runner=runner,
+        extra_args=extra_args,
+    )
     if after.exit_code < 0:
         return SWEVerdict(
             instance_id=instance.instance_id,
@@ -558,8 +601,9 @@ SWE_DEFAULT_MODEL = "glm-4.7"
 Transport = Callable[[dict[str, Any]], dict[str, Any]]
 
 
-def http_transport(payload: dict[str, Any], *, host: str, api_key: str,
-                   model: str, timeout_s: float = 120.0) -> dict[str, Any]:
+def http_transport(
+    payload: dict[str, Any], *, host: str, api_key: str, model: str, timeout_s: float = 120.0
+) -> dict[str, Any]:
     """نقل OpenAI-Compatible عبر urllib — نمط ``qwen_brain`` نفسه بلا اعتماديات.
 
     أي فشل يعود استجابة شكلها ``{"error": {"message": "<عربي>"}}`` — لا
@@ -597,10 +641,10 @@ class SWEBrain:
     """عقل إصلاح حقيقي عبر نقطة متوافقة مع OpenAI — النقل حقن، الفشل عربي."""
 
     model: str = SWE_DEFAULT_MODEL
-    host: str | None = None       # الافتراضي من البيئة — لا مفتاح في الكود
-    api_key: str | None = None    # الافتراضي من البيئة — لا مفتاح في الكود
+    host: str | None = None  # الافتراضي من البيئة — لا مفتاح في الكود
+    api_key: str | None = None  # الافتراضي من البيئة — لا مفتاح في الكود
     transport: Transport | None = None
-    mode: str = "choice"          # "choice" ثم "diff" — نداءان بترتيب ثابت
+    mode: str = "choice"  # "choice" ثم "diff" — نداءان بترتيب ثابت
 
     @property
     def name(self) -> str:
@@ -615,13 +659,24 @@ class SWEBrain:
         key = self.api_key or os.environ.get(SWE_KEY_ENV, "")
         # النقل المحقون هو الشبكة نفسها — بيانات البيئة لا تُطلب إلا للمسار الحقيقي
         if self.transport is None and (not host or not key):
-            return Proposal(text="", brain=self.name, deterministic=False,
-                            verdicts=(GateVerdict(gate="transport", passed=False,
-                                                  details_ar="لا مضيف أو مفتاح في البيئة — عقل معطل عمداً"),))
+            return Proposal(
+                text="",
+                brain=self.name,
+                deterministic=False,
+                verdicts=(
+                    GateVerdict(
+                        gate="transport",
+                        passed=False,
+                        details_ar="لا مضيف أو مفتاح في البيئة — عقل معطل عمداً",
+                    ),
+                ),
+            )
         system = SWE_SYSTEM_CHOICE_AR if self.mode == "choice" else SWE_SYSTEM_DIFF_AR
         payload = {
-            "messages": [{"role": "system", "content": system},
-                         {"role": "user", "content": request}],
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": request},
+            ],
             "max_tokens": 8192 if self.mode == "diff" else 512,
         }
         if self.transport is not None:
@@ -630,18 +685,37 @@ class SWEBrain:
             response = http_transport(payload, host=host, api_key=key, model=self.model)
         error = response.get("error") or {}
         if error:
-            return Proposal(text="", brain=self.name, deterministic=False,
-                            verdicts=(GateVerdict(gate="transport", passed=False,
-                                                  details_ar=str(error.get("message", "فشل النقل"))),))
+            return Proposal(
+                text="",
+                brain=self.name,
+                deterministic=False,
+                verdicts=(
+                    GateVerdict(
+                        gate="transport",
+                        passed=False,
+                        details_ar=str(error.get("message", "فشل النقل")),
+                    ),
+                ),
+            )
         try:
             text = str(response["choices"][0]["message"]["content"] or "")
         except (KeyError, IndexError, TypeError):
-            return Proposal(text="", brain=self.name, deterministic=False,
-                            verdicts=(GateVerdict(gate="transport", passed=False,
-                                                  details_ar="استجابة مشوّهة — بلا اختيارات"),))
-        return Proposal(text=text, brain=self.name, deterministic=False,
-                        verdicts=(GateVerdict(gate="transport", passed=True,
-                                              details_ar="استجابة سليمة"),))
+            return Proposal(
+                text="",
+                brain=self.name,
+                deterministic=False,
+                verdicts=(
+                    GateVerdict(
+                        gate="transport", passed=False, details_ar="استجابة مشوّهة — بلا اختيارات"
+                    ),
+                ),
+            )
+        return Proposal(
+            text=text,
+            brain=self.name,
+            deterministic=False,
+            verdicts=(GateVerdict(gate="transport", passed=True, details_ar="استجابة سليمة"),),
+        )
 
 
 def build_choice_request(
@@ -688,8 +762,9 @@ def build_diff_request(instance: SWEInstance, path: str, content: str) -> str:
 
 def repo_py_tree(workdir: Path, runner: Runner) -> tuple[str, ...]:
     """شجرة ملفات بايثون من ``git ls-files`` — مرتبة، بلا اختبارات الجولة."""
-    proc = runner(["git", "ls-files", "*.py"], cwd=str(workdir),
-                  capture_output=True, text=True, timeout=30)
+    proc = runner(
+        ["git", "ls-files", "*.py"], cwd=str(workdir), capture_output=True, text=True, timeout=30
+    )
     if getattr(proc, "returncode", 1) != 0:
         return ()
     paths = []
@@ -743,69 +818,116 @@ def attempt_repair(
     """
     tree = repo_py_tree(workdir, runner)
     empty_verdict = SWEVerdict(
-        instance_id=instance.instance_id, patch_applied=False, apply_error_ar=None,
-        f2p_failed_at_base=(), p2p_failed_at_base=(), f2p_passed_after=(),
-        f2p_failed_after=(), p2p_failed_after=(),
+        instance_id=instance.instance_id,
+        patch_applied=False,
+        apply_error_ar=None,
+        f2p_failed_at_base=(),
+        p2p_failed_at_base=(),
+        f2p_passed_after=(),
+        f2p_failed_after=(),
+        p2p_failed_after=(),
         runs_error_ar="لا شجرة مصدر — المستودع غير مهيأ",
     )
     if not tree:
-        return SWEAttempt(instance_id=instance.instance_id, file_choice=None,
-                          choice_reply_sha16="", diff_reply_sha16="",
-                          proposal_accepted=False, verdict=empty_verdict)
+        return SWEAttempt(
+            instance_id=instance.instance_id,
+            file_choice=None,
+            choice_reply_sha16="",
+            diff_reply_sha16="",
+            proposal_accepted=False,
+            verdict=empty_verdict,
+        )
 
     choice = choice_brain.propose(build_choice_request(instance, tree))
     chosen = parse_choice(choice.text, tree) if choice.accepted else None
     if chosen is None:
         note = "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً"
         verdict = SWEVerdict(
-            instance_id=instance.instance_id, patch_applied=False, apply_error_ar=None,
-            f2p_failed_at_base=(), p2p_failed_at_base=(), f2p_passed_after=(),
-            f2p_failed_after=(), p2p_failed_after=(),
-            runs_error_ar=None, attempts_note_ar=note,
+            instance_id=instance.instance_id,
+            patch_applied=False,
+            apply_error_ar=None,
+            f2p_failed_at_base=(),
+            p2p_failed_at_base=(),
+            f2p_passed_after=(),
+            f2p_failed_after=(),
+            p2p_failed_after=(),
+            runs_error_ar=None,
+            attempts_note_ar=note,
         )
-        return SWEAttempt(instance_id=instance.instance_id, file_choice=None,
-                          choice_reply_sha16=_sha16(choice.text),
-                          diff_reply_sha16="",
-                          proposal_accepted=choice.accepted, verdict=verdict)
+        return SWEAttempt(
+            instance_id=instance.instance_id,
+            file_choice=None,
+            choice_reply_sha16=_sha16(choice.text),
+            diff_reply_sha16="",
+            proposal_accepted=choice.accepted,
+            verdict=verdict,
+        )
 
     content = (workdir / chosen).read_text(encoding="utf-8", errors="replace")
     diff_reply = diff_brain.propose(build_diff_request(instance, chosen, content))
     if not diff_reply.accepted:
         verdict = SWEVerdict(
-            instance_id=instance.instance_id, patch_applied=False, apply_error_ar=None,
-            f2p_failed_at_base=(), p2p_failed_at_base=(), f2p_passed_after=(),
-            f2p_failed_after=(), p2p_failed_after=(),
+            instance_id=instance.instance_id,
+            patch_applied=False,
+            apply_error_ar=None,
+            f2p_failed_at_base=(),
+            p2p_failed_at_base=(),
+            f2p_passed_after=(),
+            f2p_failed_after=(),
+            p2p_failed_after=(),
             runs_error_ar=None,
             attempts_note_ar="الرقعة رُفضت ببوابة (PII أو RTL) — لا تطبيق",
         )
-        return SWEAttempt(instance_id=instance.instance_id, file_choice=chosen,
-                          choice_reply_sha16=_sha16(choice.text),
-                          diff_reply_sha16=_sha16(diff_reply.text),
-                          proposal_accepted=False, verdict=verdict)
+        return SWEAttempt(
+            instance_id=instance.instance_id,
+            file_choice=chosen,
+            choice_reply_sha16=_sha16(choice.text),
+            diff_reply_sha16=_sha16(diff_reply.text),
+            proposal_accepted=False,
+            verdict=verdict,
+        )
 
     patch = extract_diff(diff_reply.text, fallback_path=chosen)
     if patch is None:
         verdict = SWEVerdict(
-            instance_id=instance.instance_id, patch_applied=False, apply_error_ar=None,
-            f2p_failed_at_base=(), p2p_failed_at_base=(), f2p_passed_after=(),
-            f2p_failed_after=(), p2p_failed_after=(),
+            instance_id=instance.instance_id,
+            patch_applied=False,
+            apply_error_ar=None,
+            f2p_failed_at_base=(),
+            p2p_failed_at_base=(),
+            f2p_passed_after=(),
+            f2p_failed_after=(),
+            p2p_failed_after=(),
             runs_error_ar=None,
             attempts_note_ar="لا رقعة موحدة في رد العقل — " + DIFF_LANGUAGE_AR,
         )
-        return SWEAttempt(instance_id=instance.instance_id, file_choice=chosen,
-                          choice_reply_sha16=_sha16(choice.text),
-                          diff_reply_sha16=_sha16(diff_reply.text),
-                          proposal_accepted=True, verdict=verdict)
+        return SWEAttempt(
+            instance_id=instance.instance_id,
+            file_choice=chosen,
+            choice_reply_sha16=_sha16(choice.text),
+            diff_reply_sha16=_sha16(diff_reply.text),
+            proposal_accepted=True,
+            verdict=verdict,
+        )
 
     verdict = evaluate_instance(
-        instance, workdir, python_bin, candidate_patch=patch,
-        env_extra=env_extra, timeout_s=timeout_s, runner=runner,
+        instance,
+        workdir,
+        python_bin,
+        candidate_patch=patch,
+        env_extra=env_extra,
+        timeout_s=timeout_s,
+        runner=runner,
         extra_args=extra_args,
     )
-    return SWEAttempt(instance_id=instance.instance_id, file_choice=chosen,
-                      choice_reply_sha16=_sha16(choice.text),
-                      diff_reply_sha16=_sha16(diff_reply.text),
-                      proposal_accepted=True, verdict=verdict)
+    return SWEAttempt(
+        instance_id=instance.instance_id,
+        file_choice=chosen,
+        choice_reply_sha16=_sha16(choice.text),
+        diff_reply_sha16=_sha16(diff_reply.text),
+        proposal_accepted=True,
+        verdict=verdict,
+    )
 
 
 # --------------------------------------------------------------- الخلاصة
@@ -848,9 +970,11 @@ def aggregate(attempts: tuple[SWEAttempt, ...]) -> SWEAggregate:
     لم تكتمل.
     """
     f2p_total = sum(
-        len(set(a.verdict.f2p_failed_at_base)
+        len(
+            set(a.verdict.f2p_failed_at_base)
             | set(a.verdict.f2p_failed_after)
-            | set(a.verdict.f2p_passed_after))
+            | set(a.verdict.f2p_passed_after)
+        )
         for a in attempts
     )
     return SWEAggregate(

@@ -42,8 +42,12 @@ class CannedBrain:
         self.calls.append(request)
         text = self._replies.pop(0) if self._replies else ""
         passed = self._flags.pop(0) if self._flags else False
-        return Proposal(text=text, brain="canned", deterministic=False,
-                        verdicts=(GateVerdict(gate="fake", passed=passed),))
+        return Proposal(
+            text=text,
+            brain="canned",
+            deterministic=False,
+            verdicts=(GateVerdict(gate="fake", passed=passed),),
+        )
 
 
 class FakeRun:
@@ -55,9 +59,13 @@ class FakeRun:
 
 def _instance(**overrides) -> SWEInstance:
     base = dict(
-        instance_id="psf__requests-0000", repo="psf/requests", base_commit="a" * 40,
-        version="2.4", problem_statement="القيمة يجب أن تكون 2",
-        test_patch="diff", fail_to_pass=("test_level.py::test_value",),
+        instance_id="psf__requests-0000",
+        repo="psf/requests",
+        base_commit="a" * 40,
+        version="2.4",
+        problem_statement="القيمة يجب أن تكون 2",
+        test_patch="diff",
+        fail_to_pass=("test_level.py::test_value",),
         pass_to_pass=(),
     )
     return SWEInstance(**{**base, **overrides})
@@ -83,9 +91,13 @@ def mini_repo(tmp_path):
 
 GOOD_PATCH = "```diff\n--- a/src.py\n+++ b/src.py\n@@ -1 +1 @@\n-value = 1\n+value = 2\n```"
 GOOD_PATCH_RAW = "--- a/src.py\n+++ b/src.py\n@@ -1 +1 @@\n-value = 1\n+value = 2"
-CORRUPT_PATCH = "```diff\n--- a/src.py\n+++ b/src.py\n@@ -9,1 +9,2 @@\n سياق غير موجود أبداً\n+س\n```"
-MULTI_FILE_PATCH = ("--- a/src.py\n+++ b/src.py\n@@ -1 +1 @@\n-value = 1\n+value = 2\n"
-                    "--- a/alt.py\n+++ b/alt.py\n@@ -1 +1 @@\n-alt = 1\n+alt = 2")
+CORRUPT_PATCH = (
+    "```diff\n--- a/src.py\n+++ b/src.py\n@@ -9,1 +9,2 @@\n سياق غير موجود أبداً\n+س\n```"
+)
+MULTI_FILE_PATCH = (
+    "--- a/src.py\n+++ b/src.py\n@@ -1 +1 @@\n-value = 1\n+value = 2\n"
+    "--- a/alt.py\n+++ b/alt.py\n@@ -1 +1 @@\n-alt = 1\n+alt = 2"
+)
 
 
 def _tree_runner():
@@ -93,6 +105,7 @@ def _tree_runner():
         if args[:2] == ["git", "ls-files"]:
             return FakeRun(0, stdout="alt.py\nsrc.py\ntest_requests.py\n")
         return subprocess.run(args, **kwargs)
+
     return runner
 
 

@@ -24,12 +24,8 @@ def _pyproject() -> dict:
 def test_runtime_dependencies_match_eval_claim() -> None:
     """التقييم يعلن «اعتماديتان فقط» — pyproject هو الحكم لا النص."""
     deps = _pyproject()["project"]["dependencies"]
-    names = sorted(
-        dep.split(">")[0].split("=")[0].split("[")[0].strip().lower() for dep in deps
-    )
-    assert names == ["httpx", "pyyaml"], (
-        f"الاعتميات تغيرت ({names}) — حدّث ادعاء EVAL في نفس الـPR"
-    )
+    names = sorted(dep.split(">")[0].split("=")[0].split("[")[0].strip().lower() for dep in deps)
+    assert names == ["httpx", "pyyaml"], f"الاعتميات تغيرت ({names}) — حدّث ادعاء EVAL في نفس الـPR"
 
 
 def test_jail_levels_trio_matches_documented_claim() -> None:
@@ -58,9 +54,7 @@ def test_eval_doc_version_header_matches_release() -> None:
     """ترويسة EVAL تحمل إصدارًا — يجب أن تواكب الإصدار الحالي."""
     version = _pyproject()["project"]["version"]
     doc = (ROOT / "docs" / "EVAL_2026-11-12.md").read_text(encoding="utf-8")
-    assert f"**الإصدار:** {version}" in doc, (
-        "ترويسة EVAL خلف الإصدار — حدّثها في نفس الـPR"
-    )
+    assert f"**الإصدار:** {version}" in doc, "ترويسة EVAL خلف الإصدار — حدّثها في نفس الـPR"
 
 
 def test_baseline_artifact_exists() -> None:

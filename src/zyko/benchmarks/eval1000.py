@@ -149,9 +149,7 @@ def _category_stats(rows: tuple[EvalRow, ...]) -> dict[str, dict[str, Any]]:
         stat["rate"] = round(stat["passed"] / stat["total"], 4) if stat["total"] else 0.0
         rate = stat["rate"]
         stat["verdict_ar"] = (
-            "قوة" if rate >= STRENGTH_THRESHOLD
-            else "مراقبة" if rate >= WATCH_THRESHOLD
-            else "ضعف"
+            "قوة" if rate >= STRENGTH_THRESHOLD else "مراقبة" if rate >= WATCH_THRESHOLD else "ضعف"
         )
     return out
 
@@ -352,7 +350,9 @@ def main(argv: list[str] | None = None) -> int:
             per[case.category] = per.get(case.category, 0) + 1
         for category in CATEGORY_ORDER:
             print(f"  {CATEGORY_LABELS[category]:26} {per.get(category, 0):>5} حالة")
-        print(f"بصمة بنية العدّة: {hashlib.sha256(''.join(c.case_id + c.category for c in cases).encode()).hexdigest()[:16]}…")
+        print(
+            f"بصمة بنية العدّة: {hashlib.sha256(''.join(c.case_id + c.category for c in cases).encode()).hexdigest()[:16]}…"
+        )
         return 0
 
     report = run_eval1000(cases=cases)

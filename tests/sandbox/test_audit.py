@@ -164,8 +164,15 @@ def test_tamper_appended_foreign_line_detected(tmp_path):
     log = AuditLog(path)
     log.append("t", "ALLOW", "قانوني", {})
     with path.open("a", encoding="utf-8") as fh:
-        forged = {"seq": 2, "prev_hash": "0" * 64, "hash": "z" * 64,
-                  "tool": "t", "decision": "ALLOW", "reason_ar": "مزوّر", "detail": {}}
+        forged = {
+            "seq": 2,
+            "prev_hash": "0" * 64,
+            "hash": "z" * 64,
+            "tool": "t",
+            "decision": "ALLOW",
+            "reason_ar": "مزوّر",
+            "detail": {},
+        }
         fh.write(canonical_json(forged) + "\n")
     report = log.verify()
     assert not report.ok and report.first_broken_seq == 2

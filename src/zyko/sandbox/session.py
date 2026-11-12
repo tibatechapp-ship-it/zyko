@@ -86,8 +86,14 @@ class ToolSession:
         except Exception:  # noqa: BLE001 — حتى التطبيع العدوي موثق لا مفجّر
             self._audit("patch_file", DECISION_ERROR, "مدخل الرقعة غير قابل للطباعة", {})
             return PatchResult(
-                ok=False, path=_UNPRINTABLE_PATH, mode="", changed=False, matches=0,
-                sha_before="", sha_after="", bytes_written=0,
+                ok=False,
+                path=_UNPRINTABLE_PATH,
+                mode="",
+                changed=False,
+                matches=0,
+                sha_before="",
+                sha_after="",
+                bytes_written=0,
                 reason_ar="مدخل الرقعة غير قابل للطباعة — رفض موثق لا استثناء",
             )
         # ميزانية الجلسة: الرقعة فوق الميزانية رفض موثق لا كتابة
@@ -99,15 +105,23 @@ class ToolSession:
             )
             self._audit("patch_file", DECISION_DENY, reason, {"path": path_text})
             return PatchResult(
-                ok=False, path=path_text, mode="", changed=False, matches=0,
-                sha_before="", sha_after="", bytes_written=0, reason_ar=reason,
+                ok=False,
+                path=path_text,
+                mode="",
+                changed=False,
+                matches=0,
+                sha_before="",
+                sha_after="",
+                bytes_written=0,
+                reason_ar=reason,
             )
         try:
             # التدقيق يسبق التنفيذ — المحاولة موثقة حتى لو انقطعت في المنتصف
             self._audit(
                 "patch_file",
                 DECISION_ALLOW if self.contract.allow_patch else DECISION_DENY,
-                "محاولة رقعة موثقة قبل التنفيذ" if self.contract.allow_patch
+                "محاولة رقعة موثقة قبل التنفيذ"
+                if self.contract.allow_patch
                 else "محاولة رقعة على عقد قراءة-فقط",
                 {"path": path_text, "mode": mode},
             )
@@ -119,14 +133,27 @@ class ToolSession:
             reason = f"خطأ غير متوقع داخل الرقعة — {type(exc).__name__}"
             self._audit("patch_file", DECISION_ERROR, reason, {"path": path_text})
             return PatchResult(
-                ok=False, path=path_text, mode="", changed=False, matches=0,
-                sha_before="", sha_after="", bytes_written=0, reason_ar=reason,
+                ok=False,
+                path=path_text,
+                mode="",
+                changed=False,
+                matches=0,
+                sha_before="",
+                sha_after="",
+                bytes_written=0,
+                reason_ar=reason,
             )
         decision = DECISION_ALLOW if result.ok else DECISION_DENY
         self._audit(
-            "patch_file", decision, result.reason_ar,
-            {"bytes_written": result.bytes_written, "matches": result.matches,
-             "mode": result.mode, "path": result.path},
+            "patch_file",
+            decision,
+            result.reason_ar,
+            {
+                "bytes_written": result.bytes_written,
+                "matches": result.matches,
+                "mode": result.mode,
+                "path": result.path,
+            },
         )
         if not result.ok:
             self.usage.patch_denied += 1
@@ -147,7 +174,8 @@ class ToolSession:
             self._audit(
                 "run_tests",
                 DECISION_ALLOW if self.contract.allow_run_tests else DECISION_DENY,
-                "محاولة تشغيل اختبارات موثقة قبل التنفيذ" if self.contract.allow_run_tests
+                "محاولة تشغيل اختبارات موثقة قبل التنفيذ"
+                if self.contract.allow_run_tests
                 else "محاولة تشغيل اختبارات على عقد لا يفعّلها",
                 {"argv": argv_text},
             )
@@ -157,15 +185,24 @@ class ToolSession:
             reason = f"خطأ غير متوقع داخل التشغيل — {type(exc).__name__}"
             self._audit("run_tests", DECISION_ERROR, reason, {"argv": argv_text})
             return TestRunResult(
-                ok=False, exit_code=2, timed_out=False, passed=None, failed=None,
-                errors=None, skipped=None, command=argv_text,
-                stdout_tail="", stderr_tail="", reason_ar=reason,
+                ok=False,
+                exit_code=2,
+                timed_out=False,
+                passed=None,
+                failed=None,
+                errors=None,
+                skipped=None,
+                command=argv_text,
+                stdout_tail="",
+                stderr_tail="",
+                reason_ar=reason,
             )
         decision = DECISION_ALLOW if result.ok else DECISION_DENY
         self._audit(
-            "run_tests", decision, result.reason_ar,
-            {"argv": result.command[:120], "exit_code": result.exit_code,
-             "jail": jail_level()},
+            "run_tests",
+            decision,
+            result.reason_ar,
+            {"argv": result.command[:120], "exit_code": result.exit_code, "jail": jail_level()},
         )
         return result
 

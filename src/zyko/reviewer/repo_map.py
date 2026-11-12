@@ -81,8 +81,11 @@ def symbol_summary(source: str) -> str | None:
 def _tracked_py_files(root: Path, runner: Runner, max_files: int) -> tuple[str, ...]:
     """مسارات بايثون المتعقّبة من ``git ls-files`` — مرتبة، مسقوفة بسقف معلن."""
     proc = runner(
-        ["git", "ls-files", "*.py"], cwd=str(root), capture_output=True,
-        text=True, timeout=30,
+        ["git", "ls-files", "*.py"],
+        cwd=str(root),
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     if getattr(proc, "returncode", 1) != 0:
         return ()

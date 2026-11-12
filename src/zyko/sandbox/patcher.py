@@ -59,13 +59,27 @@ def _sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def _deny(path: str, reason_ar: str, *, mode: str = "", matches: int = 0,
-          sha_before: str = "", sha_after: str = "", bytes_written: int = 0) -> PatchResult:
+def _deny(
+    path: str,
+    reason_ar: str,
+    *,
+    mode: str = "",
+    matches: int = 0,
+    sha_before: str = "",
+    sha_after: str = "",
+    bytes_written: int = 0,
+) -> PatchResult:
     """بناء رفض موحد — كل الرفوض تمر هنا فلا شكل مزدوج للفشل."""
     return PatchResult(
-        ok=False, path=path, mode=mode, changed=False, matches=matches,
-        sha_before=sha_before, sha_after=sha_after,
-        bytes_written=bytes_written, reason_ar=reason_ar,
+        ok=False,
+        path=path,
+        mode=mode,
+        changed=False,
+        matches=matches,
+        sha_before=sha_before,
+        sha_after=sha_after,
+        bytes_written=bytes_written,
+        reason_ar=reason_ar,
     )
 
 
@@ -111,30 +125,42 @@ def patch_file(
     sha_before = ""
     if mode == "replace":
         if not target.is_file():
-            return _deny(str(target), "الملف القديم غير موجود — استبدال بلا أصل مرفوض",
-                         mode=mode)
+            return _deny(str(target), "الملف القديم غير موجود — استبدال بلا أصل مرفوض", mode=mode)
         try:
             if target.stat().st_size > contract.max_file_bytes:
-                return _deny(str(target),
-                             f"الملف فوق سقف العقد ({target.stat().st_size} > "
-                             f"{contract.max_file_bytes} بايتًا) — رفض قراءة وتعديل",
-                             mode=mode)
+                return _deny(
+                    str(target),
+                    f"الملف فوق سقف العقد ({target.stat().st_size} > "
+                    f"{contract.max_file_bytes} بايتًا) — رفض قراءة وتعديل",
+                    mode=mode,
+                )
             source = target.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as exc:
-            return _deny(str(target),
-                         f"قراءة الملف فشلت ({type(exc).__name__}) — ثنائي أو مقفل أو غير UTF-8",
-                         mode=mode)
+            return _deny(
+                str(target),
+                f"قراءة الملف فشلت ({type(exc).__name__}) — ثنائي أو مقفل أو غير UTF-8",
+                mode=mode,
+            )
         old_value = str(old_text or "")
         if not old_value:
             return _deny(str(target), "old_text فارغ — رقعة بلا أصل مرفوضة", mode=mode)
         matches = source.count(old_value)
         if matches == 0:
-            return _deny(str(target), "old_text غير موجود في الملف — رقعة صفرية التطابق مرفوضة",
-                         mode=mode, matches=matches, sha_before=_sha256_text(source))
+            return _deny(
+                str(target),
+                "old_text غير موجود في الملف — رقعة صفرية التطابق مرفوضة",
+                mode=mode,
+                matches=matches,
+                sha_before=_sha256_text(source),
+            )
         if matches > 1:
-            return _deny(str(target),
-                         f"old_text متكرر {matches} مرات — تطابق غامض مرفوض، حدّد نصًا وحيدًا",
-                         mode=mode, matches=matches, sha_before=_sha256_text(source))
+            return _deny(
+                str(target),
+                f"old_text متكرر {matches} مرات — تطابق غامض مرفوض، حدّد نصًا وحيدًا",
+                mode=mode,
+                matches=matches,
+                sha_before=_sha256_text(source),
+            )
         sha_before = _sha256_text(source)
         updated = source.replace(old_value, str(new_text or ""), 1)
     else:
@@ -152,13 +178,20 @@ def patch_file(
                 sha_before = ""
     # 6) سقف الناتج — الحجم بعد الرقعة يعود تحت العقد
     if len(updated.encode("utf-8")) > contract.max_file_bytes:
-        return _deny(str(target),
-                     f"ناتج الرقعة فوق سقف العقد ({len(updated.encode('utf-8'))} > "
-                     f"{contract.max_file_bytes} بايتًا) — رفض كتابة",
-                     mode=mode, sha_before=sha_before)
+        return _deny(
+            str(target),
+            f"ناتج الرقعة فوق سقف العقد ({len(updated.encode('utf-8'))} > "
+            f"{contract.max_file_bytes} بايتًا) — رفض كتابة",
+            mode=mode,
+            sha_before=sha_before,
+        )
     if "\x00" in updated:
-        return _deny(str(target), "محتوى يحوي NUL — ثنائي مرفوض في نص الرقعة",
-                     mode=mode, sha_before=sha_before)
+        return _deny(
+            str(target),
+            "محتوى يحوي NUL — ثنائي مرفوض في نص الرقعة",
+            mode=mode,
+            sha_before=sha_before,
+        )
     # 7) الكتابة الذرية: مؤقت في المجلد نفسه ثم استبدال — لا نصف ملف
     sha_after = _sha256_text(updated)
     unchanged = (mode == "replace" and updated == source) or (
@@ -166,8 +199,12 @@ def patch_file(
     )
     try:
         with tempfile.NamedTemporaryFile(
-            mode="w", encoding="utf-8", dir=target.parent,
-            prefix=target.name, suffix=_TMP_SUFFIX, delete=False,
+            mode="w",
+            encoding="utf-8",
+            dir=target.parent,
+            prefix=target.name,
+            suffix=_TMP_SUFFIX,
+            delete=False,
         ) as tmp:
             tmp.write(updated)
             tmp_path = Path(tmp.name)
@@ -177,8 +214,12 @@ def patch_file(
             tmp_path.unlink()  # لا مؤقت يتيم يبقى بعد الفشل
         except (OSError, UnboundLocalError, NameError):
             pass
-        return _deny(str(target), f"الكتابة الذرية فشلت — {type(exc).__name__}",
-                     mode=mode, sha_before=sha_before)
+        return _deny(
+            str(target),
+            f"الكتابة الذرية فشلت — {type(exc).__name__}",
+            mode=mode,
+            sha_before=sha_before,
+        )
     bytes_written = len(updated.encode("utf-8"))
     return PatchResult(
         ok=True,

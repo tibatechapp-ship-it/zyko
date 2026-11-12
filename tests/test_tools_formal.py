@@ -18,21 +18,22 @@ from zyko.tools.formal.engine import (
     summarize,
 )
 
-GOOD_SOURCE = '''\
+GOOD_SOURCE = """\
 # zyko:requires: x >= 0
 # zyko:ensures: result * 2 == x
 # zyko:domain: x = range(0, 8)
 def double(x):
     return x * 2
-'''
+"""
 
-NO_CONTRACT_SOURCE = '''\
+NO_CONTRACT_SOURCE = """\
 def plain(x):
     return x + 1
-'''
+"""
 
 
 # ------------------------------------------------------------ الحكم الأساسي
+
 
 def test_source_with_valid_contracts_is_accepted():
     report = check_source(GOOD_SOURCE)
@@ -62,6 +63,7 @@ def test_no_contracts_is_accept_with_explicit_declaration():
 
 
 # ------------------------------------------------------------ صياغة التوجيهات
+
 
 def test_malformed_directive_expression_is_rejected():
     source = "# zyko:ensures: result ==\ndef f(x):\n    return x\n"
@@ -96,12 +98,9 @@ def test_allowlisted_builtin_is_accepted():
 
 # ------------------------------------------------------------ النطاق والأسماء
 
+
 def test_names_outside_params_are_rejected():
-    source = (
-        "# zyko:ensures: result == secret\n"
-        "# zyko:domain: x = [1]\n"
-        "def f(x):\n    return x\n"
-    )
+    source = "# zyko:ensures: result == secret\n# zyko:domain: x = [1]\ndef f(x):\n    return x\n"
     report = check_source(source)
     assert report.verdict is VerdictKind.REJECT
     assert "خارج المعاملات" in report.findings[0].reason_ar
@@ -116,9 +115,7 @@ def test_result_as_parameter_is_rejected():
 
 def test_domain_for_unknown_param_is_rejected():
     source = (
-        "# zyko:ensures: result >= 0\n"
-        "# zyko:domain: y = range(0, 3)\n"
-        "def f(x):\n    return x\n"
+        "# zyko:ensures: result >= 0\n# zyko:domain: y = range(0, 3)\ndef f(x):\n    return x\n"
     )
     report = check_source(source)
     assert report.verdict is VerdictKind.REJECT
@@ -126,17 +123,14 @@ def test_domain_for_unknown_param_is_rejected():
 
 
 def test_bad_domain_shape_is_rejected():
-    source = (
-        "# zyko:ensures: result >= 0\n"
-        "# zyko:domain: x = range(0)\n"
-        "def f(x):\n    return x\n"
-    )
+    source = "# zyko:ensures: result >= 0\n# zyko:domain: x = range(0)\ndef f(x):\n    return x\n"
     report = check_source(source)
     assert report.verdict is VerdictKind.REJECT
     assert "شكل المجال غير مسموح" in report.findings[0].reason_ar
 
 
 # ------------------------------------------------------------ تعذّر التحقق
+
 
 def test_missing_domain_is_unknown_never_accept():
     source = "# zyko:ensures: x >= 0\ndef f(x):\n    return x\n"
@@ -153,6 +147,7 @@ def test_contract_without_ensures_is_unknown():
 
 
 # ------------------------------------------------------------ الأدلة والملخص
+
 
 def test_evidence_lines_carry_directive_and_line():
     source = "# zyko:ensures: result == secret\ndef f(x):\n    return x\n"
@@ -174,6 +169,7 @@ def test_summary_is_receipt_ready():
 
 
 # ------------------------------------------------------------ بوابة المحرّس
+
 
 async def test_formal_gate_passes_clean_code_with_declaration():
     from zyko.guardian.gates import FormalGate
