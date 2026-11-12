@@ -12,7 +12,6 @@ from zyko.sandbox.contracts import (
     ENV_DENY_TOKENS,
     ENV_EXAMPLE_NAME,
     MAX_TIMEOUT_S,
-    SENSITIVE_DIR_NAMES,
     PermissionContract,
     is_sensitive_dir,
     is_sensitive_file,

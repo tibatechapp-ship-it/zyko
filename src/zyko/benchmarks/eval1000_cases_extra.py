@@ -15,7 +15,8 @@ import tempfile
 from types import SimpleNamespace
 
 from zyko.guardian.gates import PIIGate, RTLGate, StructuralGate, default_gates
-from zyko.mind.global_memory import GENESIS_HASH, GlobalMemory
+from zyko.mind.global_memory import GlobalMemory
+from zyko.mind.perception import perceive
 from zyko.mind.reflect import (
     MAX_FEEDBACK_CHARS,
     RetryBudget,
@@ -24,10 +25,8 @@ from zyko.mind.reflect import (
     guard_feedback,
     guard_perception,
     guard_plan,
-    normalize_stage,
     reflect_note,
 )
-from zyko.mind.perception import perceive
 from zyko.sandbox.audit import AuditLog, canonical_json, entry_hash
 from zyko.sandbox.contracts import PermissionContract
 from zyko.sandbox.jail import (
@@ -48,7 +47,7 @@ _SECRET_XOX = "xoxb-" + "123456789012-ABCDEFGHIJKLMNOPQRSTUVWX"  # عيّنة س
 
 def build_extra_pii_redact():
     cases = []
-    from zyko.tools.pii_ar import PIIScanner, normalize_digits, redact, scan
+    from zyko.tools.pii_ar import PIIScanner, redact, scan
     from zyko.tools.pii_ar.engine import PRIORITY
     from zyko.tools.pii_ar.normalize import to_arabic_digits, to_western_digits
 
@@ -629,7 +628,7 @@ def build_extra_reflect():
     cases.append(("ملاحظة", "ملاحظة بلا فجوات تعمل", fn_reflect_note_no_gaps))
 
     def fn_stage_constants():
-        from zyko.mind.reflect import STAGE_CRITIC, STAGE_EXECUTE, STAGE_PLAN, STAGE_PERCEIVE
+        from zyko.mind.reflect import STAGE_CRITIC, STAGE_EXECUTE, STAGE_PERCEIVE, STAGE_PLAN
         ok = {STAGE_PERCEIVE, STAGE_PLAN, STAGE_EXECUTE, STAGE_CRITIC} == {"perceive", "plan", "execute", "critic"}
         return (True, "أسماء المراحل الأربع") if ok else (False, "ثوابت المراحل تغيرت")
     cases.append(("سقوف", "ثوابت المراحل الأربع", fn_stage_constants))
@@ -827,7 +826,7 @@ def build_extra_kernel_core():
 def build_extra_receipts():
     cases = []
     from zyko.ai.receipt import AIReceipt, StepRecord, hash_file, hash_text
-    from zyko.ai.session import AISession, detect_session_mode
+    from zyko.ai.session import detect_session_mode
 
     def fn_hash_unicode_vs_latin():
         a = hash_text("نص")

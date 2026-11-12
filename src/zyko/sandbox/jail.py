@@ -39,11 +39,15 @@ import os
 import platform
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from zyko.sandbox.contracts import sensitive_paths_in_roots
+
+# نتيجة بروبة الإقامة — تُقاس مرة واحدة لكل جلسة (حتمية للبيئة الواحدة)
+_ESTABLISHMENT_PROBE: bool | None = None
 
 # ------------------------------------------------------------ المستويات
 JAIL_LEVEL_NONE = "none"
@@ -198,7 +202,7 @@ def _bwrap_works() -> bool:
         target,
     ]
     try:
-        proc = subprocess.run(  # noqa: S603 — argv ثابت مبني هنا لا من المدخل
+        proc = subprocess.run(  # noqa: S603 — argv ثابت مبني هنا لا من المدخل  # nosec B603
             argv, capture_output=True, timeout=10
         )
         return proc.returncode == 0
@@ -256,7 +260,7 @@ def write_roots(roots: object) -> tuple[str, ...]:
             resolved = str(path.resolve())
             if resolved not in out:
                 out.append(resolved)
-        except Exception:  # noqa: BLE001 — جذر عديوي يُتخطى لا يفجّر
+        except Exception:  # noqa: BLE001 — جذر عديوي يُتخطى لا يفجّر  # nosec B112
             continue
     return tuple(out)
 
@@ -370,6 +374,29 @@ def _restrict_child(allowed: tuple[str, ...], net_ports: tuple[int, ...] = ()) -
         except OSError:
             pass
         os._exit(_EXIT_JAIL_FAIL)
+
+
+def jail_establishment_ok() -> bool:
+    """بروب إقامة حقيقي: هل يُقام الحبس فعلاً في هذه البيئة؟
+
+    الكشف (jail_level) يقيس توفر الواجهة فقط؛ الإقامة قد تفشل رغم توفرها
+    (سياسات seccomp في حاويات CI تحجب landlock_add_rule) — والفارق
+    بينهما يظهر فقط ببناء حبس حقيقي في ابن فعلي. البروب حتمي ومُخزّن
+    لكل جلسة: ابن واحد يُنشأ بعقود حبس صغيرة ونجاته تثبت الإقامة.
+    """
+    global _ESTABLISHMENT_PROBE
+    if _ESTABLISHMENT_PROBE is None:
+        try:
+            probe = subprocess.run(  # nosec B603 — ابن البروب: argv ثابت بلا مدخل
+                [sys.executable, "-c", "import sys; sys.exit(0)"],
+                preexec_fn=jail_preexec((os.getcwd(),)),
+                capture_output=True,
+                timeout=60,
+            )
+            _ESTABLISHMENT_PROBE = probe.returncode == 0
+        except Exception:
+            _ESTABLISHMENT_PROBE = False
+    return _ESTABLISHMENT_PROBE
 
 
 def jail_preexec(

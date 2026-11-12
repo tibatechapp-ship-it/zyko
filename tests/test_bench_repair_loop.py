@@ -11,7 +11,6 @@
 from __future__ import annotations
 
 import subprocess
-from pathlib import Path
 
 import pytest
 
@@ -23,7 +22,6 @@ from zyko.benchmarks.repair_loop import (
     feedback_from_contract,
     feedback_from_failed_tests,
 )
-
 from zyko.benchmarks.swebench import SWEInstance
 
 

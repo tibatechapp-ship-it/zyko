@@ -38,7 +38,6 @@ from __future__ import annotations
 import re
 import subprocess
 from dataclasses import dataclass
-from pathlib import Path
 
 from zyko.sandbox.contracts import PermissionContract
 from zyko.sandbox.jail import JAIL_LEVEL_BWRAP, jail_level, jail_preexec, wrap_argv, write_roots
@@ -181,7 +180,7 @@ def run_tests(
         else list(tokens)
     )
     try:
-        proc = subprocess.run(  # noqa: S603 — argv قائمة مفحوصة، بلا shell
+        proc = subprocess.run(  # noqa: S603 — argv قائمة مفحوصة، بلا shell  # nosec B603
             exec_argv,
             cwd=str(cwd_path),
             env=env,
@@ -212,7 +211,6 @@ def run_tests(
             reason_ar=f"التشغيل فشل قبل البدء — {type(exc).__name__}",
         )
     passed, failed, errors, skipped = _parse_counts(stdout + "\n" + stderr)
-    combined = stdout + "\n[stderr]\n" + stderr
     cap = contract.max_output_chars
     ok = exit_code == 0 and not timed_out
     if timed_out:

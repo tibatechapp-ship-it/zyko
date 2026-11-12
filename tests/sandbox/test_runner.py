@@ -6,8 +6,21 @@ import sys
 
 import pytest
 
+# تخطٍ موثق: النواة تعلن Landlock لكن إقامته تفشل في حاويات CI
+# (سياسات seccomp تحجب landlock_add_rule) — بروبة إقامة حقيقية تقرر،
+# والعقد نفسه fail-closed: لا تشغيل بلا عزل ولا ادعاء نجاح زور.
+from zyko.sandbox import jail as _jail_mod
 from zyko.sandbox.contracts import PermissionContract
 from zyko.sandbox.runner import run_tests
+
+_jail_broken = (
+    _jail_mod.jail_level() == _jail_mod.JAIL_LEVEL_LANDLOCK
+    and not _jail_mod.jail_establishment_ok()
+)
+pytestmark = pytest.mark.skipif(
+    _jail_broken,
+    reason="إقامة الحبس النواتي تفشل في هذه البيئة (seccomp الحاوية يحجب Landlock) — تخطٍ موثق لا فشل",
+)
 
 PY = sys.executable.replace("\\", "/").split("/")[-1].replace(".exe", "") or "python"
 

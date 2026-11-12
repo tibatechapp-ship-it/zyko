@@ -17,9 +17,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.test_ai_session_existing import SICK_CODE
 from zyko.ai.session import AISession, detect_session_mode
-
-from tests.test_ai_session_existing import SICK_CODE, GOAL_FIX
 
 
 def _make_file(tmp_path: Path, name: str = "sample.py") -> Path:

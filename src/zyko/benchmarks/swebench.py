@@ -582,7 +582,7 @@ def http_transport(payload: dict[str, Any], *, host: str, api_key: str,
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=timeout_s) as resp:
+        with urllib.request.urlopen(req, timeout=timeout_s) as resp:  # nosec B310 — نقطة نهاية المختبر بمخططات مضبوطة من العقد
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         return {"error": {"message": f"HTTP {exc.code} من نقطة النهاية"}}

@@ -44,7 +44,7 @@ MAX_OUTCOME_CHARS = 120  # سقف نص الخلاصة العربي
 MAX_QUERY_RESULTS = 8  # سقف نتائج الاسترجاع في نداء واحد
 GENESIS_HASH = "0" * 64  # جذر السلسلة — كعقد سجل التدقيق
 TRUNCATION_MARK = "…[مقتطع]"  # علامة القصّ الحتمية
-SECRET_MASK = "[سر-مقنّع]"
+SECRET_MASK = "[سر-مقنّع]"  # nosec B105 — قناع الإخفاء نفسه لا سر
 
 # أنماط الأسرار الشائعة — تُقنَّع قبل أن تلمس القرص (دفاع عمق بلا اعتمادية)
 _SECRET_PATTERNS = (
@@ -444,7 +444,7 @@ class GlobalMemory:
         إن كانا حيّين، والترتيب حتمي بالبايت (مفرز بالمفاتيح).
         """
         data = self._read_lessons()
-        seq_text = {int(l["seq"]): str(l["text"]) for l in data.get("lessons", [])}
+        seq_text = {int(lesson["seq"]): str(lesson["text"]) for lesson in data.get("lessons", [])}
         out: list[dict] = []
         for c in data.get("conflicts", []):
             existing_seq, incoming_seq = int(c["existing_seq"]), int(c["incoming_seq"])

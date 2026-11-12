@@ -37,8 +37,8 @@ from typing import TYPE_CHECKING
 
 from zyko.ai.brains import GateVerdict
 from zyko.tools.pii_ar import scan as pii_scan
-from zyko.tools.rtl.core import RTLChecker
 from zyko.tools.rtl import BIDI_CONTROL_RE
+from zyko.tools.rtl.core import RTLChecker
 
 if TYPE_CHECKING:  # الاستيراد الدائري يُكسر في الفحص النوعي فقط
     from zyko.mind.perception import Perception

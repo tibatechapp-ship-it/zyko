@@ -441,7 +441,8 @@ def test_query_shape():
     assert user_query("ali") == "SELECT * FROM users WHERE name = 'ali'"
 '''
 
-_C3_TOKEN = '''"""auth_token — ترويسة تخويل بمفتاح افتراضي (سر بُذر للفحص)."""
+_C3_TOKEN = (  # nosec B105 — عينة بذر للعابث لا اعتمادية حقيقية
+    '''"""auth_token — ترويسة تخويل بمفتاح افتراضي (سر بُذر للفحص)."""
 
 API_KEY = "sk-live-9f2c1a7b4d8e6f0a1b2c3d4e5f6a7b8c"
 
@@ -450,6 +451,7 @@ def auth_header(key=None):
     """ترويسة Bearer بمفتاح صريح أو الافتراضي."""
     return {"Authorization": "Bearer " + (key or API_KEY)}
 '''
+)
 
 _C3_TESTS = '''from auth_token import API_KEY, auth_header
 

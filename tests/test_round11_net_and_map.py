@@ -12,19 +12,19 @@ import functools
 import subprocess
 from pathlib import Path
 
+from zyko.reviewer.repo_map import UNPARSEABLE_MARK, build_repo_map, symbol_summary
 from zyko.sandbox import jail
 from zyko.sandbox.jail import (
     _ACCESS_NET_BIND_TCP,
     _ACCESS_NET_CONNECT_TCP,
     _NET_SCOPE,
     _net_scope,
+    _NetPortAttr,
     _ruleset_struct,
     _RulesetAttr,
     _RulesetAttrNet,
-    _NetPortAttr,
     net_confinement,
 )
-from zyko.reviewer.repo_map import UNPARSEABLE_MARK, build_repo_map, symbol_summary
 
 
 # --------------------------------------------------------------- حصر الشبكة

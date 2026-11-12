@@ -67,7 +67,7 @@ class ToolSession:
             return
         try:
             self.audit.append(tool, decision, reason_ar, detail)
-        except Exception:  # noqa: BLE001 — التدقيق خسارة توثيق لا فشل تنفيذ
+        except Exception:  # noqa: BLE001 — التدقيق خسارة توثيق لا فشل تنفيذ  # nosec B110
             pass
 
     # ------------------------------------------------------------ الرقعة

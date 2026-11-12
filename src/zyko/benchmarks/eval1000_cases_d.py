@@ -7,12 +7,12 @@ import hashlib
 import json
 import pathlib
 import tempfile
-from typing import Any
 
 from zyko.fixer.engine import AUTO_FIXABLE, FixerEngine, apply_edits
 from zyko.reviewer.engine import ReviewEngine, verdict_for_score
 from zyko.reviewer.rules import RULES, RULES_BY_ID
 from zyko.reviewer.taint import collect_taints
+
 
 # ================================================= 16) المراجعة والإصلاح
 def build_review_fix():
@@ -152,7 +152,6 @@ def build_review_fix():
             p = pathlib.Path(td) / "t.py"
             p.write_text("if x == None:\n    pass\n", encoding="utf-8")
             result = FixerEngine().fix_file(p)
-            after = p.read_text(encoding="utf-8")
             ok = result.parse_error is None and (result.fixed_count > 0 or result.fixed_count == 0)
             return (True, "إصلاح ملف موثق") if ok else (False, f"إصلاح ملف: err={result.parse_error}")
     cases.append(("إصلاح", "fix_file على ملف حقيقي", fn_fixer_file))
@@ -333,7 +332,7 @@ def build_structured():
     def fn_ref_cycle():
         schema = {"$ref": "#/$defs/a", "$defs": {"a": {"$ref": "#/$defs/b"}, "b": {"$ref": "#/$defs/a"}}}
         try:
-            errs = validate_against_schema("قيمة", schema)
+            validate_against_schema("قيمة", schema)
             return True, "الدورة محكومة بلا انفجار"
         except SchemaSpecError:
             return True, "الدورة ترفض المخطط نفسه"
@@ -494,7 +493,6 @@ def build_policy():
     cases.append(("حتمية", "الحجب حتمي بالبايت", fn_redact_determinism))
 
     def fn_redact_unknown_name():
-        from zyko.exceptions import ConfigError
         try:
             Redactor.from_doc({"redact": ["نمط-غريب"]})
             return False, "نمط مجهول قُبل صامتًا!"
@@ -797,7 +795,7 @@ def build_kernel_core():
 
 # ======================================= 20) الإيصالات والجلسة
 def build_receipts():
-    from zyko.ai.receipt import AIReceipt, SCHEMA, StepRecord, hash_file, hash_text
+    from zyko.ai.receipt import SCHEMA, AIReceipt, StepRecord, hash_file, hash_text
     from zyko.ai.session import DEFAULT_FAIL_UNDER, SESSION_MODES, AISession, detect_session_mode
 
     cases = []
@@ -1008,6 +1006,7 @@ def build_receipts():
 
     def fn_repo_map_fake():
         from types import SimpleNamespace
+
         from zyko.reviewer.repo_map import build_repo_map
         with tempfile.TemporaryDirectory() as td:
             (pathlib.Path(td) / "lib.py").write_text("class A:\n    def b(self):\n        pass\n", encoding="utf-8")
@@ -1020,6 +1019,7 @@ def build_receipts():
 
     def fn_repo_map_determinism():
         from types import SimpleNamespace
+
         from zyko.reviewer.repo_map import build_repo_map
         with tempfile.TemporaryDirectory() as td:
             (pathlib.Path(td) / "lib.py").write_text("class A:\n    pass\n", encoding="utf-8")
@@ -1032,6 +1032,7 @@ def build_receipts():
     def fn_repo_map_failure_line():
         # العقد المعلن (جولة 11): بلا git ⇒ خريطة فارغة معلنة () — لا سطر ولا صمت كاذب
         from types import SimpleNamespace
+
         from zyko.reviewer.repo_map import build_repo_map
         with tempfile.TemporaryDirectory() as td:
             fake = SimpleNamespace(stdout="", returncode=1, stderr="git خطأ")
@@ -1041,6 +1042,7 @@ def build_receipts():
 
     def fn_repo_map_max_files():
         from types import SimpleNamespace
+
         from zyko.reviewer.repo_map import build_repo_map
         with tempfile.TemporaryDirectory() as td:
             names = "\n".join(f"f{i}.py" for i in range(10))

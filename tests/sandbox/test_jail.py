@@ -57,6 +57,11 @@ def _needs_kernel_jail() -> None:
             "العزل النواتي غير متاح في هذه البيئة (نواة بلا Landlock وبلا bwrap) — تخطٍ موثق",
             allow_module_level=False,
         )
+    if not jail.jail_establishment_ok():
+        pytest.skip(
+            "النواة تعلن Landlock لكن إقامة الحبس تفشل هنا (seccomp الحاوية) — تخطٍ موثق لا فشل",
+            allow_module_level=False,
+        )
 
 
 # ---------------------------------------------------------------- الكشف
@@ -77,7 +82,6 @@ def test_landlock_abi_reports_an_int():
 
 def test_write_roots_resolves_dedupes_and_adds_tempdir(tmp_path):
     import tempfile as _tf
-
     from pathlib import Path as _P
 
     root = tmp_path / "جذر"

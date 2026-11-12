@@ -36,7 +36,7 @@ _SECRET_PATTERNS = (
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"xox[baprs]-[A-Za-z0-9-]{20,}"),
 )
-_SECRET_MASK = "[سر-مقنّع]"
+_SECRET_MASK = "[سر-مقنّع]"  # nosec B105 — قناع الإخفاء نفسه لا سر
 
 
 def _scrub(text: str) -> str:

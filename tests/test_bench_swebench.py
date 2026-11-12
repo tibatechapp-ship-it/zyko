@@ -35,6 +35,19 @@ from zyko.benchmarks.swebench import (
     run_ids,
 )
 
+# تخطٍ موثق: النواة تعلن Landlock لكن إقامته تفشل في حاويات CI
+# (سياسات seccomp تحجب landlock_add_rule) — بروبة إقامة حقيقية تقرر.
+from zyko.sandbox import jail as _jail_mod
+
+_jail_broken = (
+    _jail_mod.jail_level() == _jail_mod.JAIL_LEVEL_LANDLOCK
+    and not _jail_mod.jail_establishment_ok()
+)
+_working_jail = pytest.mark.skipif(
+    _jail_broken,
+    reason="إقامة الحبس النواتي تفشل في هذه البيئة (seccomp الحاوية يحجب Landlock) — تخطٍ موثق لا فشل",
+)
+
 DATA = Path(__file__).resolve().parents[1] / "benchmarks" / "data" / "swe_bench_lite_requests.json"
 
 
@@ -260,10 +273,6 @@ def _verdict_dict_runner(base_failed, after_failed, total_passed=100):
 
 def test_evaluate_instance_resolved_env_with_env_fail():
     inst = _instance()
-    runner = _verdict_dict_runner(
-        base_failed=["test_requests.py::A::x", "test_requests.py::A::y"],
-        after_failed=["test_requests.py::B::z"],  # فشل P2P البيئي — كان فاشلاً في الأساس؟ لا
-    )
     # الأساس: الفشل فيه هو الفشل الأول الممرر — لكن B::z لم يفشل في الأساس هنا
     outputs = [
         FakeRun(1, stdout=_pytest_stdout(["test_requests.py::A::x", "test_requests.py::A::y", "test_requests.py::B::z"], 0)),
@@ -279,6 +288,7 @@ def test_evaluate_instance_resolved_env_with_env_fail():
     assert verdict.p2p_failed_at_base == ("test_requests.py::B::z",)
 
 
+@_working_jail
 def test_evaluate_instance_full_resolution_flow(mini_repo):
     """قياس حقيقي كامل: عقدة pytest فاشلة ثم ناجحة بعد رقعة حقيقية."""
     inst = _instance(
@@ -409,6 +419,7 @@ class CannedBrain:
         return self._proposal
 
 
+@_working_jail
 def test_attempt_repair_happy_path_real_git(mini_repo):
     inst = _instance(
         instance_id="psf__requests-0000",

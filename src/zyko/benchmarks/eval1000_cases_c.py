@@ -5,26 +5,27 @@ from __future__ import annotations
 import json
 import pathlib
 import tempfile
-from typing import Any
 
 from zyko.mind.global_memory import (
+    GENESIS_HASH,
     MAX_GLOBAL_LESSONS,
     MAX_LESSON_CHARS,
-    GENESIS_HASH,
     GlobalMemory,
-    entry_hash as gm_entry_hash,
     goal_digest,
     lesson_polarity,
     normalize_text,
     recall_score,
     topics_conflict,
 )
+from zyko.mind.global_memory import (
+    entry_hash as gm_entry_hash,
+)
 from zyko.mind.perception import perceive
 from zyko.mind.reflect import (
+    DEFAULT_STAGE_RETRIES,
     MAX_FEEDBACK_CHARS,
     MAX_STAGE_NAME_CHARS,
     MAX_TOTAL_RETRIES,
-    DEFAULT_STAGE_RETRIES,
     ROUTE_TABLE,
     RetryBudget,
     condense_feedback,
@@ -369,7 +370,7 @@ def build_ledger():
     def fn_goal_privacy():
         with tempfile.TemporaryDirectory() as td:
             mem = GlobalMemory(home=td)
-            secret_goal = "هدف-سري-جدا-لا-يجب-قراءة-الحرف-منه-0912345678"
+            secret_goal = "هدف-سري-جدا-لا-يجب-قراءة-الحرف-منه-0912345678"  # nosec B105 — بذرة اختبار مقصودة تتحقق أن الهدف يُبصم لا يُخزَّن
             mem.record_session(goal=secret_goal, project="p")
             raw = (pathlib.Path(td) / "sessions.jsonl").read_text(encoding="utf-8")
             return (True, "الهدف بصمة لا نص") if secret_goal not in raw else (False, "النص الخام للهدف في الدفتر!")
@@ -908,7 +909,7 @@ def build_factory():
     from zyko.coder.heuristics import draft_plan, intent_specs, known_intents
     from zyko.coder.plan import ProjectPlan, package_name, safe_slug
     from zyko.coder.precheck import check_source_tree
-    from zyko.pipeline.engine import MAX_DESCRIPTION_LEN, MAX_ROUNDS, PipelineEngine, SCHEMA, STAGES
+    from zyko.pipeline.engine import MAX_DESCRIPTION_LEN, MAX_ROUNDS, SCHEMA, STAGES, PipelineEngine
 
     specs = intent_specs()
 
@@ -929,7 +930,6 @@ def build_factory():
 
     # لكل نية: تخطيط + تحقق + شجرة + فحص ساكن
     for i, spec in enumerate(specs):
-        display = spec["display"]
         def fn(spec=spec):
             plan = draft_plan(f"أنشئ {spec['display']} — نسخة تقييم موحدة")
             problems = plan.validate()

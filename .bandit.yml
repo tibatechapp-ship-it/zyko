@@ -13,3 +13,9 @@ skips:
   # B404: the policy-gated `shell` agent tool intentionally runs commands via
   #       a shell; it stays locked until a policy names it in tools.allow.
   - B404
+  # B108: "/tmp" here is sandbox semantics, not temp-file creation — it is
+  #       a Landlock jail ROOT / bwrap bind path / a PermissionContract
+  #       root the contract itself must accept, and synthetic path strings
+  #       inside the eval1000 corpus that never touch the filesystem.
+  #       Real temp files go through tempfile.gettempdir() everywhere.
+  - B108

@@ -19,7 +19,6 @@ from zyko.sandbox.audit import (
 )
 from zyko.sandbox.contracts import (
     DEFAULT_ALLOWED_COMMANDS,
-    DEFAULT_MAX_FILE_BYTES,
     DEFAULT_TIMEOUT_S,
     MAX_FILE_BYTES_LIMIT,
     MAX_ROOTS,

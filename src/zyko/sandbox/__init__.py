@@ -42,7 +42,13 @@ from zyko.sandbox.contracts import (
     MAX_TIMEOUT_S,
     PermissionContract,
 )
-from zyko.sandbox.jail import JAIL_LEVEL_BWRAP, JAIL_LEVEL_LANDLOCK, JAIL_LEVEL_NONE, jail_level, landlock_abi
+from zyko.sandbox.jail import (
+    JAIL_LEVEL_BWRAP,
+    JAIL_LEVEL_LANDLOCK,
+    JAIL_LEVEL_NONE,
+    jail_level,
+    landlock_abi,
+)
 from zyko.sandbox.patcher import PatchResult, patch_file
 from zyko.sandbox.runner import TestRunResult, run_tests
 from zyko.sandbox.session import ToolSession

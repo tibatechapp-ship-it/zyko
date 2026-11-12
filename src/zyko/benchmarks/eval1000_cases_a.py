@@ -21,11 +21,11 @@ from zyko.guardian.gates import (
     StructuralGate,
     default_gates,
 )
-from zyko.mock_llm import MockLLM, SCENARIOS, get_scenario
+from zyko.mock_llm import SCENARIOS, MockLLM, get_scenario
 from zyko.tools.pii_ar import (
-    PIIScanner,
     TYPE_LABELS,
     Finding,
+    PIIScanner,
     normalize_digits,
     redact,
     scan,
@@ -386,7 +386,7 @@ def build_pii_nid():
                 f = hits[0]
                 if f.country != "SA" or not f.valid:
                     return False, f"سعودي حُمِّل لدولة {f.country} valid={f.valid}"
-                return True, f"SA كُشِف صحيحًا"
+                return True, "SA كُشِف صحيحًا"
             cases.append(("سعودي", f"هوية سعودية صحيحة ({start}… j{j})", fn))
 
     # ب) سياق دولة أخرى يمنع النسبة للسعودية
@@ -769,7 +769,7 @@ def build_pii_names():
 
     # و) اسم مع هاتف: نوعان بترتيب موضعي
     def fn_mixed():
-        text = f"اتصل بـ 0512345678 وأخبر محمد العمري"
+        text = "اتصل بـ 0512345678 وأخبر محمد العمري"
         hits = scan(text)
         phones = [h for h in hits if h.type == "phone"]
         names = [h for h in hits if h.type == "person_name"]
@@ -1153,7 +1153,8 @@ def build_rtl():
 
     # هـ) فحص المسارات
     def fn_path_html(tmp=""):
-        import tempfile, pathlib
+        import pathlib
+        import tempfile
         with tempfile.TemporaryDirectory() as td:
             p = pathlib.Path(td) / "page.html"
             p.write_text("<html><body><p>نص</p></body></html>", encoding="utf-8")
@@ -1162,7 +1163,8 @@ def build_rtl():
     cases.append(("مسارات", "check_path على HTML معيب", fn_path_html))
 
     def fn_path_clean():
-        import tempfile, pathlib
+        import pathlib
+        import tempfile
         with tempfile.TemporaryDirectory() as td:
             p = pathlib.Path(td) / "ok.py"
             p.write_text("x = 'سلام'\n", encoding="utf-8")
@@ -1405,16 +1407,17 @@ def build_gates():
     cases.append(("بصمة", "بصمة القرار حتمية بالبايت", fn_fingerprint))
 
     def fn_fingerprint_diff():
-        gr = lambda name: __import__("zyko.guardian.contracts", fromlist=["GateResult"]).GateResult(name, True, "سليم")
+        def gr(name):
+            return __import__("zyko.guardian.contracts", fromlist=["GateResult"]).GateResult(name, True, "سليم")
         a = compute_fingerprint("نص أ", [gr("PIIGate"), gr("RTLGate")])
         b = compute_fingerprint("نص ب", [gr("PIIGate"), gr("RTLGate")])
         return (True, "النص يغير البصمة") if a != b else (False, "نصان مختلفان بنفس البصمة!")
     cases.append(("بصمة", "نصوص مختلفة بصمات مختلفة", fn_fingerprint_diff))
 
     def fn_fingerprint_order():
-        gr = lambda name: __import__("zyko.guardian.contracts", fromlist=["GateResult"]).GateResult(name, True, "سليم")
-        a = compute_fingerprint("نص", [gr("PIIGate"), gr("RTLGate")])
-        b = compute_fingerprint("نص", [gr("RTLGate"), gr("PIIGate")])
+        gr2 = __import__("zyko.guardian.contracts", fromlist=["GateResult"]).GateResult
+        a = compute_fingerprint("نص", [gr2("PIIGate"), gr2("RTLGate")])
+        b = compute_fingerprint("نص", [gr2("RTLGate"), gr2("PIIGate")])
         return (True, "الترتيب يغير البصمة") if a != b else (False, "ترتيب البوابات لا يظهر في البصمة")
     cases.append(("بصمة", "ترتيب البوابات يدخل البصمة", fn_fingerprint_order))
 

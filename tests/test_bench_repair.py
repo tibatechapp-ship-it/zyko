@@ -23,6 +23,19 @@ from zyko.benchmarks.repair import (
 )
 from zyko.reviewer.rules import RULES_BY_ID
 
+# تخطٍ موثق: النواة تعلن Landlock لكن إقامته تفشل في حاويات CI
+# (سياسات seccomp تحجب landlock_add_rule) — بروبة إقامة حقيقية تقرر.
+from zyko.sandbox import jail as _jail_mod
+
+_jail_broken = (
+    _jail_mod.jail_level() == _jail_mod.JAIL_LEVEL_LANDLOCK
+    and not _jail_mod.jail_establishment_ok()
+)
+_working_jail = pytest.mark.skipif(
+    _jail_broken,
+    reason="إقامة الحبس النواتي تفشل في هذه البيئة (seccomp الحاوية يحجب Landlock) — تخطٍ موثق لا فشل",
+)
+
 # عينات حتمية خفيفة — كل واحدة تُثبت عقد فئة كامل بأقل زمن تشغيل
 _QUALITY_SAMPLE = (
     CORPUS[6],  # unused_import
@@ -70,6 +83,7 @@ def test_corpus_tests_are_selfcontained(case: RepairCase):
 
 
 # --------------------------------------------------------------- عقد الفئات
+@_working_jail
 def test_quality_sample_repaired_without_breaking():
     """فئة الجودة: القاعدة تختفي والاختبارات تمر قبل وبعد والإصلاح معتدل."""
     report = run_repair_lab(cases=_QUALITY_SAMPLE)
@@ -81,6 +95,7 @@ def test_quality_sample_repaired_without_breaking():
         assert row.score_after >= row.score_before
 
 
+@_working_jail
 def test_behavioral_sample_flips_tests():
     """فئة السلوك: الاختبارات تفشل قبل الإصلاح وتمر بعده — مقياس الانعكاس الحرفي."""
     report = run_repair_lab(cases=_BEHAVIORAL_SAMPLE)
@@ -91,6 +106,7 @@ def test_behavioral_sample_flips_tests():
     assert row.resolved is True
 
 
+@_working_jail
 def test_manual_sample_detected_not_fixed():
     """فئة اليدوية: تُكشف البذرة كاملة ولا يتغير النص — اعتراف بالحد لا تظاهر."""
     report = run_repair_lab(cases=_MANUAL_SAMPLE)

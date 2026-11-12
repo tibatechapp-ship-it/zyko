@@ -9,8 +9,6 @@ from __future__ import annotations
 
 import sys
 
-import pytest
-
 from zyko.mind.loop import MindLoop
 from zyko.sandbox.audit import AuditLog
 from zyko.sandbox.contracts import PermissionContract
@@ -142,9 +140,9 @@ class TestFullLoop:
 
 class TestCLI:
     def test_cli_flag_registered(self):
-        from zyko.mind.cli import register_to
-
         import argparse
+
+        from zyko.mind.cli import register_to
 
         parser = argparse.ArgumentParser()
         register_to(parser.add_subparsers(dest="mind_cmd"))

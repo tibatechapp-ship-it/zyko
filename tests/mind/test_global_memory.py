@@ -10,9 +10,6 @@ from __future__ import annotations
 
 import json
 import time
-from pathlib import Path
-
-import pytest
 
 from zyko.mind.cli import main as mind_main
 from zyko.mind.global_memory import (

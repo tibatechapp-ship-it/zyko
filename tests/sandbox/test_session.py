@@ -85,7 +85,7 @@ def test_run_tests_exception_becomes_error(tmp_path):
             raise RuntimeError("انفجار")
 
     result = session.run_tests(argv=[Boom()], cwd=tmp_path)
-    assert not result.ok and not result.ok is None
+    assert not result.ok and result.ok is not None
     assert any(e.decision == "ERROR" for e in log.entries())
 
 
