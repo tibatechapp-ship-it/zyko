@@ -29,6 +29,7 @@ from zyko.sandbox.contracts import (
     sensitive_paths_in_roots,
 )
 from zyko.sandbox.jail import (
+    jail_establishment_ok,
     jail_level,
     landlock_abi,
     net_confinement,
@@ -143,7 +144,7 @@ def build_contracts():
 
     def fn_roots_absolute():
         c = PermissionContract.for_roots("relative/path")
-        ok = c.roots and c.roots[0].startswith("/")
+        ok = bool(c.roots) and pathlib.Path(c.roots[0]).is_absolute()
         return (True, "النسبي يُحسم مطلقًا") if ok else (False, f"الجذور: {c.roots}")
 
     cases.append(("قيود", "جذر نسبي يُحسم مطلقًا", fn_roots_absolute))
@@ -220,7 +221,7 @@ def build_contracts():
 
     def fn_relative():
         with _root() as td:
-            root = pathlib.Path(td)
+            root = pathlib.Path(td).resolve()
             (root / "sub").mkdir()
             (root / "ok.py").write_text("x = 1\n", encoding="utf-8")
             c = _contract(td)
@@ -1345,13 +1346,14 @@ def build_jail():
     cases.append(("اكتشاف", "net_confinement من الفهرس الثلاثي", fn_net_enum))
 
     def fn_honesty_pair():
-        """الصدق البنيوي: بلا landlock وبلا bwrap ⇒ الشبكة غير مقيدة صراحة."""
+        """الصدق البنيوي: الإعلان يطابق الإقامة الفعلية لا ظهور الواجهة."""
         abi = landlock_abi()
         net = net_confinement()
         import shutil
 
         has_bwrap = shutil.which("bwrap") is not None
-        if abi >= 4:
+        established = jail_establishment_ok()
+        if abi >= 4 and established:
             expect = "landlock-net"
         elif has_bwrap:
             expect = "bwrap-net"
@@ -1396,8 +1398,9 @@ def build_jail():
 
     def fn_write_roots():
         with tempfile.TemporaryDirectory() as td:
+            td_res = str(pathlib.Path(td).resolve())
             roots = write_roots((td, td, "relative/path", "/nonexistent-zz-eval"))
-            ok = roots.count(td) == 1 and all(r.startswith("/") for r in roots)
+            ok = roots.count(td_res) == 1 and all(pathlib.Path(r).is_absolute() for r in roots)
             ok = ok and "relative/path" not in roots and "/nonexistent-zz-eval" not in roots
             return (True, "تجميد الجذور موثق") if ok else (False, f"الجذور: {roots}")
 
@@ -1407,7 +1410,7 @@ def build_jail():
         import tempfile as tf
 
         roots = write_roots(())
-        temp = tf.gettempdir()
+        temp = str(pathlib.Path(tf.gettempdir()).resolve())
         ok = any(str(r).startswith(temp) for r in roots)
         return (True, "مجلد الحرارة يُلحق") if ok else (False, "بلا جذور: مجلد الحرارة لم يُلحق")
 
@@ -1487,8 +1490,9 @@ def build_jail():
 
     def fn_roots_many():
         with tempfile.TemporaryDirectory() as td:
+            td_res = str(pathlib.Path(td).resolve())
             roots = write_roots((td,) * 12)
-            ok = len(roots) >= 1 and roots.count(td) == 1
+            ok = len(roots) >= 1 and roots.count(td_res) == 1
             return (True, "التكرار يُفرَّد") if ok else (False, f"تكرار الجذور: {len(roots)}")
 
     cases.append(("جذور", "تكرار الجذور يُفرَّد", fn_roots_many))

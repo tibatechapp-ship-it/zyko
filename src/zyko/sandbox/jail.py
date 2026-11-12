@@ -222,7 +222,11 @@ def jail_level() -> str:
     global _level_cache
     if _level_cache is None:
         if landlock_abi() >= 1:
-            _level_cache = JAIL_LEVEL_LANDLOCK
+            # الإقامة تُمضى بروبة حقيقية: الكشف يرى الواجهة، والإقامة
+            # قد تُحجب بسياسات seccomp في حاويات CI — والابن الذي يفشل
+            # في القيد يخرج 126 وكل العدّة تموت خلفه، فالحسم عند
+            # الكشف لا عند أول تشغيل.
+            _level_cache = JAIL_LEVEL_LANDLOCK if jail_establishment_ok() else JAIL_LEVEL_NONE
         elif _bwrap_works():
             _level_cache = JAIL_LEVEL_BWRAP
         else:
@@ -388,9 +392,12 @@ def jail_establishment_ok() -> bool:
     if _ESTABLISHMENT_PROBE is None:
         try:
             probe_root = tempfile.mkdtemp(prefix="zyko-jail-probe-")
+            # البروب يبني preexec مباشرة لا عبر jail_preexec — الأخير
+            # يسأل jail_level وهذا السؤال بروبة: استدعاء متبادل قاتل.
+            # الوظيفة التي تُقيَّد هنا هي _restrict_child نفسها.
             probe = subprocess.run(  # nosec B603 — ابن البروب: argv ثابت بلا مدخل
                 [sys.executable, "-c", "import sys; sys.exit(0)"],
-                preexec_fn=jail_preexec((probe_root,)),
+                preexec_fn=functools.partial(_restrict_child, write_roots((probe_root,)), ()),
                 capture_output=True,
                 timeout=60,
             )

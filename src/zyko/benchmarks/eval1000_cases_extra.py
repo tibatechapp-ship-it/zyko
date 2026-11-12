@@ -616,9 +616,12 @@ def build_extra_jail():
     cases.append(("جذور", "جذر غائب يُتخطى", fn_roots_missing_skip))
 
     def fn_roots_strip():
-        roots = write_roots(("   /tmp   ",))
-        ok = roots and roots[0] == str(pathlib.Path("/tmp").absolute())
-        return (True, "الفراغ يُقصّ") if ok else (False, f"جذر بفراغ: {roots}")
+        with tempfile.TemporaryDirectory() as td:
+            spaced = pathlib.Path(td) / "dir with spaces"
+            spaced.mkdir()
+            roots = write_roots((f"   {spaced}   ",))
+            ok = roots and roots[0] == str(spaced.resolve())
+            return (True, "الفراغ يُقصّ") if ok else (False, f"جذر بفراغ: {roots}")
 
     cases.append(("جذور", "فراغات الجذر تُقصّ", fn_roots_strip))
 

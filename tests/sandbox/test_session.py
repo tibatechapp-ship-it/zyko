@@ -142,7 +142,12 @@ def test_session_summary_is_json_serializable(tmp_path):
 
 
 def sys_py() -> str:
-    """بايثون الحالي باسمه القصير — يمر القائمة البيضاء الافتراضية."""
+    """بايثون الحالي باسمه القصير — يمر القائمة البيضاء الافتراضية.
+
+    ويندوز يمهد المسارات بالخط المائل العكسي — القسمة على الاثنين
+    لا على الأمامي وحده، وإلا عاد المسار الكامل فحارس الأمر يرفضه.
+    """
     import sys
 
-    return sys.executable.split("/")[-1].replace(".exe", "") or "python"
+    name = sys.executable.replace("\\", "/").split("/")[-1]
+    return name.replace(".exe", "") or "python"
