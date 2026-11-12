@@ -14,6 +14,12 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python: ["3.11", "3.12", "3.13"]
     runs-on: ${{ matrix.os }}
+    env:
+      # العربية أولًا: stdout/stderr للأبناء UTF-8 في كل المنصات —
+      # على ويندوز الترميز الافتراضي (cp1252) يحوّل العربية إلى '؟'
+      # فيفشل اختبار يتحقق من نص عربي في المخرجات.
+      PYTHONIOENCODING: "utf-8"
+      PYTHONUTF8: "1"
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
