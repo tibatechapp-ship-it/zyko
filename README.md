@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-0.40.0-6366f1)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-2816%20passing-22c55e)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-2834%20passing-22c55e)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Termux-10b981)](.github/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
@@ -182,9 +182,11 @@ Linux · Windows · macOS · Android/Termux — مصفوفة CI خضراء عل�
 
 ```bash
 pytest -q
-# 2816 passed, 22 skipped  (التخطيات موثقة بيئيًا: مزودات شبكة ودماغات غير مثبتة
-#                          في هذه البيئة — تخطٍّ لا فشل؛ تخطيات ضاد الـ12 أُغلقت:
-#                          ساق metrics-truth تثبّت ضاد v0.2.0 وتشغّلها)
+# 2834 passed, 4 skipped  (أرقام ساق metrics-truth — البوابة المرجعية:
+#                          ضاد مثبتة فتخطياتها الـ12 أُغلقت، والشبكة حاضرة
+#                          فمزوداتها تعمل، والحبس تحت bwrap فأدوات الجلسة
+#                          تُقاس فعلاً — والـ4 الباقية تخطيات نواتي موثقة:
+#                          kernel-jail يختبر landlock تحديداً وbwrap ليس landlock)
 ```
 
 ---
