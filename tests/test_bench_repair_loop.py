@@ -168,21 +168,6 @@ def test_applied_but_not_resolved_then_feedback_then_resolve(mini_repo):
     diff = CannedBrain([wrong_patch, follow_patch])
     loop = RepairLoop(choice, diff)
     result = loop.run(_instance(), mini_repo, "python3", runner=_tree_runner())
-    if not result.resolved_env:
-        # تشخيص CI: المحتوى الفعلي ومخرجات pytest الداخلية الخام
-        probe = subprocess.run(
-            ["python3", "-m", "pytest", "test_level.py::test_value", "--tb=short", "-q"],
-            cwd=str(mini_repo),
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-        print("=== DIAG src.py ===", (mini_repo / "src.py").read_text(encoding="utf-8"))
-        print("=== DIAG git-status ===")
-        subprocess.run(["git", "status", "--porcelain"], cwd=str(mini_repo))
-        print(f"=== DIAG inner rc={probe.returncode} ===")
-        print(probe.stdout[-1200:])
-        print(probe.stderr[-600:])
     assert [a.applied for a in result.attempts] == [True, True], (
         "تشخيص CI: "
         f"attempts={[(a.index, a.applied, a.stop_reason_ar) for a in result.attempts]}؛ "
