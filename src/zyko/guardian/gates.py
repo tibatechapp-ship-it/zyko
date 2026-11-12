@@ -115,6 +115,46 @@ class StructuralGate:
         )
 
 
+@dataclass(frozen=True)
+class FormalGate:
+    """بوابة الحاكم الشكلي — اختيارية صريحة، لا تدخل الافتراضي الصامت.
+
+    تحاكم العقود المعلنة بتوجيهات `zyko:requires/ensures/domain`
+    سكونياً (ast، بلا تنفيذ للمقترح). مقترح بلا توجيهات يمر نظيفاً
+    وبتصريح — فالعقد المعلن شرط حكم لا شرط مرور. تُركّب صراحة:
+    ``DefaultGuardian(default_gates() + [FormalGate()])``.
+    """
+
+    gate_name: str = "FormalGate"
+
+    async def check(self, proposal: str) -> GateResult:
+        from zyko.tools.formal.engine import VerdictKind, check_source, summarize
+
+        report = check_source(proposal)
+        summary = {**report.details, **summarize(report)}
+        if report.verdict is VerdictKind.ACCEPT:
+            return GateResult(
+                self.gate_name,
+                True,
+                "العقود المعلنة سليمة سكونياً" if report.functions_with_contracts
+                else "لا عقود معلنة — الحاكم اختياري صريح",
+                summary,
+            )
+        if report.verdict is VerdictKind.REJECT:
+            return GateResult(
+                self.gate_name,
+                False,
+                "عقد معلن مشوّه أو متناقض النطاق — المقترح يعلن عقوداً لا يحققها",
+                summary,
+            )
+        return GateResult(
+            self.gate_name,
+            True,
+            "عقود ناقصة المجال — تعذّر التحقق السكوني، يحال للمراجعة دون رفض",
+            {**summary, "review_recommended": True},
+        )
+
+
 def default_gates() -> list:
     """البوابات الثلاث بترتيبها المقدّس: PII ثم RTL ثم البنيوية."""
     return [PIIGate(), RTLGate(), StructuralGate()]
