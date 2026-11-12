@@ -201,7 +201,7 @@ def test_session_fallback_model_down_planner_rescues(tmp_path: Path) -> None:
     assert receipt.plan is not None
     assert receipt.plan["brain"] == "gated:bestof:ollama:m+planner"
     assert receipt.plan["text"] == PLANNER_TEXT
-    plan_step = receipt.steps[0]
+    plan_step = next(s for s in receipt.steps if s.step == "plan")
     assert plan_step.ok
     assert "فاز المرشح 2 من 2" in plan_step.details_ar
     assert "تعذّر الوصول إلى Ollama" in plan_step.details_ar  # قصة المنافسة كاملة
@@ -216,7 +216,7 @@ def test_session_all_fail_rejects_before_any_write(tmp_path: Path) -> None:
     assert receipt.failed_step == "plan"
     assert not (tmp_path / "proj").exists()  # الرفض قبل كتابة بايت واحد
     # الإيصال يوثّق كل المرشحين الفاشلين لا أولهم فقط
-    details = receipt.steps[0].details_ar
+    details = next(s for s in receipt.steps if s.step == "plan").details_ar
     assert "تعذّر الوصول إلى Ollama" in details  # فشل المرشح الأول
     assert "غير مفهومة" in details  # فشل المرشح الثاني
     assert "فشل جميع المرشحين (2)" in details  # خلاصة المنافسة
@@ -270,7 +270,7 @@ def test_cli_brain_bestof_model_down_planner_rescues(
     assert payload["brain"] == "gated:bestof:ollama:fake-model+planner"
     assert payload["brain_deterministic"] is False
     assert payload["plan"]["text"] == PLANNER_TEXT
-    plan_details = payload["steps"][0]["details_ar"]
+    plan_details = payload["steps"][1]["details_ar"]
     assert "فاز المرشح 2 من 2" in plan_details
 
 
@@ -303,7 +303,7 @@ def test_cli_brain_bestof_model_clean_wins_first(
     assert rc == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["plan"]["text"] == PLAN_CLEAN  # النموذج فاز من المحاولة الأولى
-    assert "من المحاولة الأولى" in payload["steps"][0]["details_ar"]
+    assert "من المحاولة الأولى" in payload["steps"][1]["details_ar"]
 
 
 def test_map_documents_the_bestof_brain(capsys: pytest.CaptureFixture[str]) -> None:

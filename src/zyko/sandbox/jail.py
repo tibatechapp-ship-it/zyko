@@ -356,7 +356,7 @@ def _landlock_restrict(allowed: tuple[str, ...], *, net_ports: tuple[int, ...] =
         os.close(fd)
 
 
-def _restrict_child(allowed: tuple[str, ...], net_ports: tuple[int, ...]) -> None:
+def _restrict_child(allowed: tuple[str, ...], net_ports: tuple[int, ...] = ()) -> None:
     """دالة preexec — تقييد النواة أو الإغلاق الموثق، لا ثالث.
 
     الفشل المغلق: وسم عربي على stderr ثم ``os._exit(126)`` — الابن

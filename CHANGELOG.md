@@ -1,3 +1,25 @@
+## 0.36.0 — the emergence: a public measurement protocol, three fully documented runs, and the variance discovery
+
+### Wave 12: publish the protocol, not the slogan — determinism and stochasticity separated by receipts
+
+- **`docs/PROTOCOL.md` — بروتوكول القياس العام**: كل رقم في هذا المشروع
+  له أمر معلن ووثيقة موقعة وبصمة sha256 قابلة للمقارنة — الاختبارات
+  والبوابات، والمرجع الداخلي، ومعمل الإصلاح، وبروتوكولات
+  SWE-bench-Lite الثلاثة (v1/v2/v3) في وثيقة واحدة عامة.
+- **ثلاثة تشغيلات كاملة موثقة على العدّة نفسها** (6 حالات، النموذج نفسه،
+  البوابات نفسها): v1 صارم 0/6 وبيئي 2/6؛ v2 (حلقة تلقيم الفشل) صارم
+  **1/6** وبيئي **3/6** وإصلاحات حقيقية **3**؛ v3 (الحلقة + الخريطة
+  الدلالية) رقع مطبقة **5/6** — أفضل نتيجة ميكانيكية.
+- **الاكتشاف المركزي — الفصل مقاس لا ادعاء**: الطبقة الحتمية مستقرة
+  بالبايت عبر التشغيلات الثلاثة، وطبقة النموذج عشوائية مقاسة (3362
+  حُلّت صارماً في v2 ولم تُحلّ في v3؛ 1963 أفسدت 10 فحوص في v3) —
+  **التشغيل الواحد عيّنة لا حقيقة**، ولهذا يوّثق zyko كل محاولة لا
+  أفضلها. رفض البوابات: صفر في 18 محاولة.
+- هذه وثيقة الظهور: جولات التطوير القادمة تُقاس على العدّة نفسها،
+  ومن جاء بعدنا فليُنشِر بصمته لا شعاره.
+
+pyproject/CITATION/version.py/README/EVAL/PROTOCOL: 0.35.0 → 0.36.0.
+
 ## 0.35.0 — the network reaches the kernel and the brain sees symbols, not blind paths
 
 ### Wave 11: close the documented network gap and give the choice brain a semantic map

@@ -365,7 +365,8 @@ def test_session_with_qwen_brain_clean_accepted(tmp_path: Path) -> None:
     assert receipt.brain == "gated:qwen:m2"
     assert receipt.brain_deterministic is False
     assert receipt.plan is not None and receipt.plan["text"] == PLAN_CLEAN
-    assert receipt.steps[0].step == "plan" and receipt.steps[0].ok
+    plan = next(s for s in receipt.steps if s.step == "plan")
+    assert plan.step == "plan" and plan.ok
 
 
 def test_session_with_qwen_brain_suspicious_rejected_before_any_write(tmp_path: Path) -> None:
@@ -374,7 +375,7 @@ def test_session_with_qwen_brain_suspicious_rejected_before_any_write(tmp_path: 
     receipt = AISession(brain=brain).run(CLEAN_GOAL, tmp_path / "proj")
     assert not receipt.ok
     assert receipt.failed_step == "plan"
-    assert "phone" in receipt.steps[0].details_ar
+    assert "phone" in next(s for s in receipt.steps if s.step == "plan").details_ar
     assert not (tmp_path / "proj").exists()  # الرفض قبل كتابة بايت واحد
 
 
