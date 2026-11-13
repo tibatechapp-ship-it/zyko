@@ -81,7 +81,7 @@
     "generated_utc": "2026-11-13T19:57:01Z",
     "platform": "Linux",
     "python": "3.12.16",
-    "zyko_version": "0.47.0"
+    "zyko_version": "0.48.0"
   },
   "target": {
     "bytes": 41462,

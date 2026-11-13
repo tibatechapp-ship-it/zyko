@@ -39,6 +39,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from zyko.benchmarks.patch_surgeon import apply_tolerant, revert_candidate
+from zyko.benchmarks.path_rescue import rescue_choice
 from zyko.benchmarks.swebench import (
     DEFAULT_TIMEOUT_S,
     SWEInstance,
@@ -132,6 +133,7 @@ class LoopAttempt:
     stop_reason_ar: str  # لماذا واصلت أو انصرفت بعد هذه المحاولة
     apply_mode: str = ""  # الموجة 20: كاملة / بالملفات / بالأجزاء — الوضع المعلن
     reverted: bool = False  # الموجة 20: حرس التراجع أرجع الرقعة بعد القياس
+    rescue_mode: str = ""  # الموجة 25: brain|normalize|lexical — من أنتج المسار
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -146,6 +148,7 @@ class LoopAttempt:
             "stop_reason_ar": self.stop_reason_ar,
             "apply_mode": self.apply_mode,
             "reverted": self.reverted,
+            "rescue_mode": self.rescue_mode,
         }
 
 
@@ -283,6 +286,15 @@ class RepairLoop:
                 build_choice_request(instance, tree, map_lines=self.map_lines) + suffix
             )
             chosen = parse_choice(choice.text, tree) if choice.accepted else None
+            # الموجة 25: منقِذ المسار — فشل العقل في إعطاء مسار حي لا يكسر
+            # الحلقة بعد اليوم: درجات حتمية بلا نموذج تستخرج مساراً متحققاً
+            # من الشجرة، ووضعه يُوثق في المحاولة نفسها (لا استبدال صامت)
+            rescue_mode = ""
+            if chosen is None:
+                resc = rescue_choice(choice.text, tree, instance, map_lines=self.map_lines)
+                if resc.path is not None:
+                    chosen = resc.path
+                    rescue_mode = resc.mode
             choices.append(chosen)
             if chosen is None:
                 attempts.append(
@@ -320,6 +332,7 @@ class RepairLoop:
                         stop_reason_ar="نهاية الميزانية — البوابات رفضت"
                         if last
                         else "انصراف — البوابات رفضت اقتراحاً بلا رجعية ممكنة",
+                        rescue_mode=rescue_mode,
                     )
                 )
                 break
@@ -342,6 +355,7 @@ class RepairLoop:
                         stop_reason_ar="نهاية الميزانية — لا رقعة"
                         if last
                         else "متابعة — رجعية الصيغة بُنيت",
+                        rescue_mode=rescue_mode,
                     )
                 )
                 continue
@@ -362,6 +376,7 @@ class RepairLoop:
                         stop_reason_ar="نهاية الميزانية — الحرس رفض"
                         if last
                         else "متابعة — رجعية الحرس بُنيت",
+                        rescue_mode=rescue_mode,
                     )
                 )
                 continue
@@ -395,6 +410,7 @@ class RepairLoop:
                         if last
                         else "متابعة — رجعية التطبيق بُنيت",
                         apply_mode=tol.mode_ar,
+                        rescue_mode=rescue_mode,
                     )
                 )
                 continue
@@ -461,6 +477,7 @@ class RepairLoop:
                     ),
                     apply_mode=tol.mode_ar,
                     reverted=reverted,
+                    rescue_mode=rescue_mode,
                 )
             )
 

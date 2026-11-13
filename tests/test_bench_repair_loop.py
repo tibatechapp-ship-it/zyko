@@ -271,13 +271,17 @@ def test_gate_rejection_terminates_with_documentation(mini_repo):
     assert not result.verdict.patch_applied
 
 
-def test_no_valid_file_choice_documents_and_stops(mini_repo):
+def test_no_valid_file_choice_is_rescued_and_declared(mini_repo):
+    """الموجة 25 — درس العينة الواسعة بالبايت: رد اختيار أعمى كان يكسر
+    الحلقة عند نقطة فشل أحادية (34 حالة من 44 ماتت هنا). المنقذ الحتمي
+    يواصل الحلقة بمسار متحقق من الشجرة والوضع معلن في المحاولة."""
     choice = CannedBrain(["ليس ملفاً في الشجرة"])
     diff = CannedBrain([])
     loop = RepairLoop(choice, diff)
     result = loop.run(_instance(), mini_repo, "python3", runner=_tree_runner())
-    assert result.attempts[0].file_choice is None
-    assert "لا ملف صالح" in result.attempts[0].stop_reason_ar
+    assert result.attempts[0].file_choice is not None  # مسار حي من الشجرة
+    assert result.attempts[0].rescue_mode == "lexical"
+    assert "لا ملف صالح" not in result.attempts[0].stop_reason_ar
     assert result.chain_hash
 
 

@@ -68,6 +68,7 @@ RESULTS_DIR = _resolve_results_dir()
 # ---------------------------------------------------------------- وثائق موقّعة
 WIDE19_DOC = RESULTS_DIR / "swebench_full_wide_2026-11-13.json"
 WIDE22_DOC = RESULTS_DIR / "swebench_full_wide22_2026-11-13.json"
+WIDE25_MERGED_DOC = RESULTS_DIR / "swebench_full_wide25_merged_2026-11-14.json"
 EVAL1000_DOC = RESULTS_DIR / "eval1000_2026-11-12.json"
 SYNTHLAB_DOC = RESULTS_DIR / "synthlab_2026-11-12.json"
 
@@ -130,22 +131,28 @@ def read_signed_doc(path: Path) -> dict:
 
 
 def read_wide_metrics() -> dict[str, object]:
-    """مقاييس SWE-bench الواسع من الوثيقتين الموقّعتين — كل رقم بمصدره."""
+    """مقاييس SWE-bench الواسع من الوثائق الموقّعة — كل رقم بمصدره.
+
+    الموجة 25: البيئي من وثيقة الموجة 19 كما هو (مزيجها المعلن لم
+    يتغير)، والصارم والرقع المطبقة من **وثيقة الدمج الموقعة** — 44 سجلاً
+    على العينة نفسها: تسعة ناجون من الموجة 22 ببصماتهم و34 وفاة اختيار
+    أُعيد تشغيلها بعقل حقيقي فوق المنقذ الحتمي.
+    """
     wide19 = read_signed_doc(WIDE19_DOC)
-    wide22 = read_signed_doc(WIDE22_DOC)
-    agg19, agg22 = wide19["aggregate"], wide22["aggregate"]
+    merged25 = read_signed_doc(WIDE25_MERGED_DOC)
+    agg19, agg25 = wide19["aggregate"], merged25["aggregate"]
     env_rate = _ratio(agg19["resolved_env"], agg19["total"])
-    strict_rate = _ratio(agg22["resolved_strict"], agg22["total"])
-    applied_rate = _ratio(agg22["applied_count"], agg22["total"])
+    strict_rate = _ratio(agg25["resolved_strict"], agg25["total"])
+    applied_rate = _ratio(agg25["applied_count"], agg25["total"])
     if env_rate is None or strict_rate is None or applied_rate is None:
         raise ValueError("وثيقة موقّعة بأرقام غير قابلة للنسبة — رفض لا تجاهل")
     return {
         "env_solve_pct": env_rate,
         "env_source": f"{WIDE19_DOC.name} (الموجة 19، حلقة بعقل حقيقي)",
         "strict_solve_pct": strict_rate,
-        "strict_source": f"{WIDE22_DOC.name} (الموجة 22، أول حلّين صارمين بالاسم)",
+        "strict_source": f"{WIDE25_MERGED_DOC.name} (الموجة 25، منقِذ المسار — الدمج الموقّع للعينة كاملة)",
         "applied_patch_pct": applied_rate,
-        "applied_source": f"{WIDE22_DOC.name} (رقع مطبقة فعلاً)",
+        "applied_source": f"{WIDE25_MERGED_DOC.name} (رقع مطبقة فعلاً)",
     }
 
 

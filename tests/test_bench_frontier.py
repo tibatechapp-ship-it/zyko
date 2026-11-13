@@ -17,7 +17,7 @@ from zyko.benchmarks.frontier import (
     EVAL1000_DOC,
     SYNTHLAB_DOC,
     WIDE19_DOC,
-    WIDE22_DOC,
+    WIDE25_MERGED_DOC,
     APPLICABLE_WEIGHTS,
     WEIGHT_SUM,
     read_signed_doc,
@@ -94,7 +94,7 @@ def test_swe_axis_score_matches_declared_formula():
     )
     assert float(swe["score_pct"]) == expected
     sources = json.dumps(swe["sub_metrics"], ensure_ascii=False)
-    assert WIDE19_DOC.name in sources and WIDE22_DOC.name in sources, (
+    assert WIDE19_DOC.name in sources and WIDE25_MERGED_DOC.name in sources, (
         "كل رقم فرعي يفصح بوثيقته الموقّعة"
     )
 
@@ -107,8 +107,8 @@ def test_readers_refuse_missing_documents():
 
 
 def test_signed_documents_present_in_tree():
-    """الوثائق الأربع الموقّعة موجودة في الشجرة — قراءة المحاور لا تتخيلها."""
-    for doc in (WIDE19_DOC, WIDE22_DOC, EVAL1000_DOC, SYNTHLAB_DOC):
+    """الوثائق الموقّعة موجودة في الشجرة — قراءة المحاور لا تتخيلها."""
+    for doc in (WIDE19_DOC, WIDE25_MERGED_DOC, EVAL1000_DOC, SYNTHLAB_DOC):
         assert doc.is_file(), f"وثيقة موقّعة مفقودة: {doc.name}"
         data = json.loads(doc.read_text(encoding="utf-8"))
         assert data, f"وثيقة فارغة: {doc.name}"

@@ -22,13 +22,13 @@
         },
         {
           "name": "الحل الصارم",
-          "source": "swebench_full_wide22_2026-11-13.json (الموجة 22، أول حلّين صارمين بالاسم)",
+          "source": "swebench_full_wide25_merged_2026-11-14.json (الموجة 25، منقِذ المسار — الدمج الموقّع للعينة كاملة)",
           "value_pct": 4.55
         },
         {
           "name": "رقع مطبقة فعلاً",
-          "source": "swebench_full_wide22_2026-11-13.json (رقع مطبقة فعلاً)",
-          "value_pct": 20.45
+          "source": "swebench_full_wide25_merged_2026-11-14.json (رقع مطبقة فعلاً)",
+          "value_pct": 95.45
         }
       ],
       "title_ar": "هندسة البرمجيات",
@@ -128,7 +128,7 @@
       "weight": 0.0
     }
   ],
-  "chain_hash": "fd50105c927413572c6499dbbcbf976fd9547803952d64e3fe71c02d72ddac3e",
+  "chain_hash": "db4242f123fcbf18084f6a2e783054fdf7597dc322227d96bbf54dbb2956e88b",
   "counts": {
     "contract_lab": {
       "correct": 12,
@@ -142,5 +142,5 @@
   "kind": "zyko_frontier_gauge",
   "zfi": 83.64,
   "zfi_formula": "المتوسط الموزون للمحاور القابلة للقياس (الأوزان معلنة، مجموعها 1.0؛ متعدد الوسائط 0.0 معلن)",
-  "zyko_version": "0.47.0"
+  "zyko_version": "0.48.0"
 }
