@@ -329,10 +329,44 @@ def atomic_write_json(path: Path, doc: dict[str, Any]) -> None:
     tmp.replace(path)
 
 
-def resume_plan(instances: tuple[SWEInstance, ...], out_path: Path) -> tuple[SWEInstance, ...]:
+def _case_completed(record: dict) -> bool:
+    """تعريف المكتمل بعقد التنفّس: حالة تُعدّ مكتملة إن طُبِّقت رقعة منها فعلاً.
+
+    سجل بلا رقعة مطبَّقة (اقتراح فارغ خانق، أو رقع رفضها الحرس/الجرّاح قبل
+    التطبيق) = منصرف جزئي — يستحق إعادة جدولة عند ``--retry-incomplete``.
+    """
+    attempts = (record.get("loop") or {}).get("attempts") or []
+    return any(bool(a.get("applied")) for a in attempts)
+
+
+def merge_result(
+    results: list[dict[str, Any]], record: dict[str, Any]
+) -> tuple[list[dict[str, Any]], int]:
+    """دمج سجل حالة في الوثيقة — الاستبدال لا التضاعف (عقد التنفّس، الموجة 23).
+
+    إعادة جدولة منصرف خانق ثم كتابته append كانت ستضاعف السجل ويُعدّه
+    التجميع مرتين؛ العقد: وثيقة واحدة لكل حالة — القياس الأحدث يستبدل
+    السابق، وعدد الاستبدالات معلن في الوثيقة (``loop.retried_records``).
+    يعيد (القائمة الجديدة، عدد السجلات السابقة المستبدلة).
+    """
+    iid = record.get("instance_id")
+    replaced = sum(1 for r in results if r.get("instance_id") == iid)
+    merged = [r for r in results if r.get("instance_id") != iid]
+    merged.append(record)
+    return merged, replaced
+
+
+def resume_plan(
+    instances: tuple[SWEInstance, ...],
+    out_path: Path,
+    retry_incomplete: bool = False,
+) -> tuple[SWEInstance, ...]:
     """خطة الاستكمال: الحالات غير المكتملة فقط — ``--resume`` يكمل حيث توقف.
 
-    مكتمل = سجل في الوثيقة بمحاولات حلقة غير فارغة أو سجل أساس فقط مقصود.
+    مكتمل (الافتراضي) = أي سجل في الوثيقة — سلوك الموجتين 19–22 المحافظ.
+    بـ``--retry-incomplete`` (عقد التنفّس، الموجة 23): المكتمل = حالة طُبِّقت
+    رقعة منها فعلاً — المنصرف الخانق ورفض ما قبل التطبيق يُعاد جدولته عند
+    التعافي، كما يقتضي «بروتوكول التشغيل الثاني المتنفّس» في وثيقة الموجة 22.
     """
     if not out_path.exists():
         return instances
@@ -340,10 +374,16 @@ def resume_plan(instances: tuple[SWEInstance, ...], out_path: Path) -> tuple[SWE
         doc = json.loads(out_path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return instances
-    done = {r["instance_id"] for r in doc.get("results", [])}
+    records = doc.get("results", [])
+    if not retry_incomplete:
+        done = {r["instance_id"] for r in records}
+    else:
+        done = {r["instance_id"] for r in records if _case_completed(r)}
     remaining = tuple(i for i in instances if i.instance_id not in done)
+    replanned = len(records) - len(done)
     print(
-        f"الاستكمال: {len(done)} مكتملة — المتبقي {len(remaining)} من {len(instances)}",
+        f"الاستكمال: {len(done)} مكتملة — المتبقي {len(remaining)} من {len(instances)}"
+        + (f" — أعيد جدولتها {replanned} منصرفة/غير مطبَّقة (عقد التنفّس)" if retry_incomplete else ""),
         file=sys.stderr,
     )
     return remaining
@@ -530,6 +570,11 @@ def main(argv: list[str] | None = None) -> int:
         "--resume", action="store_true", help="اكمل الحالات غير المكتملة في وثيقة موجودة"
     )
     parser.add_argument(
+        "--retry-incomplete",
+        action="store_true",
+        help="مع --resume: المكتمل = طُبِّقت رقعة منها — المنصرف الخانق يُعاد جدولته (عقد التنفّس، الموجة 23)",
+    )
+    parser.add_argument(
         "--ids", type=str, default="", help="قائمة معرفات محدودة بفواصل — تشغيل مقطع موثق"
     )
     parser.add_argument(
@@ -561,7 +606,7 @@ def main(argv: list[str] | None = None) -> int:
 
     out_path = Path(args.out)
     if args.resume:
-        instances = resume_plan(instances, out_path)
+        instances = resume_plan(instances, out_path, retry_incomplete=args.retry_incomplete)
     if not instances:
         print("لا حالات متبقية — وثيقة موجودة تكفي", file=sys.stderr)
         return 0
@@ -609,6 +654,7 @@ def main(argv: list[str] | None = None) -> int:
         gold_map = load_gold_paths(Path(args.gold_paths))
 
     results = list(existing_results)
+    replaced_records = 0
     for index, instance in enumerate(instances, start=1):
         print(f"[{index}/{len(instances)}] {instance.instance_id} …", file=sys.stderr)
         try:
@@ -646,7 +692,8 @@ def main(argv: list[str] | None = None) -> int:
                     "note_ar": "التحضير أُوقِف",
                 },
             }
-        results.append(record)
+        results, replaced_now = merge_result(results, record)
+        replaced_records += replaced_now
         if args.pace_s > 0:
             time.sleep(args.pace_s)
         # كتابة ذرية بعد كل حالة — الانقطاع يفقد شيئاً لا يفسد كل شيء
@@ -670,6 +717,8 @@ def main(argv: list[str] | None = None) -> int:
                 "patch_surgeon": "فحص صياغي محلي قبل git apply وسلّم تطبيق معلن: كاملة ← بالملفات ← بالأجزاء (الموجة 20)",
                 "regression_guard": "رقعة تكسر عقداً ناجحة عند الأساس تُرجع إلى الأساس ورجعيتها تُغذّى للعقل (الموجة 20)",
                 "pace_s": args.pace_s,
+                "retried_records": replaced_records,
+                "retry_contract": "وثيقة واحدة لكل حالة — القياس الأحدث يستبدل المنصرف السابق، والعدد معلن هنا (عقد التنفّس، الموجة 23)",
             },
             results=results,
             planned_total=len(load_instances(data_path)),

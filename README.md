@@ -5,8 +5,8 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.45.0-6366f1)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-3061%20passing-22c55e)](.github/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.46.0-6366f1)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-3072%20passing-22c55e)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Termux-10b981)](.github/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
@@ -19,7 +19,7 @@
 
 > توليد ← مراجعة ← إصلاح ← حارس — من بوابة واحدة، بإيصالات توجيه قابلة للتحقق، وعلى أي منصة.
 
-النسخة **0.45.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
+النسخة **0.46.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
 
 ---
 
@@ -234,11 +234,23 @@ Linux · Windows · macOS · Android/Termux — مصفوفة CI خضراء عل�
 
 ```bash
 pytest -q
-# 3061 passed, 4 skipped  (أرقام التشغيل المرجعي الكامل — بوابة حقيقة الأرقام
+# 3072 passed, 4 skipped  (أرقام التشغيل المرجعي الكامل — بوابة حقيقة الأرقام
 #                          تقرأ junit وتطابق الشارة والسطر آليًا؛ التخطيات
 #                          بيئية موثقة: نواة بلا Landlock/bwrap، ومزودات
 #                          شبكة بلا مفاتيح، وويندوز بلا preexec)
 ```
+
+## النشر فوق منصات البرمجة
+
+zyko يعمل فوق كل شيء يعمل — والجاهزية تُقاس لا تُدَّعى (`zyko doctor` يقيس
+الأصول من الشجرة):
+
+- **GitHub** — CI أخضر + نشر PyPI عبر Trusted Publisher + Pages + حاوية Docker.
+- **Hugging Face Spaces** — Space Docker يشغّل البوابة المتوافقة مع OpenAI على 7860، بلا مفاتيح من أول لحظة (`deploy/huggingface/`).
+- **Vercel** — دالة Serverless ASGI بلا أطر فوق الموجّه، اعتماديتان إلزاميتان فقط (`deploy/vercel/`).
+- **LobeChat** — بوابة zyko كمزوّد OpenAI مخصص + إضافة `zykoAsk` (`deploy/lobe/`).
+
+الدليل الكامل خطوة بخطوة: [docs/PLATFORMS.md](docs/PLATFORMS.md).
 
 ---
 

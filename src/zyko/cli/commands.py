@@ -1080,6 +1080,15 @@ def cmd_doctor(args: Any) -> int:
             "bridge spans to Langfuse/Tempo/Jaeger/Collector)"
         )
     print()
+    print(bold("Deployment targets"))
+    try:
+        from zyko.platform.deploy import deployment_report, format_report_lines
+
+        for line in format_report_lines(deployment_report()):
+            print(line)
+    except Exception as exc:  # doctor لا يسقط أبداً على فجوة قياس
+        print(ui.warn(f"deployment targets not measurable: {exc}"))
+    print()
     print(ui.ok("doctor finished"))
     return 0
 

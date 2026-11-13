@@ -1,0 +1,4 @@
+# اعتماديات دالة Vercel — zyko نفسها فقط (اعتماديتاها الإلزاميتان httpx و PyYAML تُسحبان تلقائياً).
+# يُبنى من فرع main افتراضياً؛ للتكرار الصارم ثبّت وسم إصدار بعد نشره:
+#   zyko @ git+https://github.com/tibatechapp-ship-it/zyko.git@v0.46.0
+zyko @ git+https://github.com/tibatechapp-ship-it/zyko.git

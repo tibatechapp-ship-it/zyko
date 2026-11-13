@@ -1,0 +1,27 @@
+{
+  "identifier": "zyko-agent",
+  "version": "1",
+  "type": "default",
+  "meta": {
+    "title": "ZYKO Agent",
+    "description": "الوكيل الحتمي zyko: توجيه بمزوّدات متعددة، سياسة صريحة، إيصال قرار قابل للتحقق — عبر بوابة متوافقة مع OpenAI تشغّلها بنفسك.",
+    "tags": ["agent", "coding", "routing", "policy"]
+  },
+  "api": [
+    {
+      "name": "zykoAsk",
+      "description": "اسأل الوكيل الحتمي zyko — يجيب بإجابة موجّهة بالسياسة ويحمل إيصال التوجيه (المزوّد المختار والسبب).",
+      "url": "https://REPLACE-WITH-YOUR-ZYKO-GATEWAY/v1/chat/completions",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "السؤال أو مهمة البرمجة المطلوبة من zyko"
+          }
+        },
+        "required": ["prompt"]
+      }
+    }
+  ]
+}

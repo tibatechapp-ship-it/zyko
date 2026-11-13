@@ -19,6 +19,7 @@ from zyko.benchmarks.runner import (
     assemble_doc,
     atomic_write_json,
     chain_hash_of,
+    merge_result,
     prep_commands_for_instance,
     prepare_worktree,
     remove_worktree,
@@ -280,11 +281,83 @@ def test_resume_missing_doc_returns_all(tmp_path):
     assert resume_plan(instances, tmp_path / "absent.json") == instances
 
 
+def test_merge_result_replaces_not_duplicates():
+    """عقد التنفّس: القياس الأحدث يستبدل سجل الحالة — لا تضاعف في التجميع."""
+    first = {"instance_id": "psf__requests-1", "loop": {"attempts": []}}
+    again = {"instance_id": "psf__requests-1", "loop": {"attempts": [{"applied": True}]}}
+    other = {"instance_id": "psf__requests-2", "loop": {"attempts": []}}
+
+    merged, replaced = merge_result([first, other], again)
+    assert replaced == 1
+    assert len(merged) == 2
+    assert [r["instance_id"] for r in merged] == ["psf__requests-2", "psf__requests-1"]
+    assert merged[-1]["loop"]["attempts"][0]["applied"] is True
+
+    # الحالة الغائبة تُضاف بلا استبدال
+    fresh = {"instance_id": "psf__requests-3", "loop": {"attempts": []}}
+    merged2, replaced2 = merge_result(merged, fresh)
+    assert replaced2 == 0 and len(merged2) == 3
+
+
+def test_resume_retry_incomplete_replans_unapplied(tmp_path):
+    """عقد التنفّس (الموجة 23): المكتمل = طُبِّقت رقعة منها — المنصرف الخانق يُعاد جدولته.
+
+    وثيقة خانقة: حالة مطبَّقة + حالة منصرفة (بلا رقعة مطبَّقة) + حالة غائبة.
+    ``--retry-incomplete`` يعيد المنصرفة والغائبة ويكمل المطبَّقة؛
+    والافتراضي يحافظ على سلوك الموجتين 19–22 (أي سجل = مكتمل).
+    """
+    out = tmp_path / "doc.json"
+    instances = load_instances(FULL)[:3]
+    doc = assemble_doc(
+        protocol="p",
+        data={"s": "1"},
+        model_label="m",
+        model_served_by="b",
+        httpbin="h",
+        python_env="3.9",
+        loop={"x": 1},
+        results=[
+            dict(_sample_result(True), instance_id=instances[0].instance_id),
+            dict(_sample_result(False), instance_id=instances[1].instance_id),
+        ],
+        planned_total=44,
+    )
+    atomic_write_json(out, doc)
+
+    remaining_default = resume_plan(instances, out)
+    assert [i.instance_id for i in remaining_default] == [instances[2].instance_id]
+
+    remaining_breathing = resume_plan(instances, out, retry_incomplete=True)
+    assert [i.instance_id for i in remaining_breathing] == [
+        instances[1].instance_id,
+        instances[2].instance_id,
+    ]
+
+
 def test_runner_script_exists_and_is_thin_wrapper():
     """الغلاف الموصى به في PROTOCOL حقيقي متعقّب — ثغرة القابلية للإعادة سدّت."""
     assert RUNNER_SCRIPT.is_file()
     source = RUNNER_SCRIPT.read_text(encoding="utf-8")
     assert "from zyko.benchmarks.runner import main" in source
+
+
+def test_breathing_bridge_is_tracked_with_its_contract():
+    """الجسر المتنفّس متتبَّع بعقده الثلاثة — ثغرة الموجة 22 (سكربت غير متتبَّع ضاع) سُدّت."""
+    root = Path(__file__).resolve().parents[1]
+    bridge = root / "scripts" / "bridge.mjs"
+    assert bridge.is_file(), "الجسر متتبَّع في المستودع لا سكربتاً ضائعاً"
+    source = bridge.read_text(encoding="utf-8")
+    # العقد الثلاثة الموثقة في docs/SWEBENCH_WAVE22 §3 موجودة بالنص لا بالادعاء
+    assert "single-flight" in source or "طيران واحد" in source
+    assert "BRIDGE_MIN_INTERVAL_MS" in source
+    assert "429" in source
+    # سجل الجسر JSONL — مصدر التشخيص المعتمد
+    assert "bridge_log" in source
+    chunk = root / "scripts" / "run_wave23_chunk.sh"
+    assert chunk.is_file(), "غلاف التشغيلة المتنفّسة متتبَّع"
+    chunk_source = chunk.read_text(encoding="utf-8")
+    assert "--pace-s" in chunk_source and "--resume" in chunk_source
+    assert "--retry-incomplete" in chunk_source, "عقد التنفّس في الغلاف: المنصرف يُعاد جدولته"
 
 
 def test_runner_module_help():
