@@ -78,10 +78,10 @@
   },
   "recorded": {
     "date": "2026-11-13",
-    "generated_utc": "2026-11-13T02:27:56Z",
+    "generated_utc": "2026-11-13T07:07:04Z",
     "platform": "Linux",
     "python": "3.12.16",
-    "zyko_version": "0.42.0"
+    "zyko_version": "0.43.0"
   },
   "target": {
     "bytes": 41462,

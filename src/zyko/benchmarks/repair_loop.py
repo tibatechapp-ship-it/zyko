@@ -38,12 +38,12 @@ import subprocess
 from dataclasses import dataclass
 from typing import Any, Callable
 
+from zyko.benchmarks.patch_surgeon import apply_tolerant, revert_candidate
 from zyko.benchmarks.swebench import (
     DEFAULT_TIMEOUT_S,
     SWEInstance,
     SWEVerdict,
     _sha16,
-    apply_candidate,
     build_choice_request,
     build_diff_request,
     check_patch_contract,
@@ -64,6 +64,7 @@ __all__ = [
     "feedback_from_apply_error",
     "feedback_from_contract",
     "feedback_from_failed_tests",
+    "feedback_from_regression",
 ]
 
 # الميزانيات المعلنة — لا سقف خفي ولا نهاية مفتوحة
@@ -76,6 +77,9 @@ Runner = Callable[..., Any]
 _APPLY_FEEDBACK_TITLE_AR = "رجعية التطبيق — رقعتك السابقة رفضها git apply، صحّح الصيغة الموحدة كاملة"
 _TESTS_FEEDBACK_TITLE_AR = "رجعية الاختبارات — عقد FAIL_TO_PASS ما زال فاشلاً بعد رقعتك"
 _CONTRACT_FEEDBACK_TITLE_AR = "رجعية الحرس — رقعتك خرقت عقداً معلناً"
+_REGRESSION_FEEDBACK_TITLE_AR = (
+    "رجعية التراجع — رقعتك كسرت عقداً PASS_TO_PASS كانت ناجحة عند الأساس، وأُرجِعت"
+)
 
 
 def feedback_from_apply_error(error_ar: str) -> str:
@@ -94,6 +98,25 @@ def feedback_from_failed_tests(failed_ids: tuple[str, ...]) -> str:
     return f"{_TESTS_FEEDBACK_TITLE_AR}:\n{listed}"
 
 
+def feedback_from_regression(
+    broken_ids: tuple[str, ...], reverted: bool, revert_reason_ar: str = ""
+) -> str:
+    """رجعية حرس التراجع (الموجة 20): العقد المكسورة + مصير الرقعة حرفياً.
+
+    درس العينة الواسعة: 7 حالات كسرت عقداً ناجحة عند الأساس وبقيت
+    الرقعة على الشجرة فتكدّس التراجع في المحاولات التالية. هنا الرقعة
+    تُرجَع إلى الأساس والرجعية تصرّح بذلك — العقل يعرف أن شجرته نظيفة
+    وأن عليه إصلاح الفشل دون كسر الناجح.
+    """
+    listed = "\n".join(sorted(broken_ids)[:12]) or "(لا تفاصيل)"
+    fate = (
+        "الشجرة أُرجِعت إلى الأساس — ابدأ من نظيف ولا تكسر الناجح"
+        if reverted
+        else f"تعذّر الإرجاع الآلي: {revert_reason_ar or 'سبب غير معروف'}"
+    )
+    return f"{_REGRESSION_FEEDBACK_TITLE_AR}:\nالعقد المكسورة:\n{listed}\n{fate}"
+
+
 @dataclass(frozen=True)
 class LoopAttempt:
     """محاولة واحدة داخل الحلقة — كل ما جرى بالبايت."""
@@ -107,6 +130,8 @@ class LoopAttempt:
     applied: bool
     apply_error_ar: str | None
     stop_reason_ar: str  # لماذا واصلت أو انصرفت بعد هذه المحاولة
+    apply_mode: str = ""  # الموجة 20: كاملة / بالملفات / بالأجزاء — الوضع المعلن
+    reverted: bool = False  # الموجة 20: حرس التراجع أرجع الرقعة بعد القياس
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -119,6 +144,8 @@ class LoopAttempt:
             "applied": self.applied,
             "apply_error_ar": self.apply_error_ar,
             "stop_reason_ar": self.stop_reason_ar,
+            "apply_mode": self.apply_mode,
+            "reverted": self.reverted,
         }
 
 
@@ -339,7 +366,19 @@ class RepairLoop:
                 )
                 continue
 
-            applied, apply_reason = apply_candidate(workdir, patch, runner)
+            # الموجة 20: سلّم التطبيق المعلن — فحص صياغي محلي ثم كاملة ←
+            # بالملفات ← بالأجزاء؛ الوضع الجزئي موثق بالأجزاء لا مطموس،
+            # والفشل الكلي يحمل سبب git وأخطاء الصياغة معاً في رجعية واحدة
+            tol = apply_tolerant(workdir, patch, runner)
+            applied = tol.applied
+            apply_reason: str | None = None if applied else tol.reason_ar
+            if not applied and tol.syntax_errors:
+                apply_reason = (
+                    "فشل الفحص الصياغي: "
+                    + " | ".join(tol.syntax_errors)[:400]
+                    + " — "
+                    + (tol.reason_ar or "")
+                ).rstrip(" —")
             if not applied:
                 feedback = feedback_from_apply_error(apply_reason)
                 attempts.append(
@@ -355,6 +394,7 @@ class RepairLoop:
                         stop_reason_ar="نهاية الميزانية — التطبيق فشل"
                         if last
                         else "متابعة — رجعية التطبيق بُنيت",
+                        apply_mode=tol.mode_ar,
                     )
                 )
                 continue
@@ -390,6 +430,18 @@ class RepairLoop:
                 contract_reason_ar=reason,
                 attempts_note_ar=f"الحلقة طبّقت عند المحاولة {index}",
             )
+            # الموجة 20: حرس التراجع — رقعة كسرت عقداً ناجحة عند الأساس
+            # تُرجَع عكسياً إلى الأساس قبل المحاولة التالية، ورجعيتها تصرّح
+            # بالمكسور ومصير الشجرة. درس multiplan «الصفقة تُرجع بالبايت»
+            # وصل للحلقة العامة: لا تراكم تراجع على شجرة مكسورة.
+            new_regressions = tuple(sorted(set(p2p_after_failed) - set(base_p2p)))
+            resolved = verdict.resolved_env or verdict.resolved_strict
+            reverted = False
+            revert_reason_ar = ""
+            if new_regressions and not resolved and not verdict.runs_error_ar:
+                reverted, revert_reason_ar = revert_candidate(
+                    workdir, patch, runner, tol.applied_subpatches
+                )
             attempts.append(
                 LoopAttempt(
                     index=index,
@@ -400,21 +452,30 @@ class RepairLoop:
                     contract_reason_ar=reason,
                     applied=True,
                     apply_error_ar=None,
-                    stop_reason_ar="انصراف — حلّ"
-                    if (verdict.resolved_env or verdict.resolved_strict)
-                    else "متابعة — رجعية الاختبارات بُنيت",
+                    stop_reason_ar=(
+                        "انصراف — حلّ"
+                        if resolved
+                        else "متابعة — حرس التراجع أرجع الرقعة وبنى رجعيتها"
+                        if new_regressions
+                        else "متابعة — رجعية الاختبارات بُنيت"
+                    ),
+                    apply_mode=tol.mode_ar,
+                    reverted=reverted,
                 )
             )
 
-            if verdict.resolved_env or verdict.resolved_strict:
+            if resolved:
                 break
             if verdict.runs_error_ar:
                 break
             if last:
                 break
-            feedback = feedback_from_failed_tests(
-                verdict.f2p_failed_after or tuple(after.failed_ids)
-            )
+            if new_regressions:
+                feedback = feedback_from_regression(new_regressions, reverted, revert_reason_ar)
+            else:
+                feedback = feedback_from_failed_tests(
+                    verdict.f2p_failed_after or tuple(after.failed_ids)
+                )
 
         return self._result(instance, attempts, verdict, choices)
 

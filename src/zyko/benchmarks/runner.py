@@ -52,6 +52,7 @@ from zyko.benchmarks.repair_loop import (
     MAX_FILES_DEFAULT,
     RepairLoop,
 )
+from zyko.benchmarks.selection import DEFAULT_GOLD_PATHS, load_gold_paths, selection_accuracy
 from zyko.benchmarks.swebench import (
     SWEBrain,
     SWEInstance,
@@ -247,6 +248,16 @@ def aggregate_loop_results(results: list[dict[str, Any]]) -> dict[str, Any]:
         for v in verdicts
     )
     applied_count = sum(1 for v in verdicts if v["patch_applied"])
+    # الموجة 20: حرس التراجع والسلّم المتسامح يُحتسبان من الإيصالات — لا صمت
+    reverted_count = sum(
+        1 for r in results for a in r["loop"]["attempts"] if a.get("reverted", False)
+    )
+    partial_applies = sum(
+        1
+        for r in results
+        for a in r["loop"]["attempts"]
+        if a["applied"] and a.get("apply_mode", "") not in ("", "كاملة")
+    )
     contract_rejections = sum(
         1
         for r in results
@@ -265,6 +276,8 @@ def aggregate_loop_results(results: list[dict[str, Any]]) -> dict[str, Any]:
         "applied_count": applied_count,
         "contract_rejections": contract_rejections,
         "gate_rejections": gate_rejections,
+        "reverted_count": reverted_count,
+        "partial_applies": partial_applies,
         "base_only_count": base_only,
         "resolve_rate_env": round(resolved_env / total, 4) if total else 0.0,
     }
@@ -525,6 +538,12 @@ def main(argv: list[str] | None = None) -> int:
         default=0.0,
         help="ثوانٍ انتظار بين الحالات — تخفيف ضغط حصص النقاط العابرة (معلن في الوثيقة)",
     )
+    parser.add_argument(
+        "--gold-paths",
+        type=str,
+        default=str(DEFAULT_GOLD_PATHS),
+        help="ملف مسارات الرقعة الذهبية (المسارات حصراً بلا محتوى) — مسطرة دقة الاختيار بعد الجولة حصراً، لا يصل للعقل",
+    )
     args = parser.parse_args(argv)
 
     data_path = Path(args.data)
@@ -573,7 +592,7 @@ def main(argv: list[str] | None = None) -> int:
     protocol = (
         "SWE-bench (psf/requests) — قياس أساس فقط، التوسع من 6 إلى 44 حالة (الموجة 19)"
         if args.base_only
-        else f"SWE-bench (psf/requests) — عقل حقيقي داخل حلقة تلقيم الفشل + خريطة دلالية — التوسع من 6 إلى 44 حالة (الموجة 19، بروتوكول {args.protocol})"
+        else f"SWE-bench (psf/requests) — عقل حقيقي داخل حلقة تلقيم الفشل + خريطة دلالية + جرّاح صياغي وحرس تراجع (الموجة 20، بروتوكول {args.protocol})"
     )
 
     # الوثيقة موجودة من تشغيل سابق؟ نستكمل نتائجها لا نستبدلها.
@@ -584,6 +603,10 @@ def main(argv: list[str] | None = None) -> int:
             existing_results = list(prior.get("results", []))
         except (json.JSONDecodeError, OSError):
             existing_results = []
+
+    gold_map = None
+    if Path(args.gold_paths).exists():
+        gold_map = load_gold_paths(Path(args.gold_paths))
 
     results = list(existing_results)
     for index, instance in enumerate(instances, start=1):
@@ -644,11 +667,17 @@ def main(argv: list[str] | None = None) -> int:
                 "feedback": "خطأ التطبيق ورفض الحرس وعقد FAIL_TO_PASS الفاشلة تُغذّى للعقل",
                 "repo_map": "خريطة دلالية (رموز كل ملف) ملحقة بطلب اختيار الملف",
                 "transport_retries": "النقل الافتراضي يعاد 3 مرات بتراجع 2s على الأخطاء العابرة (الموجة 19)",
+                "patch_surgeon": "فحص صياغي محلي قبل git apply وسلّم تطبيق معلن: كاملة ← بالملفات ← بالأجزاء (الموجة 20)",
+                "regression_guard": "رقعة تكسر عقداً ناجحة عند الأساس تُرجع إلى الأساس ورجعيتها تُغذّى للعقل (الموجة 20)",
                 "pace_s": args.pace_s,
             },
             results=results,
             planned_total=len(load_instances(data_path)),
         )
+        # الموجة 20: مسطرة دقة الاختيار — قياس بعد الجولة على المسارات الذهبية
+        # (المسارات حصراً بلا محتوى، ولا تصل للعقل أبداً) — والبصمة تُعاد فوقها
+        doc["selection"] = selection_accuracy(results, gold_map).to_dict()
+        doc["chain_hash"] = chain_hash_of(doc)
         atomic_write_json(out_path, doc)
         loop_verdict = record.get("loop", {}).get("verdict") if record.get("loop") else None
         if loop_verdict:

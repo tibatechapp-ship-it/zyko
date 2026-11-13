@@ -1,0 +1,170 @@
+{
+  "source": "princeton-nlp/SWE-bench (test split) — datasets-server /rows، يوم 2026-11-13",
+  "purpose": "مسطرة دقة اختيار الملف (الموجة 20) — للقياس بعد الجولة حصراً",
+  "honesty_ar": "مسارات الرقعة الذهبية فقط — لا سطر من محتوى الرقعة. لا تُلحق بطلب العقل ولا تمر عبر البوابات؛ تُقرأ بعد انتهاء الجولة لتقيس دقة اختيار الملف (zyko.benchmarks.selection)",
+  "repo_filter": "psf/requests",
+  "gold_patch_excluded": true,
+  "count": 44,
+  "instances": {
+    "psf__requests-1142": [
+      "requests/models.py"
+    ],
+    "psf__requests-1327": [
+      "requests/sessions.py"
+    ],
+    "psf__requests-1339": [
+      "requests/structures.py",
+      "requests/utils.py"
+    ],
+    "psf__requests-1376": [
+      "requests/models.py"
+    ],
+    "psf__requests-1537": [
+      "requests/models.py"
+    ],
+    "psf__requests-1635": [
+      "requests/cookies.py",
+      "requests/models.py",
+      "requests/sessions.py"
+    ],
+    "psf__requests-1657": [
+      "requests/sessions.py"
+    ],
+    "psf__requests-1689": [
+      "requests/models.py"
+    ],
+    "psf__requests-1713": [
+      "requests/cookies.py",
+      "requests/sessions.py"
+    ],
+    "psf__requests-1724": [
+      "requests/sessions.py"
+    ],
+    "psf__requests-1733": [
+      "requests/models.py"
+    ],
+    "psf__requests-1766": [
+      "requests/auth.py"
+    ],
+    "psf__requests-1768": [
+      "requests/utils.py"
+    ],
+    "psf__requests-1776": [
+      "requests/auth.py",
+      "requests/models.py",
+      "requests/sessions.py"
+    ],
+    "psf__requests-1888": [
+      "requests/sessions.py"
+    ],
+    "psf__requests-1921": [
+      "requests/sessions.py"
+    ],
+    "psf__requests-1944": [
+      "requests/adapters.py",
+      "requests/sessions.py"
+    ],
+    "psf__requests-1962": [
+      "requests/sessions.py"
+    ],
+    "psf__requests-1963": [
+      "requests/sessions.py"
+    ],
+    "psf__requests-2148": [
+      "requests/models.py"
+    ],
+    "psf__requests-2153": [
+      "requests/compat.py",
+      "requests/models.py"
+    ],
+    "psf__requests-2193": [
+      "requests/adapters.py"
+    ],
+    "psf__requests-2317": [
+      "requests/sessions.py"
+    ],
+    "psf__requests-2393": [
+      "requests/utils.py"
+    ],
+    "psf__requests-2413": [
+      "requests/compat.py",
+      "requests/utils.py"
+    ],
+    "psf__requests-2466": [
+      "requests/packages/__init__.py"
+    ],
+    "psf__requests-2617": [
+      "requests/models.py",
+      "requests/sessions.py"
+    ],
+    "psf__requests-2674": [
+      "requests/adapters.py"
+    ],
+    "psf__requests-2678": [
+      "requests/adapters.py",
+      "requests/auth.py",
+      "requests/packages/__init__.py",
+      "requests/packages/urllib3/__init__.py",
+      "requests/packages/urllib3/connection.py",
+      "requests/packages/urllib3/connectionpool.py",
+      "requests/packages/urllib3/contrib/appengine.py",
+      "requests/packages/urllib3/contrib/pyopenssl.py",
+      "requests/packages/urllib3/exceptions.py",
+      "requests/packages/urllib3/poolmanager.py",
+      "requests/packages/urllib3/request.py",
+      "requests/packages/urllib3/response.py",
+      "requests/packages/urllib3/util/connection.py",
+      "requests/packages/urllib3/util/response.py",
+      "requests/packages/urllib3/util/retry.py",
+      "requests/packages/urllib3/util/ssl_.py"
+    ],
+    "psf__requests-2754": [
+      "requests/sessions.py",
+      "requests/utils.py"
+    ],
+    "psf__requests-2821": [
+      "requests/models.py",
+      "requests/sessions.py"
+    ],
+    "psf__requests-2873": [
+      "requests/utils.py"
+    ],
+    "psf__requests-2931": [
+      "requests/models.py"
+    ],
+    "psf__requests-3362": [
+      "requests/utils.py"
+    ],
+    "psf__requests-3718": [
+      "requests/models.py"
+    ],
+    "psf__requests-3738": [
+      "requests/models.py"
+    ],
+    "psf__requests-4106": [
+      "requests/packages.py"
+    ],
+    "psf__requests-4356": [
+      "requests/adapters.py",
+      "requests/exceptions.py"
+    ],
+    "psf__requests-4718": [
+      "requests/sessions.py"
+    ],
+    "psf__requests-5087": [
+      "requests/models.py"
+    ],
+    "psf__requests-5414": [
+      "requests/models.py"
+    ],
+    "psf__requests-6028": [
+      "requests/utils.py"
+    ],
+    "psf__requests-774": [
+      "requests/models.py"
+    ],
+    "psf__requests-863": [
+      "requests/models.py"
+    ]
+  }
+}

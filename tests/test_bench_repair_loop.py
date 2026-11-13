@@ -21,6 +21,7 @@ from zyko.benchmarks.repair_loop import (
     feedback_from_apply_error,
     feedback_from_contract,
     feedback_from_failed_tests,
+    feedback_from_regression,
 )
 from zyko.benchmarks.swebench import SWEInstance
 
@@ -205,6 +206,58 @@ def test_loop_switches_file_when_feedback_points_elsewhere(mini_repo):
     loop = RepairLoop(choice, diff)
     result = loop.run(_instance(), mini_repo, "python3", runner=_tree_runner())
     assert result.file_choices == ("src.py", "alt.py")
+
+
+BREAKING_PATCH = (
+    "--- a/src.py\n+++ b/src.py\n@@ -1 +1 @@\n-value = 1\n+value = 2\n"
+    "--- a/alt.py\n+++ b/alt.py\n@@ -1 +1 @@\n-alt = 1\n+alt = 9"
+)
+
+
+def test_regression_guard_reverts_and_feeds_back(mini_repo):
+    """الموجة 20 — سيناريو العينة الواسعة الحرفي (7 حالات كسرت عقداً
+    ناجحة عند الأساس): رقعة تصلح عقدة FAIL_TO_PASS وتكسر عقدة
+    PASS_TO_PASS ناجحة عند الأساس → تُرجَع إلى الأساس → رجعيتها تصرّح
+    بالمكسور ومصير الشجرة → المحاولة التالية تبدأ من نظيف فتحلّ."""
+    # عقدة P2P ناجحة عند الأساس على ملف آخر
+    (mini_repo / "test_alt.py").write_text(
+        "def test_alt():\n    from alt import alt\n    assert alt == 1\n",
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "add", "."], cwd=mini_repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "alt test"], cwd=mini_repo, check=True)
+
+    choice = CannedBrain(["src.py", "src.py"])
+    diff = CannedBrain([BREAKING_PATCH, GOOD_PATCH])
+    loop = RepairLoop(choice, diff)
+    instance = _instance(pass_to_pass=("test_alt.py::test_alt",))
+    result = loop.run(instance, mini_repo, "python3", runner=_tree_runner())
+
+    first = result.attempts[0]
+    assert first.applied and first.apply_mode == "كاملة"
+    assert first.reverted is True
+    assert first.stop_reason_ar == "متابعة — حرس التراجع أرجع الرقعة وبنى رجعيتها"
+    # الحل تحقق من شجرة نظيفة عند المحاولة الثانية — لا تراكم تراجع
+    assert result.resolved_env
+    assert [a.reverted for a in result.attempts] == [True, False]
+    # رجعية التراجع وصلت للعقل: العقدة المكسورة ومصير الشجرة حرفياً
+    assert "test_alt.py::test_alt" in choice.calls[1]
+    assert "أُرجِعت" in choice.calls[1]
+    # الشجرة على الأساس في النهاية — الإصلاح النهائي هو رقعة المحاولة الثانية
+    assert (mini_repo / "src.py").read_text(encoding="utf-8") == "value = 2\n"
+    assert (mini_repo / "alt.py").read_text(encoding="utf-8") == "alt = 1\n"
+
+
+def test_regression_feedback_builder_is_deterministic():
+    f1 = feedback_from_regression(("z::c", "a::x"), reverted=True)
+    assert f1.splitlines()[2:] == [
+        "a::x",
+        "z::c",
+        "الشجرة أُرجِعت إلى الأساس — ابدأ من نظيف ولا تكسر الناجح",
+    ]
+    f2 = feedback_from_regression(("a::x",), reverted=False, revert_reason_ar="سبب")
+    assert "تعذّر الإرجاع الآلي: سبب" in f2
+    assert f1 == feedback_from_regression(("z::c", "a::x"), reverted=True)
 
 
 def test_gate_rejection_terminates_with_documentation(mini_repo):

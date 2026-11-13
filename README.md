@@ -5,8 +5,8 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.42.0-6366f1)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-2991%20passing-22c55e)](.github/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.43.0-6366f1)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-3015%20passing-22c55e)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Termux-10b981)](.github/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
@@ -19,7 +19,7 @@
 
 > توليد ← مراجعة ← إصلاح ← حارس — من بوابة واحدة، بإيصالات توجيه قابلة للتحقق، وعلى أي منصة.
 
-النسخة **0.42.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
+النسخة **0.43.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
 
 ---
 
@@ -195,6 +195,17 @@ python3 scripts/run_swebench_lite.py --out /tmp/wide.json
 #    التوثيق الكامل: docs/SWEBENCH_FULL_2026-11-13.md
 ```
 
+**الجرّاح الصياغي وحرس التراجع ومسطرة الاختيار (0.43.0):** أهداف وثيقة
+العينة الواسعة §5 تصير عقودًا — فحص صياغي محلي وسلّم تطبيق معلن
+(كاملة ← بالملفات ← بالأجزاء) يكتشف أن git يُلزم الجزء عديم السياق
+اللاحق أن يمتد إلى نهاية الملف فينقذ الأجزاء بعلم معلن
+(`--unidiff-zero`)، وحرس تراجع يرجع الرقعة الكسّارة عقدًا ناجحة عند
+الأساس قبل المحاولة التالية، ومسطرة دقة اختيار تقاس بمقارنة المسارات
+المختارة بالذهبية (مسارات حصراً بلا محتوى — لا تصل للعقل) على وثيقة
+الموجة 19 نفسها: **إصابة 74.42% ومتوسط دقة 93.75% و11 إخفاقًا مسماة** —
+والرقم مرساة اختبار تُقارن عليها كل جولة قادمة (نمط الإخفاق: جوار
+دلالي — api.py بدل models.py).
+
 ---
 
 ## المنصات والاختبارات
@@ -203,7 +214,7 @@ Linux · Windows · macOS · Android/Termux — مصفوفة CI خضراء عل�
 
 ```bash
 pytest -q
-# 2991 passed, 22 skipped  (أرقام التشغيل المرجعي الكامل — بوابة حقيقة الأرقام
+# 3015 passed, 22 skipped  (أرقام التشغيل المرجعي الكامل — بوابة حقيقة الأرقام
 #                          تقرأ junit وتطابق الشارة والسطر آليًا؛ التخطيات
 #                          بيئية موثقة: نواة بلا Landlock/bwrap، ومزودات
 #                          شبكة بلا مفاتيح، وويندوز بلا preexec)
