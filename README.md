@@ -5,8 +5,8 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.40.0-6366f1)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-2834%20passing-22c55e)](.github/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.41.0-6366f1)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-2871%20passing-22c55e)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Termux-10b981)](.github/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
@@ -19,7 +19,7 @@
 
 > توليد ← مراجعة ← إصلاح ← حارس — من بوابة واحدة، بإيصالات توجيه قابلة للتحقق، وعلى أي منصة.
 
-النسخة **0.40.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
+النسخة **0.41.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
 
 ---
 
@@ -174,6 +174,15 @@ PYTHONPATH=src python3 -m zyko.benchmarks.synthlab --run
 
 الأحكام الخمسة صادقة: `synthesized` / `exhausted` (برهان غياب داخل الصنف) / `budget` (غير مكتمل بصدق) / `invalid_spec` / `unverifiable`. التوثيق الكامل: [docs/SYNTH.md](docs/SYNTH.md).
 
+**محرك الترقيع متعدد الملفات (0.41.0):** إعادة تسمية رمز عبر مستودع كامل بالعقود لا بالادعاء — الاستكشاف يرى بالشجرة (AST لا نص، فالسلاسل والتعليقات ليست مراجع)، والمخطِّط يرفض الغموض (تعريف مزدوج، اسم ملتقط، استيراد خارجي، اسم جديد مصادم)، والتنفيذ **صفقة**: لقطة قبل أي كتابة، وتحقق صياغة من القرص، وتحقق تغطية بمسح جديد، وأي خرق يُرجع بالبايت:
+
+```bash
+PYTHONPATH=src python3 -m zyko.coder.multiplan scan --root ./ممشى --symbol calc
+PYTHONPATH=src python3 -m zyko.coder.multiplan rename --root ./ممشى --symbol calc --new-name compute   # عرض بلا كتابة
+PYTHONPATH=src python3 -m zyko.benchmarks.multilab
+# 9/9 حالة ناجحة — بصمة السلسلة: 86da0c3e88ca0e58…
+```
+
 ---
 
 ## المنصات والاختبارات
@@ -182,11 +191,10 @@ Linux · Windows · macOS · Android/Termux — مصفوفة CI خضراء عل�
 
 ```bash
 pytest -q
-# 2834 passed, 4 skipped  (أرقام ساق metrics-truth — البوابة المرجعية:
-#                          ضاد مثبتة فتخطياتها الـ12 أُغلقت، والشبكة حاضرة
-#                          فمزوداتها تعمل، والحبس تحت bwrap فأدوات الجلسة
-#                          تُقاس فعلاً — والـ4 الباقية تخطيات نواتي موثقة:
-#                          kernel-jail يختبر landlock تحديداً وbwrap ليس landlock)
+# 2871 passed, 22 skipped  (أرقام التشغيل المحلي الكامل — بوابة حقيقة الأرقام
+#                          تقرأ junit وتطابق الشارة والسطر آليًا؛ التخطيات
+#                          الـ22 بيئية موثقة: نواة بلا Landlock/bwrap، ومزودات
+#                          شبكة بلا مفاتيح، وويندوز بلا preexec)
 ```
 
 ---
