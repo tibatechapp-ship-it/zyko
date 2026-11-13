@@ -128,12 +128,17 @@ def test_symbol_summary_sorted_with_signatures():
 
 
 def test_repo_map_deterministic_and_symbolic(tmp_path):
+    """مرساة جولة 11 مرقّاة بالموجة 21 (CHANGELOG 0.44.0): أعضاء الأصناف
+    تدخل التوقيع باسمهم الكامل — ``Response.__init__`` جزء من سطر الملف
+    لا ضيف مخفي، والحتمية بالبايت كما كانت."""
     repo = _make_repo(tmp_path)
     lines1 = build_repo_map(repo)
     lines2 = build_repo_map(repo)
     assert lines1 == lines2  # حتمية بالبايت
     text = "\n".join(lines1)
-    assert "models.py :: class Response" in text
+    assert "models.py :: " in text
+    assert "class Response" in text
+    assert "Response.__init__(a)" in text  # عضو الصنف باسمه الكامل (الموجة 21)
     assert "def ok(self)" in text
     assert "async def fetch(url, *, timeout)" in text
     assert "class AuthError" in text
@@ -141,11 +146,16 @@ def test_repo_map_deterministic_and_symbolic(tmp_path):
     assert "empty_symbols.py :: بلا رموز مستوى أعلى" in text
 
 
-def test_repo_map_empty_without_git(tmp_path):
+def test_repo_map_walks_without_git(tmp_path):
+    """تعديل الموجة 21 الموثق (CHANGELOG 0.44.0): بلا git كانت الخريطة
+    فارغة معلنة () — صارت تُمشى على القرص بقائمة التجاهل المعلنة، فالخريطة
+    تعمل على أي شجرة ملفات (تنزيل Hugging Face، أرشيف مُفكوك) لا على
+    المستودع المثالي فقط. المصدر تغيّر ووصف الملفات نفسه لا يتغير."""
     plain = tmp_path / "no-git"
     plain.mkdir()
-    (plain / "x.py").write_text("a = 1\n", encoding="utf-8")
-    assert build_repo_map(plain) == ()  # لا git ⇒ خريطة فارغة معلنة
+    (plain / "x.py").write_text("def solve(url): pass\n", encoding="utf-8")
+    lines = build_repo_map(plain)
+    assert lines == ("x.py :: def solve(url)",)  # مسح قرص معلن بالسقوف نفسها
 
 
 def test_repo_map_missing_file_documented(tmp_path):

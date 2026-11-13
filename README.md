@@ -5,8 +5,8 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.43.0-6366f1)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-3033%20passing-22c55e)](.github/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.44.0-6366f1)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-3055%20passing-22c55e)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Termux-10b981)](.github/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
@@ -19,7 +19,7 @@
 
 > توليد ← مراجعة ← إصلاح ← حارس — من بوابة واحدة، بإيصالات توجيه قابلة للتحقق، وعلى أي منصة.
 
-النسخة **0.43.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
+النسخة **0.44.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
 
 ---
 
@@ -206,6 +206,17 @@ python3 scripts/run_swebench_lite.py --out /tmp/wide.json
 والرقم مرساة اختبار تُقارن عليها كل جولة قادمة (نمط الإخفاق: جوار
 دلالي — api.py بدل models.py).
 
+**repo-map بتوقيع الرموز والمختار المعجمي (0.44.0):** الخريطة الدلالية
+تُرقّى — docstring لكل رمز، ودوال الأصناف باسمها الكامل، وعائلات
+لغات متعددة (JS/TS وRust وGo وJava/Kotlin وC/C++ وRuby وPHP وShell
+وصيغ التوثيق)، وعمل بلا git بمسح معلن — فتعمل على أي مستودع GitHub
+أو Hugging Face بلا استثناء. وقيمة الخريطة تُقاس لا تُدّعى:
+`zyko.benchmarks.lexical_chooser` مختار حتمي بالبايت بلا نموذج، على
+العينة الواسعة نفسها: **إصابة أول-1 من 9.09% بلا خريطة إلى 36.36%
+بخريطة** (وثيقة موقعة بصمة `2ae28ab43ff67a5a`)، وثلاثة من إخفاقات
+العقل الـ11 تُصطاد بالتوقيع الدلالي. التفصيل الكامل:
+[docs/REPO_MAP_2026-11-13.md](docs/REPO_MAP_2026-11-13.md).
+
 ---
 
 ## المنصات والاختبارات
@@ -214,7 +225,7 @@ Linux · Windows · macOS · Android/Termux — مصفوفة CI خضراء عل�
 
 ```bash
 pytest -q
-# 3033 passed, 4 skipped  (أرقام التشغيل المرجعي الكامل — بوابة حقيقة الأرقام
+# 3055 passed, 4 skipped  (أرقام التشغيل المرجعي الكامل — بوابة حقيقة الأرقام
 #                          تقرأ junit وتطابق الشارة والسطر آليًا؛ التخطيات
 #                          بيئية موثقة: نواة بلا Landlock/bwrap، ومزودات
 #                          شبكة بلا مفاتيح، وويندوز بلا preexec)

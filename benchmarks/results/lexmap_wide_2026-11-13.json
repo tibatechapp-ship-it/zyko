@@ -1,0 +1,805 @@
+{
+  "protocol": "المختار المعجمي الحتمي — قيمة repo-map v2 (توقيع الرموز) على العينة الواسعة (الموجة 21)",
+  "data": {
+    "source": "swe_bench_full_requests.json",
+    "instances_sha16": "718a80aba3bbc422",
+    "gold_sha16": "9b938cab48f2f306"
+  },
+  "model_label": "lexical-chooser (بلا نموذج — حتمي بالبايت)",
+  "model_served_by": "لا شيء — معجم وتقاطعات حصراً",
+  "httpbin": "غير مستخدم",
+  "python_env": "3.12.16",
+  "loop": {
+    "weights": "مسار ×2 ورموز خريطة ×2 — الأزواج المتساوية تُفروز بالمسار",
+    "comparison": "بخريطة v2 مقابل بلا خريطة (مسارات حصراً) — الإصابة على أول 1 و3",
+    "note_ar": "حد أدنى لمعلومات الخريطة: مختار معجمي لا يفهم المعنى — مرساة العقل 74.42% تُقارن عليها الموجة 22"
+  },
+  "aggregate": {
+    "measured": true,
+    "measurable_cases": 44,
+    "hit_top1_map": 0.3636,
+    "hit_top1_no_map": 0.0909,
+    "hit_top3_map": 0.6136,
+    "misses_top1_map": [
+      "psf__requests-1142",
+      "psf__requests-1327",
+      "psf__requests-1689",
+      "psf__requests-1724",
+      "psf__requests-1733",
+      "psf__requests-1766",
+      "psf__requests-1888",
+      "psf__requests-1921",
+      "psf__requests-1944",
+      "psf__requests-1962",
+      "psf__requests-2148",
+      "psf__requests-2153",
+      "psf__requests-2193",
+      "psf__requests-2317",
+      "psf__requests-2393",
+      "psf__requests-2466",
+      "psf__requests-2617",
+      "psf__requests-2674",
+      "psf__requests-2754",
+      "psf__requests-2821",
+      "psf__requests-2873",
+      "psf__requests-2931",
+      "psf__requests-3718",
+      "psf__requests-3738",
+      "psf__requests-4106",
+      "psf__requests-4718",
+      "psf__requests-5087",
+      "psf__requests-5414"
+    ],
+    "gained_by_map": [
+      "psf__requests-1339",
+      "psf__requests-1376",
+      "psf__requests-1537",
+      "psf__requests-1635",
+      "psf__requests-1657",
+      "psf__requests-1713",
+      "psf__requests-1768",
+      "psf__requests-1776",
+      "psf__requests-1963",
+      "psf__requests-3362",
+      "psf__requests-6028",
+      "psf__requests-774",
+      "psf__requests-863"
+    ]
+  },
+  "results": [
+    {
+      "instance_id": "psf__requests-1142",
+      "gold_paths": [
+        "requests/models.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 69,
+      "map_lines": 71,
+      "top1_map": "requests/sessions.py",
+      "top1_no_map": "requests/packages/urllib3/request.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-1327",
+      "gold_paths": [
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 73,
+      "map_lines": 75,
+      "top1_map": "requests/packages/urllib3/packages/ordered_dict.py",
+      "top1_no_map": "requests/adapters.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-1339",
+      "gold_paths": [
+        "requests/structures.py",
+        "requests/utils.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 73,
+      "map_lines": 75,
+      "top1_map": "requests/utils.py",
+      "top1_no_map": "requests/packages/urllib3/request.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-1376",
+      "gold_paths": [
+        "requests/models.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 73,
+      "map_lines": 75,
+      "top1_map": "requests/models.py",
+      "top1_no_map": "requests/packages/urllib3/request.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-1537",
+      "gold_paths": [
+        "requests/models.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 72,
+      "map_lines": 74,
+      "top1_map": "requests/models.py",
+      "top1_no_map": "requests/packages/urllib3/filepost.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-1635",
+      "gold_paths": [
+        "requests/cookies.py",
+        "requests/models.py",
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 73,
+      "map_lines": 75,
+      "top1_map": "requests/cookies.py",
+      "top1_no_map": "requests/api.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-1657",
+      "gold_paths": [
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 73,
+      "map_lines": 75,
+      "top1_map": "requests/sessions.py",
+      "top1_no_map": "requests/hooks.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-1689",
+      "gold_paths": [
+        "requests/models.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 73,
+      "map_lines": 75,
+      "top1_map": "requests/utils.py",
+      "top1_no_map": "requests/compat.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-1713",
+      "gold_paths": [
+        "requests/cookies.py",
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 75,
+      "map_lines": 76,
+      "top1_map": "requests/cookies.py",
+      "top1_no_map": "requests/packages/urllib3/request.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-1724",
+      "gold_paths": [
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 74,
+      "map_lines": 75,
+      "top1_map": "requests/packages/urllib3/connectionpool.py",
+      "top1_no_map": "requests/packages/urllib3/connectionpool.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-1733",
+      "gold_paths": [
+        "requests/models.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 75,
+      "map_lines": 76,
+      "top1_map": "requests/packages/urllib3/packages/ordered_dict.py",
+      "top1_no_map": "requests/packages/urllib3/response.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-1766",
+      "gold_paths": [
+        "requests/auth.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 75,
+      "map_lines": 76,
+      "top1_map": "requests/utils.py",
+      "top1_no_map": "requests/auth.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": true,
+      "hit_top3_map": true,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-1768",
+      "gold_paths": [
+        "requests/utils.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 75,
+      "map_lines": 76,
+      "top1_map": "requests/utils.py",
+      "top1_no_map": "requests/auth.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-1776",
+      "gold_paths": [
+        "requests/auth.py",
+        "requests/models.py",
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 75,
+      "map_lines": 76,
+      "top1_map": "requests/sessions.py",
+      "top1_no_map": "requests/cookies.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-1888",
+      "gold_paths": [
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 75,
+      "map_lines": 76,
+      "top1_map": "requests/exceptions.py",
+      "top1_no_map": "requests/packages/urllib3/connection.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-1921",
+      "gold_paths": [
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 75,
+      "map_lines": 76,
+      "top1_map": "requests/adapters.py",
+      "top1_no_map": "docs/_themes/flask_theme_support.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-1944",
+      "gold_paths": [
+        "requests/adapters.py",
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 81,
+      "map_lines": 82,
+      "top1_map": "requests/exceptions.py",
+      "top1_no_map": "requests/packages/urllib3/exceptions.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-1962",
+      "gold_paths": [
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 75,
+      "map_lines": 76,
+      "top1_map": "requests/exceptions.py",
+      "top1_no_map": "requests/packages/urllib3/request.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-1963",
+      "gold_paths": [
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 75,
+      "map_lines": 76,
+      "top1_map": "requests/sessions.py",
+      "top1_no_map": "requests/packages/urllib3/request.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-2148",
+      "gold_paths": [
+        "requests/models.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 82,
+      "map_lines": 83,
+      "top1_map": "requests/packages/urllib3/response.py",
+      "top1_no_map": "requests/packages/urllib3/connection.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-2153",
+      "gold_paths": [
+        "requests/compat.py",
+        "requests/models.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 82,
+      "map_lines": 83,
+      "top1_map": "requests/sessions.py",
+      "top1_no_map": "requests/packages/urllib3/exceptions.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-2193",
+      "gold_paths": [
+        "requests/adapters.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 82,
+      "map_lines": 83,
+      "top1_map": "requests/packages/urllib3/connectionpool.py",
+      "top1_no_map": "requests/packages/urllib3/connection.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-2317",
+      "gold_paths": [
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 82,
+      "map_lines": 83,
+      "top1_map": "requests/cookies.py",
+      "top1_no_map": "requests/packages/urllib3/response.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-2393",
+      "gold_paths": [
+        "requests/utils.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 82,
+      "map_lines": 83,
+      "top1_map": "requests/packages/urllib3/poolmanager.py",
+      "top1_no_map": "requests/packages/urllib3/util/url.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-2413",
+      "gold_paths": [
+        "requests/compat.py",
+        "requests/utils.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 82,
+      "map_lines": 83,
+      "top1_map": "requests/utils.py",
+      "top1_no_map": "requests/compat.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": true,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-2466",
+      "gold_paths": [
+        "requests/packages/__init__.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 82,
+      "map_lines": 83,
+      "top1_map": "requests/packages/urllib3/exceptions.py",
+      "top1_no_map": "requests/packages/chardet/compat.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-2617",
+      "gold_paths": [
+        "requests/models.py",
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 82,
+      "map_lines": 83,
+      "top1_map": "requests/packages/urllib3/connectionpool.py",
+      "top1_no_map": "requests/packages/urllib3/connectionpool.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-2674",
+      "gold_paths": [
+        "requests/adapters.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 82,
+      "map_lines": 83,
+      "top1_map": "requests/packages/urllib3/poolmanager.py",
+      "top1_no_map": "requests/packages/urllib3/exceptions.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-2678",
+      "gold_paths": [
+        "requests/adapters.py",
+        "requests/auth.py",
+        "requests/packages/__init__.py",
+        "requests/packages/urllib3/__init__.py",
+        "requests/packages/urllib3/connection.py",
+        "requests/packages/urllib3/connectionpool.py",
+        "requests/packages/urllib3/contrib/appengine.py",
+        "requests/packages/urllib3/contrib/pyopenssl.py",
+        "requests/packages/urllib3/exceptions.py",
+        "requests/packages/urllib3/poolmanager.py",
+        "requests/packages/urllib3/request.py",
+        "requests/packages/urllib3/response.py",
+        "requests/packages/urllib3/util/connection.py",
+        "requests/packages/urllib3/util/response.py",
+        "requests/packages/urllib3/util/retry.py",
+        "requests/packages/urllib3/util/ssl_.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 82,
+      "map_lines": 83,
+      "top1_map": "requests/packages/urllib3/poolmanager.py",
+      "top1_no_map": "requests/packages/urllib3/exceptions.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": true,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-2754",
+      "gold_paths": [
+        "requests/sessions.py",
+        "requests/utils.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 83,
+      "map_lines": 85,
+      "top1_map": "requests/exceptions.py",
+      "top1_no_map": "requests/packages/urllib3/request.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-2821",
+      "gold_paths": [
+        "requests/models.py",
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 83,
+      "map_lines": 84,
+      "top1_map": "requests/packages/urllib3/connectionpool.py",
+      "top1_no_map": "requests/packages/urllib3/contrib/pyopenssl.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-2873",
+      "gold_paths": [
+        "requests/utils.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 83,
+      "map_lines": 84,
+      "top1_map": "requests/exceptions.py",
+      "top1_no_map": "requests/packages/urllib3/request.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-2931",
+      "gold_paths": [
+        "requests/models.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 83,
+      "map_lines": 85,
+      "top1_map": "requests/exceptions.py",
+      "top1_no_map": "requests/packages/urllib3/request.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-3362",
+      "gold_paths": [
+        "requests/utils.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 86,
+      "map_lines": 100,
+      "top1_map": "requests/utils.py",
+      "top1_no_map": "requests/__init__.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-3718",
+      "gold_paths": [
+        "requests/models.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 94,
+      "map_lines": 108,
+      "top1_map": "requests/exceptions.py",
+      "top1_no_map": "requests/packages/urllib3/request.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-3738",
+      "gold_paths": [
+        "requests/models.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 94,
+      "map_lines": 108,
+      "top1_map": "requests/exceptions.py",
+      "top1_no_map": "requests/packages/idna/__init__.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-4106",
+      "gold_paths": [
+        "requests/packages.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 21,
+      "map_lines": 39,
+      "top1_map": "requests/help.py",
+      "top1_no_map": "requests/help.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-4356",
+      "gold_paths": [
+        "requests/adapters.py",
+        "requests/exceptions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 21,
+      "map_lines": 41,
+      "top1_map": "requests/exceptions.py",
+      "top1_no_map": "requests/adapters.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": true,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-4718",
+      "gold_paths": [
+        "requests/sessions.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 21,
+      "map_lines": 45,
+      "top1_map": "requests/exceptions.py",
+      "top1_no_map": "requests/auth.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-5087",
+      "gold_paths": [
+        "requests/models.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 21,
+      "map_lines": 47,
+      "top1_map": "requests/exceptions.py",
+      "top1_no_map": "requests/help.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-5414",
+      "gold_paths": [
+        "requests/models.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 21,
+      "map_lines": 48,
+      "top1_map": "requests/exceptions.py",
+      "top1_no_map": "requests/help.py",
+      "hit_top1_map": false,
+      "hit_top1_no_map": false,
+      "hit_top3_map": false,
+      "precision_top1_map": 0.0
+    },
+    {
+      "instance_id": "psf__requests-6028",
+      "gold_paths": [
+        "requests/utils.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 21,
+      "map_lines": 48,
+      "top1_map": "requests/utils.py",
+      "top1_no_map": "docs/_themes/flask_theme_support.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-774",
+      "gold_paths": [
+        "requests/models.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 119,
+      "map_lines": 125,
+      "top1_map": "requests/models.py",
+      "top1_no_map": "requests/packages/urllib3/request.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    },
+    {
+      "instance_id": "psf__requests-863",
+      "gold_paths": [
+        "requests/models.py"
+      ],
+      "measured": true,
+      "reason_ar": null,
+      "tree_size": 119,
+      "map_lines": 126,
+      "top1_map": "requests/models.py",
+      "top1_no_map": "requests/hooks.py",
+      "hit_top1_map": true,
+      "hit_top1_no_map": false,
+      "hit_top3_map": true,
+      "precision_top1_map": 1.0
+    }
+  ],
+  "planned_total": 44,
+  "chain_hash": "2ae28ab43ff67a5a"
+}

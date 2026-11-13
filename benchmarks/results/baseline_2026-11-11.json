@@ -15,7 +15,7 @@
     "probes_passed": 12,
     "probes_total": 12,
     "problems": [],
-    "target": "/tmp/requests-test/src/requests/models.py",
+    "target": "/home/z/.cache/zyko-swe/requests/src/requests/models.py",
     "verify_ok": true
   },
   "gauntlet_stress": {
@@ -78,10 +78,10 @@
   },
   "recorded": {
     "date": "2026-11-13",
-    "generated_utc": "2026-11-13T07:07:04Z",
+    "generated_utc": "2026-11-13T09:23:46Z",
     "platform": "Linux",
     "python": "3.12.16",
-    "zyko_version": "0.43.0"
+    "zyko_version": "0.44.0"
   },
   "target": {
     "bytes": 41462,
