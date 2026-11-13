@@ -1,0 +1,2758 @@
+{
+  "protocol": "SWE-bench (psf/requests) — عقل حقيقي داخل حلقة تلقيم الفشل + خريطة دلالية + جرّاح صياغي وحرس تراجع (الموجة 20، بروتوكول v2)",
+  "data": {
+    "source": "swe_bench_full_requests.json",
+    "instances_sha16": "718a80aba3bbc422"
+  },
+  "model_label": "glm-4.7",
+  "model_served_by": "z-ai-web-dev-sdk bridge (local, 127.0.0.1)",
+  "httpbin": "http://127.0.0.1:8642/",
+  "python_env": "3.9 (uv) — بيئة معزولة لكل حالة",
+  "loop": {
+    "max_attempts": 3,
+    "max_files": 3,
+    "feedback": "خطأ التطبيق ورفض الحرس وعقد FAIL_TO_PASS الفاشلة تُغذّى للعقل",
+    "repo_map": "repo-map بتوقيع الرموز (docstring + أعضاء الأصناف + عائلات لغات متعددة + عمل بلا git) ملحق بطلب الاختيار (الموجة 21)",
+    "transport_retries": "النقل الافتراضي يعاد 3 مرات بتراجع 2s على الأخطاء العابرة (الموجة 19)",
+    "patch_surgeon": "فحص صياغي محلي قبل git apply وسلّم تطبيق معلن: كاملة ← بالملفات ← بالأجزاء (الموجة 20)",
+    "regression_guard": "رقعة تكسر عقداً ناجحة عند الأساس تُرجع إلى الأساس ورجعيتها تُغذّى للعقل (الموجة 20)",
+    "pace_s": 0.0
+  },
+  "aggregate": {
+    "planned_total": 44,
+    "total": 44,
+    "resolved_strict": 2,
+    "resolved_env": 2,
+    "f2p_repaired_total": 2,
+    "f2p_total": 51,
+    "applied_count": 9,
+    "contract_rejections": 37,
+    "gate_rejections": 37,
+    "reverted_count": 6,
+    "partial_applies": 1,
+    "base_only_count": 0,
+    "resolve_rate_env": 0.0455
+  },
+  "results": [
+    {
+      "instance_id": "psf__requests-1142",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_no_content_length"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1142",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/models.py",
+            "patch_sha16": "d8c139a31ae536fa",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — حرس التراجع أرجع الرقعة وبنى رجعيتها",
+            "apply_mode": "كاملة",
+            "reverted": true
+          },
+          {
+            "index": 2,
+            "feedback_sha16": "601a34eedc2a8d64",
+            "file_choice": "requests/models.py",
+            "patch_sha16": "bb1963811b506afe",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 3,
+            "feedback_sha16": "052b1d4445604eb0",
+            "file_choice": "requests/models.py",
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "الرقعة رُفضت ببوابة (PII أو RTL)",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "نهاية الميزانية — البوابات رفضت",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1142",
+          "patch_applied": true,
+          "apply_error_ar": null,
+          "patch_sha16": "bb1963811b506afe",
+          "contract_reason_ar": "مسموح",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_no_content_length"
+          ],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [
+            "test_requests.py::RequestsTestCase::test_no_content_length"
+          ],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "الحلقة طبّقت عند المحاولة 2"
+        },
+        "file_choices": [
+          "requests/models.py",
+          "requests/models.py",
+          "requests/models.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "26257ccfd988d910"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1327",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_transport_adapter_ordering"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1327",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1327",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_transport_adapter_ordering"
+          ],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "69a78e28078f5e0c"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1339",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::TestCaseInsensitiveDict::test_equality",
+          "test_requests.py::TestCaseInsensitiveDict::test_fixes_649",
+          "test_requests.py::TestCaseInsensitiveDict::test_len",
+          "test_requests.py::TestCaseInsensitiveDict::test_lower_items",
+          "test_requests.py::TestCaseInsensitiveDict::test_preserve_last_key_case",
+          "test_requests.py::TestCaseInsensitiveDict::test_setdefault",
+          "test_requests.py::TestCaseInsensitiveDict::test_update"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1339",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/structures.py",
+            "patch_sha16": "5d6cb7fa4276f209",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — حرس التراجع أرجع الرقعة وبنى رجعيتها",
+            "apply_mode": "كاملة",
+            "reverted": true
+          },
+          {
+            "index": 2,
+            "feedback_sha16": "dd5273bf750a51e9",
+            "file_choice": "requests/structures.py",
+            "patch_sha16": "40fb9ed69ea61711",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — حرس التراجع أرجع الرقعة وبنى رجعيتها",
+            "apply_mode": "كاملة",
+            "reverted": true
+          },
+          {
+            "index": 3,
+            "feedback_sha16": "dd5273bf750a51e9",
+            "file_choice": "requests/structures.py",
+            "patch_sha16": "4ba340561a7cf64b",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — حرس التراجع أرجع الرقعة وبنى رجعيتها",
+            "apply_mode": "كاملة",
+            "reverted": true
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1339",
+          "patch_applied": true,
+          "apply_error_ar": null,
+          "patch_sha16": "4ba340561a7cf64b",
+          "contract_reason_ar": "مسموح",
+          "f2p_failed_at_base": [
+            "test_requests.py::TestCaseInsensitiveDict::test_equality",
+            "test_requests.py::TestCaseInsensitiveDict::test_fixes_649",
+            "test_requests.py::TestCaseInsensitiveDict::test_len",
+            "test_requests.py::TestCaseInsensitiveDict::test_lower_items",
+            "test_requests.py::TestCaseInsensitiveDict::test_preserve_last_key_case",
+            "test_requests.py::TestCaseInsensitiveDict::test_setdefault",
+            "test_requests.py::TestCaseInsensitiveDict::test_update"
+          ],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [
+            "test_requests.py::TestCaseInsensitiveDict::test_len"
+          ],
+          "f2p_failed_after": [
+            "test_requests.py::TestCaseInsensitiveDict::test_equality",
+            "test_requests.py::TestCaseInsensitiveDict::test_fixes_649",
+            "test_requests.py::TestCaseInsensitiveDict::test_lower_items",
+            "test_requests.py::TestCaseInsensitiveDict::test_preserve_last_key_case",
+            "test_requests.py::TestCaseInsensitiveDict::test_setdefault",
+            "test_requests.py::TestCaseInsensitiveDict::test_update"
+          ],
+          "p2p_failed_after": [
+            "test_requests.py::TestCaseInsensitiveDict::test_docstring_example"
+          ],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 1,
+          "attempts_note_ar": "الحلقة طبّقت عند المحاولة 3"
+        },
+        "file_choices": [
+          "requests/structures.py",
+          "requests/structures.py",
+          "requests/structures.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "3c7197094b43fce2"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1376",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_invalid_url"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1376",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1376",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_invalid_url"
+          ],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "4bdf6667c6750089"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1537",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_can_send_nonstring_objects_with_files"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1537",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/packages/urllib3/filepost.py",
+            "patch_sha16": "359671a66a56b023",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": false,
+            "apply_error_ar": "فشل الفحص الصياغي: عدّاد جزء مخالف في «a/requests/packages/urllib3/filepost.py»: ترويسة «@@ -85,6 +85,10 @@» تعلن 6 قديماً و10 جديداً، والأسطر الفعلية 5 قديماً و9 جديداً — صحّح الترويسة أو الأسطر (أعِد حساب العدّادات) — فشل فحص التطبيق: error: requests/packages/urllib3/filepost.py: patch does not apply | الصياغي: عدّاد جزء مخالف في «a/requests/packages/urllib3/filepost.py»: ترويسة «@@ -85,6 +85,10 @@» تعلن 6 قديماً و10 جديداً، والأسطر الفعلية 5 قديماً و9 جديداً — صحّح الترويسة أو الأسطر (أعِد حساب العدّادات)",
+            "stop_reason_ar": "متابعة — رجعية التطبيق بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 2,
+            "feedback_sha16": "6d61cb9b9a25bff0",
+            "file_choice": "requests/packages/urllib3/filepost.py",
+            "patch_sha16": "54899d5b06e23cfd",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 3,
+            "feedback_sha16": "a38e8a2e09aafdc3",
+            "file_choice": "requests/packages/urllib3/filepost.py",
+            "patch_sha16": "bbe9937882d2ee1c",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — حلّ",
+            "apply_mode": "بالأجزاء",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1537",
+          "patch_applied": true,
+          "apply_error_ar": null,
+          "patch_sha16": "bbe9937882d2ee1c",
+          "contract_reason_ar": "مسموح",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_can_send_nonstring_objects_with_files"
+          ],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [
+            "test_requests.py::RequestsTestCase::test_can_send_nonstring_objects_with_files"
+          ],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": true,
+          "resolved_env": true,
+          "f2p_repaired_count": 1,
+          "attempts_note_ar": "الحلقة طبّقت عند المحاولة 3"
+        },
+        "file_choices": [
+          "requests/packages/urllib3/filepost.py",
+          "requests/packages/urllib3/filepost.py",
+          "requests/packages/urllib3/filepost.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "92abc8e5b888bb94"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1635",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_cookie_persists_via_api"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1635",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/sessions.py",
+            "patch_sha16": "02245944b9b4746e",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": false,
+            "apply_error_ar": "فشل الفحص الصياغي: عدّاد جزء مخالف في «a/requests/sessions.py»: ترويسة «@@ -292,6 +292,7 @@» تعلن 6 قديماً و7 جديداً، والأسطر الفعلية 5 قديماً و6 جديداً — صحّح الترويسة أو الأسطر (أعِد حساب العدّادات) — فشل فحص التطبيق: error: requests/sessions.py: patch does not apply | الصياغي: عدّاد جزء مخالف في «a/requests/sessions.py»: ترويسة «@@ -292,6 +292,7 @@» تعلن 6 قديماً و7 جديداً، والأسطر الفعلية 5 قديماً و6 جديداً — صحّح الترويسة أو الأسطر (أعِد حساب العدّادات)",
+            "stop_reason_ar": "متابعة — رجعية التطبيق بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 2,
+            "feedback_sha16": "c5a30d1b46e4d0c0",
+            "file_choice": "requests/sessions.py",
+            "patch_sha16": "e37e5843810cdc21",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 3,
+            "feedback_sha16": "75e8a265995f613e",
+            "file_choice": "requests/sessions.py",
+            "patch_sha16": "138df7ab13084d16",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1635",
+          "patch_applied": true,
+          "apply_error_ar": null,
+          "patch_sha16": "138df7ab13084d16",
+          "contract_reason_ar": "مسموح",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_cookie_persists_via_api"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [
+            "test_requests.py::RequestsTestCase::test_cookie_persists_via_api"
+          ],
+          "p2p_failed_after": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+          ],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "الحلقة طبّقت عند المحاولة 3"
+        },
+        "file_choices": [
+          "requests/sessions.py",
+          "requests/sessions.py",
+          "requests/sessions.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "c240ffaabfb4f1f4"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1657",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_session_hooks_are_used_with_no_request_hooks"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1657",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/sessions.py",
+            "patch_sha16": "2d8d5023dbafd8cc",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": false,
+            "apply_error_ar": "فشل الفحص الصياغي: عدّاد جزء مخالف في «a/requests/sessions.py»: ترويسة «@@ -267,7 +267,7 @@» تعلن 7 قديماً و7 جديداً، والأسطر الفعلية 6 قديماً و6 جديداً — صحّح الترويسة أو الأسطر (أعِد حساب العدّادات) — فشل فحص التطبيق: error: requests/sessions.py: patch does not apply | الصياغي: عدّاد جزء مخالف في «a/requests/sessions.py»: ترويسة «@@ -267,7 +267,7 @@» تعلن 7 قديماً و7 جديداً، والأسطر الفعلية 6 قديماً و6 جديداً — صحّح الترويسة أو الأسطر (أعِد حساب العدّادات)",
+            "stop_reason_ar": "متابعة — رجعية التطبيق بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 2,
+            "feedback_sha16": "1c2525879e50fb40",
+            "file_choice": "requests/sessions.py",
+            "patch_sha16": "23854771ca87b51a",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 3,
+            "feedback_sha16": "ecda00b0f5aea976",
+            "file_choice": "requests/sessions.py",
+            "patch_sha16": "13fb98ddbf3e9c3b",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": false,
+            "apply_error_ar": "فشل الفحص الصياغي: عدّاد جزء مخالف في «a/requests/sessions.py»: ترويسة «@@ -265,7 +265,7 @@» تعلن 7 قديماً و7 جديداً، والأسطر الفعلية 5 قديماً و6 جديداً — صحّح الترويسة أو الأسطر (أعِد حساب العدّادات) — فشل فحص التطبيق: error: requests/sessions.py: patch does not apply | الصياغي: عدّاد جزء مخالف في «a/requests/sessions.py»: ترويسة «@@ -265,7 +265,7 @@» تعلن 7 قديماً و7 جديداً، والأسطر الفعلية 5 قديماً و6 جديداً — صحّح الترويسة أو الأسطر (أعِد حساب العدّادات)",
+            "stop_reason_ar": "نهاية الميزانية — التطبيق فشل",
+            "apply_mode": "كاملة",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1657",
+          "patch_applied": true,
+          "apply_error_ar": null,
+          "patch_sha16": "23854771ca87b51a",
+          "contract_reason_ar": "مسموح",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_session_hooks_are_used_with_no_request_hooks"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+          ],
+          "f2p_passed_after": [
+            "test_requests.py::RequestsTestCase::test_prepared_from_session",
+            "test_requests.py::RequestsTestCase::test_request_cookie_overrides_session_cookie"
+          ],
+          "f2p_failed_after": [
+            "test_requests.py::RequestsTestCase::test_session_hooks_are_used_with_no_request_hooks"
+          ],
+          "p2p_failed_after": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+          ],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "الحلقة طبّقت عند المحاولة 2"
+        },
+        "file_choices": [
+          "requests/sessions.py",
+          "requests/sessions.py",
+          "requests/sessions.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "c0e5c4e4eb384920"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1689",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1689",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/models.py",
+            "patch_sha16": "2b3489dfc86c60da",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — حلّ",
+            "apply_mode": "كاملة",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1689",
+          "patch_applied": true,
+          "apply_error_ar": null,
+          "patch_sha16": "2b3489dfc86c60da",
+          "contract_reason_ar": "مسموح",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [
+            "test_requests.py::RequestsTestCase::test_HTTP_200_OK_HEAD"
+          ],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": true,
+          "resolved_env": true,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "الحلقة طبّقت عند المحاولة 1"
+        },
+        "file_choices": [
+          "requests/models.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "d8d22208bc7868b5"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1713",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_param_cookiejar_works"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1713",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/cookies.py",
+            "patch_sha16": "9e0bb36c0044c2bc",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": false,
+            "apply_error_ar": "فشل الفحص الصياغي: عدّاد جزء مخالف في «a/requests/cookies.py»: ترويسة «@@ -407,7 +407,12 @@» تعلن 7 قديماً و12 جديداً، والأسطر الفعلية 8 قديماً و14 جديداً — صحّح الترويسة أو الأسطر (أعِد حساب العدّادات) — فشل فحص التطبيق: error: requests/cookies.py: patch does not apply | الصياغي: عدّاد جزء مخالف في «a/requests/cookies.py»: ترويسة «@@ -407,7 +407,12 @@» تعلن 7 قديماً و12 جديداً، والأسطر الفعلية 8 قديماً و14 جديداً — صحّح الترويسة أو الأسطر (أعِد حساب العدّادات)",
+            "stop_reason_ar": "متابعة — رجعية التطبيق بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 2,
+            "feedback_sha16": "21560a9f018c44a2",
+            "file_choice": "requests/cookies.py",
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "الرقعة رُفضت ببوابة (PII أو RTL)",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — البوابات رفضت اقتراحاً بلا رجعية ممكنة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1713",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_param_cookiejar_works"
+          ],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          "requests/cookies.py",
+          "requests/cookies.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "e4b775f236fed717"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1724",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1724",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1724",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "a3e7e7ef18e6a6d1"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1733",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_request_and_response_are_pickleable"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1733",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1733",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+            "test_requests.py::RequestsTestCase::test_request_and_response_are_pickleable"
+          ],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "18061ea7a806cc2d"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1766",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_DIGESTAUTH_QUOTES_QOP_VALUE"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1766",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1766",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_DIGESTAUTH_QUOTES_QOP_VALUE"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "9f052625676a2e72"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1768",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_get_auth_from_url_encoded_spaces"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1768",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1768",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_get_auth_from_url_encoded_spaces"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "fb66b5f103a8ed6b"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1776",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_request_cookies_not_persisted"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1776",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1776",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_request_cookies_not_persisted"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "abd15af490710976"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1888",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1888",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1888",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "31ec8b6e11b8eec5"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1921",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_headers_on_session_with_None_are_not_sent"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1921",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1921",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_headers_on_session_with_None_are_not_sent"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "5c9c6f9355b1b544"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1944",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_redirect_with_wrong_gzipped_header"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_manual_redirect_with_partial_body_read",
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+          "test_requests.py::TestTimeout::test_stream_timeout"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1944",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1944",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_redirect_with_wrong_gzipped_header"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_manual_redirect_with_partial_body_read",
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+            "test_requests.py::TestTimeout::test_stream_timeout"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "aec52668dcd444fb"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1962",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_history_is_always_a_list",
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+          "test_requests.py::TestTimeout::test_stream_timeout"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1962",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1962",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_history_is_always_a_list",
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+            "test_requests.py::TestTimeout::test_stream_timeout"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "6623137a1be01a5d"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1963",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::TestRedirects::test_requests_are_updated_each_time"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+          "test_requests.py::TestTimeout::test_stream_timeout"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1963",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1963",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::TestRedirects::test_requests_are_updated_each_time"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+            "test_requests.py::TestTimeout::test_stream_timeout"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "991c47a2a9880a86"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2148",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_iter_content_handles_socket_error"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2148",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-2148",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_iter_content_handles_socket_error"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "bc96825d50251172"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2153",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2153",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-2153",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "18ad75be61f6b72f"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2193",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_connection_error"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+          "test_requests.py::RequestsTestCase::test_requests_history_is_saved",
+          "test_requests.py::TestTimeout::test_stream_timeout"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2193",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-2193",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_connection_error"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+            "test_requests.py::RequestsTestCase::test_requests_history_is_saved",
+            "test_requests.py::TestTimeout::test_stream_timeout"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "666e1b72eae123e7"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2317",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_requests_history_is_saved",
+          "test_requests.py::TestTimeout::test_encoded_methods"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_connection_error",
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+          "test_requests.py::TestTimeout::test_stream_timeout"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2317",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/sessions.py",
+            "patch_sha16": "32358a4fabfa466c",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 2,
+            "feedback_sha16": "00a6d907a846508b",
+            "file_choice": "requests/sessions.py",
+            "patch_sha16": "1e11436733223809",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — حرس التراجع أرجع الرقعة وبنى رجعيتها",
+            "apply_mode": "كاملة",
+            "reverted": true
+          },
+          {
+            "index": 3,
+            "feedback_sha16": "312752f5f3bc3885",
+            "file_choice": "requests/sessions.py",
+            "patch_sha16": "de8ed1cfbf93897c",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-2317",
+          "patch_applied": true,
+          "apply_error_ar": null,
+          "patch_sha16": "de8ed1cfbf93897c",
+          "contract_reason_ar": "مسموح",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_requests_history_is_saved",
+            "test_requests.py::TestTimeout::test_encoded_methods"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_connection_error",
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+            "test_requests.py::TestTimeout::test_stream_timeout"
+          ],
+          "f2p_passed_after": [
+            "test_requests.py::RequestsTestCase::test_HTTP_302_ALLOW_REDIRECT_GET",
+            "test_requests.py::RequestsTestCase::test_POSTBIN_GET_POST_FILES",
+            "test_requests.py::RequestsTestCase::test_POSTBIN_GET_POST_FILES_WITH_DATA",
+            "test_requests.py::RequestsTestCase::test_basicauth_with_netrc",
+            "test_requests.py::RequestsTestCase::test_json_param_post_content_type_works",
+            "test_requests.py::RequestsTestCase::test_manual_redirect_with_partial_body_read"
+          ],
+          "f2p_failed_after": [
+            "test_requests.py::RequestsTestCase::test_requests_history_is_saved",
+            "test_requests.py::TestTimeout::test_encoded_methods"
+          ],
+          "p2p_failed_after": [
+            "test_requests.py::RequestsTestCase::test_connection_error",
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+            "test_requests.py::TestTimeout::test_stream_timeout"
+          ],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "الحلقة طبّقت عند المحاولة 3"
+        },
+        "file_choices": [
+          "requests/sessions.py",
+          "requests/sessions.py",
+          "requests/sessions.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "5a238e7faa9c592d"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2393",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::UtilsTestCase::test_requote_uri_with_unquoted_percents"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_connection_error",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2393",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/utils.py",
+            "patch_sha16": "f3c83b5e0b433b95",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 2,
+            "feedback_sha16": "b22a3ccb81950e09",
+            "file_choice": "requests/utils.py",
+            "patch_sha16": "40bfef6b29cc70a4",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 3,
+            "feedback_sha16": "b22a3ccb81950e09",
+            "file_choice": "requests/utils.py",
+            "patch_sha16": "f6f2c747c31915cc",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — حرس التراجع أرجع الرقعة وبنى رجعيتها",
+            "apply_mode": "كاملة",
+            "reverted": true
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-2393",
+          "patch_applied": true,
+          "apply_error_ar": null,
+          "patch_sha16": "f6f2c747c31915cc",
+          "contract_reason_ar": "مسموح",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+            "test_requests.py::UtilsTestCase::test_requote_uri_with_unquoted_percents"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_connection_error",
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [
+            "test_requests.py::RequestsTestCase::test_cookie_removed_on_expire",
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+            "test_requests.py::UtilsTestCase::test_requote_uri_with_unquoted_percents"
+          ],
+          "p2p_failed_after": [
+            "test_requests.py::RequestsTestCase::test_DIGESTAUTH_QUOTES_QOP_VALUE",
+            "test_requests.py::RequestsTestCase::test_DIGEST_AUTH_SETS_SESSION_COOKIES",
+            "test_requests.py::RequestsTestCase::test_DIGEST_STREAM",
+            "test_requests.py::RequestsTestCase::test_HTTP_200_OK_GET_ALTERNATIVE",
+            "test_requests.py::RequestsTestCase::test_HTTP_200_OK_GET_WITH_PARAMS",
+            "test_requests.py::RequestsTestCase::test_HTTP_200_OK_PUT",
+            "test_requests.py::RequestsTestCase::test_auth_is_retained_for_redirect_on_host",
+            "test_requests.py::RequestsTestCase::test_basic_building",
+            "test_requests.py::RequestsTestCase::test_connection_error",
+            "test_requests.py::RequestsTestCase::test_cookie_persists_via_api",
+            "test_requests.py::RequestsTestCase::test_cookie_quote_wrapped",
+            "test_requests.py::RequestsTestCase::test_cookie_sent_on_redirect",
+            "test_requests.py::RequestsTestCase::test_custom_content_type",
+            "test_requests.py::RequestsTestCase::test_decompress_gzip",
+            "test_requests.py::RequestsTestCase::test_different_encodings_dont_break_post",
+            "test_requests.py::RequestsTestCase::test_fixes_1329",
+            "test_requests.py::RequestsTestCase::test_generic_cookiejar_works",
+            "test_requests.py::RequestsTestCase::test_header_remove_is_case_insensitive",
+            "test_requests.py::RequestsTestCase::test_history_is_always_a_list",
+            "test_requests.py::RequestsTestCase::test_json_param_post_content_type_works",
+            "test_requests.py::RequestsTestCase::test_long_authinfo_in_url",
+            "test_requests.py::RequestsTestCase::test_manual_redirect_with_partial_body_read",
+            "test_requests.py::RequestsTestCase::test_param_cookiejar_works",
+            "test_requests.py::RequestsTestCase::test_params_are_added_before_fragment",
+            "test_requests.py::RequestsTestCase::test_params_are_merged_case_sensitive",
+            "test_requests.py::RequestsTestCase::test_path_is_not_double_encoded",
+            "test_requests.py::RequestsTestCase::test_prepare_request_with_bytestring_url",
+            "test_requests.py::RequestsTestCase::test_prepared_from_session",
+            "test_requests.py::RequestsTestCase::test_prepared_request_hook",
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+            "test_requests.py::RequestsTestCase::test_redirect_with_wrong_gzipped_header",
+            "test_requests.py::RequestsTestCase::test_request_and_response_are_pickleable",
+            "test_requests.py::RequestsTestCase::test_request_cookie_overrides_session_cookie",
+            "test_requests.py::RequestsTestCase::test_request_cookies_not_persisted",
+            "test_requests.py::RequestsTestCase::test_request_ok_set",
+            "test_requests.py::RequestsTestCase::test_requests_history_is_saved",
+            "test_requests.py::RequestsTestCase::test_requests_in_history_are_not_overridden",
+            "test_requests.py::RequestsTestCase::test_session_pickling",
+            "test_requests.py::RequestsTestCase::test_set_cookie_on_301",
+            "test_requests.py::RequestsTestCase::test_status_raising",
+            "test_requests.py::RequestsTestCase::test_time_elapsed_blank",
+            "test_requests.py::RequestsTestCase::test_unicode_get",
+            "test_requests.py::RequestsTestCase::test_unicode_header_name",
+            "test_requests.py::RequestsTestCase::test_unicode_multipart_post",
+            "test_requests.py::RequestsTestCase::test_uppercase_scheme_redirect",
+            "test_requests.py::RequestsTestCase::test_urlencoded_get_query_multivalued_param",
+            "test_requests.py::RequestsTestCase::test_user_agent_transfers",
+            "test_requests.py::TestTimeout::test_connect_timeout",
+            "test_requests.py::TestTimeout::test_encoded_methods",
+            "test_requests.py::TestTimeout::test_invalid_timeout",
+            "test_requests.py::TestTimeout::test_read_timeout",
+            "test_requests.py::TestTimeout::test_stream_timeout",
+            "test_requests.py::TestTimeout::test_total_timeout_connect",
+            "test_requests.py::UtilsTestCase::test_requote_uri_properly_requotes"
+          ],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "الحلقة طبّقت عند المحاولة 3"
+        },
+        "file_choices": [
+          "requests/utils.py",
+          "requests/utils.py",
+          "requests/utils.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "fc946b379c573ca0"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2413",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::UtilsTestCase::test_guess_filename_with_file_like_obj"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_connection_error",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2413",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/utils.py",
+            "patch_sha16": "8016063394442307",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 2,
+            "feedback_sha16": "b1c3a106ab711d2e",
+            "file_choice": "requests/utils.py",
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "الرقعة رُفضت ببوابة (PII أو RTL)",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — البوابات رفضت اقتراحاً بلا رجعية ممكنة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-2413",
+          "patch_applied": true,
+          "apply_error_ar": null,
+          "patch_sha16": "8016063394442307",
+          "contract_reason_ar": "مسموح",
+          "f2p_failed_at_base": [
+            "test_requests.py::UtilsTestCase::test_guess_filename_with_file_like_obj"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_connection_error",
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+          ],
+          "f2p_passed_after": [
+            "test_requests.py::RequestsTestCase::test_BASICAUTH_TUPLE_HTTP_200_OK_GET",
+            "test_requests.py::RequestsTestCase::test_POSTBIN_GET_POST_FILES_WITH_DATA",
+            "test_requests.py::RequestsTestCase::test_auth_is_stripped_on_redirect_off_host"
+          ],
+          "f2p_failed_after": [
+            "test_requests.py::UtilsTestCase::test_guess_filename_with_file_like_obj"
+          ],
+          "p2p_failed_after": [
+            "test_requests.py::RequestsTestCase::test_connection_error",
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+          ],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "الحلقة طبّقت عند المحاولة 1"
+        },
+        "file_choices": [
+          "requests/utils.py",
+          "requests/utils.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "b9ff3f0fc41c79e2"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2466",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::test_vendor_aliases"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2466",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-2466",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::test_vendor_aliases"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "97f5632f8364745f"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2617",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2617",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-2617",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "15a6b71b1dbafe10"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2674",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2674",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-2674",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "6f6d42379efd4a2a"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2678",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::test_urllib3_pool_connection_closed"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2678",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-2678",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::test_urllib3_pool_connection_closed"
+          ],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "eccee01cbb5ec0eb"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2754",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2754",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-2754",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "5ea34b6fdf4d48a0"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2821",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+          "test_requests.py::test_urllib3_pool_connection_closed"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2821",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-2821",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+            "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+            "test_requests.py::test_urllib3_pool_connection_closed"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "a4953b618a4cb14d"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2873",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::UtilsTestCase::test_super_len_correctly_calculates_len_of_partially_read_file"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2873",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-2873",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::UtilsTestCase::test_super_len_correctly_calculates_len_of_partially_read_file"
+          ],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "35c6ebbf8e18900d"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2931",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::TestRequests::test_binary_put"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2931",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-2931",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::TestRequests::test_binary_put"
+          ],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "cdd3b68bd55d4830"
+      }
+    },
+    {
+      "instance_id": "psf__requests-3362",
+      "base": {
+        "f2p_failed_at_base": [
+          "tests/test_requests.py::TestRequests::test_response_decode_unicode"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-3362",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-3362",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "tests/test_requests.py::TestRequests::test_response_decode_unicode"
+          ],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "72e65f03dd582f00"
+      }
+    },
+    {
+      "instance_id": "psf__requests-3718",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-3718",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-3718",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "699c4de566d9a406"
+      }
+    },
+    {
+      "instance_id": "psf__requests-3738",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-3738",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-3738",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "bf18c582ec3c6aa4"
+      }
+    },
+    {
+      "instance_id": "psf__requests-4106",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-4106",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-4106",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "f346314bc10e7d65"
+      }
+    },
+    {
+      "instance_id": "psf__requests-4356",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-4356",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-4356",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "387374a3f683ed15"
+      }
+    },
+    {
+      "instance_id": "psf__requests-4718",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-4718",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-4718",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "48fc72b46e4a855d"
+      }
+    },
+    {
+      "instance_id": "psf__requests-5087",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-5087",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-5087",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "79e620f13465f340"
+      }
+    },
+    {
+      "instance_id": "psf__requests-5414",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-5414",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-5414",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "2bf1ad4a7143d8e0"
+      }
+    },
+    {
+      "instance_id": "psf__requests-6028",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-6028",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-6028",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "e1de8b9546e30c7e"
+      }
+    },
+    {
+      "instance_id": "psf__requests-774",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": [
+          "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-774",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-774",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [
+            "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "426195f6a9097f55"
+      }
+    },
+    {
+      "instance_id": "psf__requests-863",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": [
+          "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-863",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": null,
+            "patch_sha16": "",
+            "accepted": false,
+            "contract_reason_ar": "اختيار الملف رُفض ببوابة أو لم يعطِ مساراً موجوداً",
+            "applied": false,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — لا ملف صالح للمحاولة القادمة",
+            "apply_mode": "",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-863",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [
+            "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+          ],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          null
+        ],
+        "note_ar": "",
+        "chain_hash": "e7325cfd5b394866"
+      }
+    }
+  ],
+  "chain_hash": "2a8bf413045ba0c7",
+  "selection": {
+    "measured": true,
+    "reason_ar": "مقاسة على 10 حالة من 44 ذهبية موثقة",
+    "cases_with_choice": 10,
+    "cases_with_gold": 44,
+    "hit_any": 9,
+    "hit_rate": 0.9,
+    "mean_precision": 1.0,
+    "misses": [
+      "psf__requests-1537"
+    ]
+  }
+}

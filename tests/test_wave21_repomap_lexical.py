@@ -313,3 +313,35 @@ def test_lexmap_doc_shape_if_present():
     assert doc["aggregate"]["measurable_cases"] == len([r for r in doc["results"] if r["measured"]])
     assert "chain_hash" in doc and len(doc["chain_hash"]) == 16
     assert doc["data"]["gold_sha16"] and doc["data"]["instances_sha16"]
+
+
+# --------------------------------------------------------------- عقد التلاقي (الموجة 22)
+def test_choice_request_filters_map_lines_outside_tree():
+    """عقد الموجة 22: الخريطة لا تسمّي ما ليس في شجرة الاختيار — الخريطة
+    العامة (الموجة 21) ترى كل اللغات وشجرة البروتوكول بايثون حصراً؛ السطر
+    الخارجي يُستبعد في نقطة التلاقي الواحدة لا في المتسابق ولا في العقل."""
+    from zyko.benchmarks.swebench import SWEInstance, build_choice_request
+
+    inst = SWEInstance(
+        instance_id="x",
+        repo="r",
+        base_commit="b" * 40,
+        version="1",
+        problem_statement="ع",
+        test_patch="t",
+        fail_to_pass=("a::b",),
+        pass_to_pass=(),
+    )
+    tree = ("requests/models.py", "requests/sessions.py")
+    map_lines = (
+        "requests/models.py :: class Session «إدارة الجلسة»",
+        "README.md :: # النموذج",  # خارج الشجرة — يُستبعد
+        "setup.cfg :: metadata:",  # خارج الشجرة — يُستبعد
+    )
+    request = build_choice_request(inst, tree, map_lines=map_lines)
+    assert "requests/models.py :: class Session" in request
+    assert "README.md ::" not in request
+    assert "setup.cfg ::" not in request
+    # خريطة كاملة خارج الشجرة — بلا قسم خريطة أصلاً (الفراغ الصادق)
+    request_no_map = build_choice_request(inst, tree, map_lines=("README.md :: # النموذج",))
+    assert "خريطة المستودع" not in request_no_map

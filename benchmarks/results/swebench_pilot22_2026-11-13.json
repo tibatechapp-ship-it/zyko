@@ -1,0 +1,580 @@
+{
+  "protocol": "SWE-bench (psf/requests) — عقل حقيقي داخل حلقة تلقيم الفشل + خريطة دلالية + جرّاح صياغي وحرس تراجع (الموجة 20، بروتوكول v2)",
+  "data": {
+    "source": "pilot22_data.json",
+    "instances_sha16": "ecc9bad601bd33ab"
+  },
+  "model_label": "glm-4.7",
+  "model_served_by": "z-ai-web-dev-sdk bridge (local, 127.0.0.1)",
+  "httpbin": "http://127.0.0.1:8642/",
+  "python_env": "3.9 (uv) — بيئة معزولة لكل حالة",
+  "loop": {
+    "max_attempts": 3,
+    "max_files": 3,
+    "feedback": "خطأ التطبيق ورفض الحرس وعقد FAIL_TO_PASS الفاشلة تُغذّى للعقل",
+    "repo_map": "repo-map بتوقيع الرموز (docstring + أعضاء الأصناف + عائلات لغات متعددة + عمل بلا git) ملحق بطلب الاختيار (الموجة 21)",
+    "transport_retries": "النقل الافتراضي يعاد 3 مرات بتراجع 2s على الأخطاء العابرة (الموجة 19)",
+    "patch_surgeon": "فحص صياغي محلي قبل git apply وسلّم تطبيق معلن: كاملة ← بالملفات ← بالأجزاء (الموجة 20)",
+    "regression_guard": "رقعة تكسر عقداً ناجحة عند الأساس تُرجع إلى الأساس ورجعيتها تُغذّى للعقل (الموجة 20)",
+    "pace_s": 0.0
+  },
+  "aggregate": {
+    "planned_total": 6,
+    "total": 6,
+    "resolved_strict": 0,
+    "resolved_env": 1,
+    "f2p_repaired_total": 0,
+    "f2p_total": 129,
+    "applied_count": 5,
+    "contract_rejections": 0,
+    "gate_rejections": 0,
+    "reverted_count": 0,
+    "partial_applies": 0,
+    "base_only_count": 0,
+    "resolve_rate_env": 0.1667
+  },
+  "results": [
+    {
+      "instance_id": "psf__requests-1142",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_no_content_length"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1142",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/models.py",
+            "patch_sha16": "49172fdc38715b0c",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 2,
+            "feedback_sha16": "052b1d4445604eb0",
+            "file_choice": "requests/models.py",
+            "patch_sha16": "36e9d6a1c1efda66",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 3,
+            "feedback_sha16": "052b1d4445604eb0",
+            "file_choice": "requests/models.py",
+            "patch_sha16": "7cfe94e138ea8912",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1142",
+          "patch_applied": true,
+          "apply_error_ar": null,
+          "patch_sha16": "7cfe94e138ea8912",
+          "contract_reason_ar": "مسموح",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_no_content_length"
+          ],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [
+            "test_requests.py::RequestsTestCase::test_no_content_length"
+          ],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "الحلقة طبّقت عند المحاولة 3"
+        },
+        "file_choices": [
+          "requests/models.py",
+          "requests/models.py",
+          "requests/models.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "5d9fc57709319280"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1537",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_can_send_nonstring_objects_with_files"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1537",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/packages/urllib3/filepost.py",
+            "patch_sha16": "bd13d72cbd1b464e",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": false,
+            "apply_error_ar": "فشل فحص التطبيق: error: requests/packages/urllib3/filepost.py: patch does not apply",
+            "stop_reason_ar": "متابعة — رجعية التطبيق بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 2,
+            "feedback_sha16": "80befbfbd9f50750",
+            "file_choice": "requests/packages/urllib3/filepost.py",
+            "patch_sha16": "969be8b3cb72b4b0",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": false,
+            "apply_error_ar": "فشل فحص التطبيق: error: requests/packages/urllib3/filepost.py: patch does not apply",
+            "stop_reason_ar": "متابعة — رجعية التطبيق بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 3,
+            "feedback_sha16": "80befbfbd9f50750",
+            "file_choice": "requests/packages/urllib3/filepost.py",
+            "patch_sha16": "7452c8e897d8dd82",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": false,
+            "apply_error_ar": "فشل الفحص الصياغي: عدّاد جزء مخالف في «a/requests/packages/urllib3/filepost.py»: ترويسة «@@ -72,7 +76,6 @@» تعلن 7 قديماً و6 جديداً، والأسطر الفعلية 8 قديماً و6 جديداً — صحّح الترويسة أو الأسطر (أعِد حساب العدّادات) — فشل فحص التطبيق: error: requests/packages/urllib3/filepost.py: patch does not apply | الصياغي: عدّاد جزء مخالف في «a/requests/packages/urllib3/filepost.py»: ترويسة «@@ -72,7 +76,6 @@» تعلن 7 قديماً و6 جديداً، والأسطر الفعلية 8 قديماً و6 جديداً — صحّح الترويسة أو الأسطر (أعِد حساب العدّادات)",
+            "stop_reason_ar": "نهاية الميزانية — التطبيق فشل",
+            "apply_mode": "كاملة",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-1537",
+          "patch_applied": false,
+          "apply_error_ar": null,
+          "patch_sha16": "",
+          "contract_reason_ar": "",
+          "f2p_failed_at_base": [
+            "test_requests.py::RequestsTestCase::test_can_send_nonstring_objects_with_files"
+          ],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "لم تُطبَّق أي رقعة في الميزانية"
+        },
+        "file_choices": [
+          "requests/packages/urllib3/filepost.py",
+          "requests/packages/urllib3/filepost.py",
+          "requests/packages/urllib3/filepost.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "4915d739d3a4aec7"
+      }
+    },
+    {
+      "instance_id": "psf__requests-3362",
+      "base": {
+        "f2p_failed_at_base": [
+          "tests/test_requests.py::TestRequests::test_response_decode_unicode"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-3362",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/models.py",
+            "patch_sha16": "a970d338ee62de74",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 2,
+            "feedback_sha16": "324c25b88b288170",
+            "file_choice": "requests/models.py",
+            "patch_sha16": "94df834373fe21e0",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": false,
+            "apply_error_ar": "فشل فحص التطبيق: error: requests/models.py: patch does not apply",
+            "stop_reason_ar": "متابعة — رجعية التطبيق بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          },
+          {
+            "index": 3,
+            "feedback_sha16": "fa2eb8797dc44587",
+            "file_choice": "requests/models.py",
+            "patch_sha16": "0231e8483ff23210",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-3362",
+          "patch_applied": true,
+          "apply_error_ar": null,
+          "patch_sha16": "0231e8483ff23210",
+          "contract_reason_ar": "مسموح",
+          "f2p_failed_at_base": [
+            "tests/test_requests.py::TestRequests::test_response_decode_unicode"
+          ],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [],
+          "f2p_failed_after": [
+            "tests/test_requests.py::TestRequests::test_response_decode_unicode"
+          ],
+          "p2p_failed_after": [],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "الحلقة طبّقت عند المحاولة 3"
+        },
+        "file_choices": [
+          "requests/models.py",
+          "requests/models.py",
+          "requests/models.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "a33175406ab0b2a8"
+      }
+    },
+    {
+      "instance_id": "psf__requests-4356",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-4356",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/utils.py",
+            "patch_sha16": "ef97e0ec9c01d9d9",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-4356",
+          "patch_applied": true,
+          "apply_error_ar": null,
+          "patch_sha16": "ef97e0ec9c01d9d9",
+          "contract_reason_ar": "مسموح",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [],
+          "f2p_passed_after": [
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_contains",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_copy",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_delitem",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_docstring_example",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_equality",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_fixes_649",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_get",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_getitem",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_init[cid0]",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_init[cid1]",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_init[cid2]",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_iter",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_len",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_lower_items",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_preserve_key_case",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_preserve_last_key_case",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_setdefault",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_update",
+            "tests/test_requests.py::TestCaseInsensitiveDict::test_update_retains_unchanged",
+            "tests/test_requests.py::TestMorselToCookieExpires::test_expires_invalid_int[100-TypeError]",
+            "tests/test_requests.py::TestMorselToCookieExpires::test_expires_invalid_int[woops-ValueError]",
+            "tests/test_requests.py::TestMorselToCookieExpires::test_expires_none",
+            "tests/test_requests.py::TestMorselToCookieExpires::test_expires_valid_str",
+            "tests/test_requests.py::TestMorselToCookieMaxAge::test_max_age_invalid_str",
+            "tests/test_requests.py::TestMorselToCookieMaxAge::test_max_age_valid_int",
+            "tests/test_requests.py::TestPreparingURLs::test_parameters_for_nonstandard_schemes[http+unix://%2Fvar%2Frun%2Fsocket/path-params0-http+unix://%2Fvar%2Frun%2Fsocket/path?key=value]",
+            "tests/test_requests.py::TestPreparingURLs::test_parameters_for_nonstandard_schemes[http+unix://%2Fvar%2Frun%2Fsocket/path-params1-http+unix://%2Fvar%2Frun%2Fsocket/path?key=value]",
+            "tests/test_requests.py::TestPreparingURLs::test_parameters_for_nonstandard_schemes[mailto:user@example.org-params2-mailto:user@example.org]",
+            "tests/test_requests.py::TestPreparingURLs::test_parameters_for_nonstandard_schemes[mailto:user@example.org-params3-mailto:user@example.org]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_bad_url[http://*.google.com0]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_bad_url[http://*.google.com1]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_bad_url[http://*0]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_bad_url[http://*1]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_bad_url[http://\\u2603.net/]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_url[http://K\\xc3\\xb6nigsg\\xc3\\xa4\\xc3\\x9fchen.de/stra\\xc3\\x9fe-http://xn--knigsgchen-b4a3dun.de/stra%C3%9Fe]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_url[http://K\\xf6nigsg\\xe4\\xdfchen.de/stra\\xdfe-http://xn--knigsgchen-b4a3dun.de/stra%C3%9Fe]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_url[http://[1200:0000:ab00:1234:0000:2552:7777:1313]:12345/-http://[1200:0000:ab00:1234:0000:2552:7777:1313]:12345/0]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_url[http://[1200:0000:ab00:1234:0000:2552:7777:1313]:12345/-http://[1200:0000:ab00:1234:0000:2552:7777:1313]:12345/1]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_url[http://\\u30b8\\u30a7\\u30fc\\u30d4\\u30fc\\u30cb\\u30c3\\u30af.jp-http://xn--hckqz9bzb1cyrb.jp/]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_url[http://\\xe3\\x82\\xb8\\xe3\\x82\\xa7\\xe3\\x83\\xbc\\xe3\\x83\\x94\\xe3\\x83\\xbc\\xe3\\x83\\x8b\\xe3\\x83\\x83\\xe3\\x82\\xaf.jp-http://xn--hckqz9bzb1cyrb.jp/]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_url[http://google.com-http://google.com/]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_url[http://stra\\xc3\\x9fe.de/stra\\xc3\\x9fe-http://xn--strae-oqa.de/stra%C3%9Fe]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_url[http://stra\\xdfe.de/stra\\xdfe-http://xn--strae-oqa.de/stra%C3%9Fe]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_url[http://xn--n3h.net/-http://xn--n3h.net/0]",
+            "tests/test_requests.py::TestPreparingURLs::test_preparing_url[http://xn--n3h.net/-http://xn--n3h.net/1]",
+            "tests/test_requests.py::TestPreparingURLs::test_url_mutation[data:SSDimaUgUHl0aG9uIQ==-data:SSDimaUgUHl0aG9uIQ==]",
+            "tests/test_requests.py::TestPreparingURLs::test_url_mutation[http+unix://%2Fvar%2Frun%2Fsocket/path%7E-http+unix://%2Fvar%2Frun%2Fsocket/path~0]",
+            "tests/test_requests.py::TestPreparingURLs::test_url_mutation[http+unix://%2Fvar%2Frun%2Fsocket/path%7E-http+unix://%2Fvar%2Frun%2Fsocket/path~1]",
+            "tests/test_requests.py::TestPreparingURLs::test_url_mutation[mailto:user@example.org-mailto:user@example.org0]",
+            "tests/test_requests.py::TestPreparingURLs::test_url_mutation[mailto:user@example.org-mailto:user@example.org1]",
+            "tests/test_requests.py::TestRequests::test_basic_auth_str_is_always_native[\\xd0\\xb8\\xd0\\xbc\\xd1\\x8f-\\xd0\\xbf\\xd0\\xb0\\xd1\\x80\\xd0\\xbe\\xd0\\xbb\\xd1\\x8c-Basic",
+            "tests/test_requests.py::TestRequests::test_basic_auth_str_is_always_native[test-test-Basic",
+            "tests/test_requests.py::TestRequests::test_basic_building",
+            "tests/test_requests.py::TestRequests::test_basicauth_encodes_byte_strings",
+            "tests/test_requests.py::TestRequests::test_binary_put",
+            "tests/test_requests.py::TestRequests::test_cookie_as_dict_items",
+            "tests/test_requests.py::TestRequests::test_cookie_as_dict_keeps_items",
+            "tests/test_requests.py::TestRequests::test_cookie_as_dict_keeps_len",
+            "tests/test_requests.py::TestRequests::test_cookie_as_dict_keys",
+            "tests/test_requests.py::TestRequests::test_cookie_as_dict_values",
+            "tests/test_requests.py::TestRequests::test_cookie_duplicate_names_different_domains",
+            "tests/test_requests.py::TestRequests::test_cookie_duplicate_names_raises_cookie_conflict_error",
+            "tests/test_requests.py::TestRequests::test_cookie_parameters",
+            "tests/test_requests.py::TestRequests::test_empty_response_has_content_none",
+            "tests/test_requests.py::TestRequests::test_entry_points",
+            "tests/test_requests.py::TestRequests::test_errors[http://doesnotexist.google.com-ConnectionError]",
+            "tests/test_requests.py::TestRequests::test_errors[http://fe80::5054:ff:fe5a:fc0-InvalidURL]",
+            "tests/test_requests.py::TestRequests::test_errors[http://localhost:1-ConnectionError]",
+            "tests/test_requests.py::TestRequests::test_http_error",
+            "tests/test_requests.py::TestRequests::test_invalid_url[InvalidSchema-10.122.1.1:3128/]",
+            "tests/test_requests.py::TestRequests::test_invalid_url[InvalidSchema-localhost.localdomain:3128/]",
+            "tests/test_requests.py::TestRequests::test_invalid_url[InvalidSchema-localhost:3128]",
+            "tests/test_requests.py::TestRequests::test_invalid_url[InvalidURL-http://]",
+            "tests/test_requests.py::TestRequests::test_invalid_url[MissingSchema-hiwpefhipowhefopw]",
+            "tests/test_requests.py::TestRequests::test_links",
+            "tests/test_requests.py::TestRequests::test_long_authinfo_in_url",
+            "tests/test_requests.py::TestRequests::test_non_prepared_request_error",
+            "tests/test_requests.py::TestRequests::test_nonhttp_schemes_dont_check_URLs",
+            "tests/test_requests.py::TestRequests::test_params_are_added_before_fragment[http://example.com/path#fragment-http://example.com/path?a=b#fragment]",
+            "tests/test_requests.py::TestRequests::test_params_are_added_before_fragment[http://example.com/path?key=value#fragment-http://example.com/path?key=value&a=b#fragment]",
+            "tests/test_requests.py::TestRequests::test_params_bytes_are_encoded",
+            "tests/test_requests.py::TestRequests::test_params_original_order_is_preserved_by_default",
+            "tests/test_requests.py::TestRequests::test_path_is_not_double_encoded",
+            "tests/test_requests.py::TestRequests::test_prepare_body_position_non_stream",
+            "tests/test_requests.py::TestRequests::test_prepare_request_with_bytestring_url",
+            "tests/test_requests.py::TestRequests::test_proxy_error",
+            "tests/test_requests.py::TestRequests::test_response_chunk_size_type",
+            "tests/test_requests.py::TestRequests::test_response_decode_unicode",
+            "tests/test_requests.py::TestRequests::test_response_is_iterable",
+            "tests/test_requests.py::TestRequests::test_response_reason_unicode",
+            "tests/test_requests.py::TestRequests::test_response_reason_unicode_fallback",
+            "tests/test_requests.py::TestRequests::test_response_without_release_conn",
+            "tests/test_requests.py::TestRequests::test_rewind_body",
+            "tests/test_requests.py::TestRequests::test_rewind_body_failed_seek",
+            "tests/test_requests.py::TestRequests::test_rewind_body_failed_tell",
+            "tests/test_requests.py::TestRequests::test_rewind_body_no_seek",
+            "tests/test_requests.py::TestRequests::test_rewind_partially_read_body",
+            "tests/test_requests.py::TestRequests::test_transport_adapter_ordering",
+            "tests/test_requests.py::TestRequests::test_whitespaces_are_removed_from_url",
+            "tests/test_requests.py::TestTimeout::test_connect_timeout[timeout0]",
+            "tests/test_requests.py::TestTimeout::test_connect_timeout[timeout1]",
+            "tests/test_requests.py::TestTimeout::test_total_timeout_connect[timeout0]",
+            "tests/test_requests.py::TestTimeout::test_total_timeout_connect[timeout1]",
+            "tests/test_requests.py::test_data_argument_accepts_tuples[data0]",
+            "tests/test_requests.py::test_data_argument_accepts_tuples[data1]",
+            "tests/test_requests.py::test_data_argument_accepts_tuples[data2]",
+            "tests/test_requests.py::test_json_encodes_as_bytes",
+            "tests/test_requests.py::test_prepared_copy[None]",
+            "tests/test_requests.py::test_prepared_copy[kwargs1]",
+            "tests/test_requests.py::test_prepared_copy[kwargs2]",
+            "tests/test_requests.py::test_prepared_copy[kwargs3]",
+            "tests/test_requests.py::test_proxy_env_vars_override_default[all_proxy-http://example.com-socks5://proxy.com:9876]",
+            "tests/test_requests.py::test_proxy_env_vars_override_default[all_proxy-https://example.com-socks5://proxy.com:9876]",
+            "tests/test_requests.py::test_proxy_env_vars_override_default[http_proxy-http://example.com-socks5://proxy.com:9876]",
+            "tests/test_requests.py::test_proxy_env_vars_override_default[https_proxy-https://example.com-socks5://proxy.com:9876]"
+          ],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": "pytest خرج بـ 4",
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "الحلقة طبّقت عند المحاولة 1"
+        },
+        "file_choices": [
+          "requests/utils.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "34201ebd8c1e7c18"
+      }
+    },
+    {
+      "instance_id": "psf__requests-774",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": [
+          "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-774",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/models.py",
+            "patch_sha16": "100cb2216376a617",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "انصراف — حلّ",
+            "apply_mode": "كاملة",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-774",
+          "patch_applied": true,
+          "apply_error_ar": null,
+          "patch_sha16": "100cb2216376a617",
+          "contract_reason_ar": "مسموح",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [
+            "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+          ],
+          "f2p_passed_after": [
+            "tests/test_requests.py::RequestsTestSuite::test_GET_no_redirect",
+            "tests/test_requests.py::RequestsTestSuite::test_HTTP_200_OK_GET_WITH_MIXED_PARAMS",
+            "tests/test_requests.py::RequestsTestSuite::test_POSTBIN_GET_POST_FILES_WITH_PARAMS",
+            "tests/test_requests.py::RequestsTestSuite::test_danger_mode_redirects",
+            "tests/test_requests.py::RequestsTestSuite::test_httpauth_recursion",
+            "tests/test_requests.py::RequestsTestSuite::test_iter_lines",
+            "tests/test_requests.py::RequestsTestSuite::test_urlencoded_post_querystring_multivalued"
+          ],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [
+            "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+          ],
+          "runs_error_ar": null,
+          "resolved_strict": false,
+          "resolved_env": true,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "الحلقة طبّقت عند المحاولة 1"
+        },
+        "file_choices": [
+          "requests/models.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "b528b377bc5e4764"
+      }
+    },
+    {
+      "instance_id": "psf__requests-863",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": [
+          "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-863",
+        "attempts": [
+          {
+            "index": 1,
+            "feedback_sha16": "",
+            "file_choice": "requests/models.py",
+            "patch_sha16": "aec64bbb95b8eef3",
+            "accepted": true,
+            "contract_reason_ar": "مسموح",
+            "applied": true,
+            "apply_error_ar": null,
+            "stop_reason_ar": "متابعة — رجعية الاختبارات بُنيت",
+            "apply_mode": "كاملة",
+            "reverted": false
+          }
+        ],
+        "verdict": {
+          "instance_id": "psf__requests-863",
+          "patch_applied": true,
+          "apply_error_ar": null,
+          "patch_sha16": "aec64bbb95b8eef3",
+          "contract_reason_ar": "مسموح",
+          "f2p_failed_at_base": [],
+          "p2p_failed_at_base": [
+            "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+          ],
+          "f2p_passed_after": [
+            "tests/test_requests.py::RequestsTestSuite::test_POSTBIN_GET_POST_FILES_WITH_HEADERS",
+            "tests/test_requests.py::RequestsTestSuite::test_nonurlencoded_postdata",
+            "tests/test_requests.py::RequestsTestSuite::test_prefetch_redirect_bug",
+            "tests/test_requests.py::RequestsTestSuite::test_urlencoded_post_data"
+          ],
+          "f2p_failed_after": [],
+          "p2p_failed_after": [],
+          "runs_error_ar": "pytest خرج بـ 4",
+          "resolved_strict": false,
+          "resolved_env": false,
+          "f2p_repaired_count": 0,
+          "attempts_note_ar": "الحلقة طبّقت عند المحاولة 1"
+        },
+        "file_choices": [
+          "requests/models.py"
+        ],
+        "note_ar": "",
+        "chain_hash": "10a458a93b774f29"
+      }
+    }
+  ],
+  "chain_hash": "21a51f70393af529",
+  "selection": {
+    "measured": true,
+    "reason_ar": "مقاسة على 6 حالة من 44 ذهبية موثقة",
+    "cases_with_choice": 6,
+    "cases_with_gold": 6,
+    "hit_any": 3,
+    "hit_rate": 0.5,
+    "mean_precision": 1.0,
+    "misses": [
+      "psf__requests-1537",
+      "psf__requests-3362",
+      "psf__requests-4356"
+    ]
+  }
+}
