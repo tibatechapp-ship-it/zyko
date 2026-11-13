@@ -1,0 +1,146 @@
+{
+  "axes": [
+    {
+      "axis": "swe_engineering",
+      "frontier_analogs": [
+        "SWE-bench Verified",
+        "EC-SWE (تعدد الملفات)",
+        "SciCode"
+      ],
+      "score_pct": 45.46,
+      "source": "reader+lab",
+      "sub_metrics": [
+        {
+          "name": "تعدد الملفات (EC-SWE analog)",
+          "source": "zyko.benchmarks.multilab حي — 9 سيناريوهات",
+          "value_pct": 100.0
+        },
+        {
+          "name": "الحل البيئي",
+          "source": "swebench_full_wide_2026-11-13.json (الموجة 19، حلقة بعقل حقيقي)",
+          "value_pct": 13.64
+        },
+        {
+          "name": "الحل الصارم",
+          "source": "swebench_full_wide22_2026-11-13.json (الموجة 22، أول حلّين صارمين بالاسم)",
+          "value_pct": 4.55
+        },
+        {
+          "name": "رقع مطبقة فعلاً",
+          "source": "swebench_full_wide22_2026-11-13.json (رقع مطبقة فعلاً)",
+          "value_pct": 20.45
+        }
+      ],
+      "title_ar": "هندسة البرمجيات",
+      "verdict": "ضعف",
+      "weight": 0.3
+    },
+    {
+      "axis": "agentic_tools",
+      "frontier_analogs": [
+        "BFCL (استدعاء الدوال)",
+        "τ-bench (التزام السياسة)"
+      ],
+      "score_pct": 100.0,
+      "source": "lab",
+      "sub_metrics": [
+        {
+          "name": "دقة قرارات العقود بالاتجاهين",
+          "source": "معمل قرارات العقود الحي (12 سيناريو)",
+          "value_pct": 100.0
+        }
+      ],
+      "title_ar": "الأدوات والعقود",
+      "verdict": "قوة",
+      "weight": 0.25
+    },
+    {
+      "axis": "terminal",
+      "frontier_analogs": [
+        "Terminal-Bench"
+      ],
+      "score_pct": 100.0,
+      "source": "lab",
+      "sub_metrics": [
+        {
+          "name": "مهام الطرفية تحت العقد والجِل",
+          "source": "معمل الطرفية الحي (8 مهام)",
+          "value_pct": 100.0
+        }
+      ],
+      "title_ar": "الطرفية",
+      "verdict": "قوة",
+      "weight": 0.15
+    },
+    {
+      "axis": "reasoning_determinism",
+      "frontier_analogs": [
+        "ARC-AGI (التعميم)",
+        "منهج إعادة الاشتقاق بالبايت"
+      ],
+      "score_pct": 100.0,
+      "source": "reader",
+      "sub_metrics": [
+        {
+          "name": "eval1000",
+          "source": "eval1000_2026-11-12.json — بصمة f69ba9abf1ed1142",
+          "value_pct": 100.0
+        },
+        {
+          "name": "synthlab",
+          "source": "synthlab_2026-11-12.json — بصمة da44c50bcff7d91d",
+          "value_pct": 100.0
+        }
+      ],
+      "title_ar": "التفكير والحتمية",
+      "verdict": "قوة",
+      "weight": 0.2
+    },
+    {
+      "axis": "platforms",
+      "frontier_analogs": [
+        "— (بعدُ zyko: النشر المقاس)"
+      ],
+      "score_pct": 100.0,
+      "source": "reader",
+      "sub_metrics": [
+        {
+          "name": "أهداف النشر الجاهزة",
+          "source": "zyko.platform.deploy — مقياس من الشجرة",
+          "value": "4/4"
+        }
+      ],
+      "title_ar": "المنصات",
+      "verdict": "قوة",
+      "weight": 0.1
+    },
+    {
+      "axis": "multimodal",
+      "frontier_analogs": [
+        "MMMU-Pro",
+        "ScreenSpot Pro"
+      ],
+      "score_pct": null,
+      "source": "declared-na",
+      "sub_metrics": [],
+      "title_ar": "متعدد الوسائط",
+      "verdict": "خارج النطاق — معلن",
+      "weight": 0.0
+    }
+  ],
+  "chain_hash": "fd50105c927413572c6499dbbcbf976fd9547803952d64e3fe71c02d72ddac3e",
+  "counts": {
+    "contract_lab": {
+      "correct": 12,
+      "total": 12
+    },
+    "terminal_lab": {
+      "passed": 8,
+      "total": 8
+    }
+  },
+  "kind": "zyko_frontier_gauge",
+  "zfi": 83.64,
+  "zfi_formula": "المتوسط الموزون للمحاور القابلة للقياس (الأوزان معلنة، مجموعها 1.0؛ متعدد الوسائط 0.0 معلن)",
+  "zyko_version": "0.47.0"
+}
