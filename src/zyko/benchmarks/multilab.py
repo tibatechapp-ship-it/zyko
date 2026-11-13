@@ -97,12 +97,7 @@ def _seed_discovery_simple() -> tuple[dict[str, str], str, tuple[str, ...], tupl
     """ML-D1 — ثلاثة ملفات: تعريف، استدعاء مباشر، استيراد من-؛ وفخاخ نصية."""
     files = {
         "calc.py": (
-            "def scale(x):\n"
-            "    return x * 3\n"
-            "\n"
-            "\n"
-            "def twice(y):\n"
-            "    return scale(y) + scale(1)\n"
+            "def scale(x):\n    return x * 3\n\n\ndef twice(y):\n    return scale(y) + scale(1)\n"
         ),
         "app.py": "from calc import scale\n\n\ndef run():\n    return scale(5) + twice(2)\n",
         "views.py": "import calc\n\n\ndef render():\n    return calc.scale(9)\n",
@@ -119,24 +114,11 @@ def _seed_discovery_attributes() -> tuple[dict[str, str], str, tuple[str, ...], 
     """ML-D2 — وصول عبر الوحدة واستيراد من-؛ وملف فخ يرشح رمزًا آخر فلا يظهر."""
     files = {
         "pkg/__init__.py": "",
-        "pkg/core.py": (
-            "def audit(entries, limit=0):\n"
-            "    return len(entries) + limit\n"
-        ),
+        "pkg/core.py": ("def audit(entries, limit=0):\n    return len(entries) + limit\n"),
         "pkg/use.py": (
-            "from pkg.core import audit\n"
-            "\n"
-            "\n"
-            "def check(items):\n"
-            "    return audit(items, limit=2)\n"
+            "from pkg.core import audit\n\n\ndef check(items):\n    return audit(items, limit=2)\n"
         ),
-        "pkg/other.py": (
-            "from . import core\n"
-            "\n"
-            "\n"
-            "def bad(x):\n"
-            "    return core.audit([x])\n"
-        ),
+        "pkg/other.py": ("from . import core\n\n\ndef bad(x):\n    return core.audit([x])\n"),
         # فخ: يرشح Report وtotal — رمزًا آخر كله فلا يدخل مسح audit
         "pkg/report.py": (
             "class Report:\n"
@@ -192,10 +174,7 @@ def _seed_execution_multi() -> tuple[dict[str, str], str, str]:
     """ML-E2 — الاسم يعبر ثلاثة ملفات بثلاثة أنماط: دالة ووسيطة وسمة وحدة."""
     files = {
         "m/__init__.py": "",
-        "m/base.py": (
-            "def weight(v):\n"
-            "    return len(v) * 2\n"
-        ),
+        "m/base.py": ("def weight(v):\n    return len(v) * 2\n"),
         "m/mid.py": (
             "from m.base import weight\n"
             "\n"
@@ -204,13 +183,7 @@ def _seed_execution_multi() -> tuple[dict[str, str], str, str]:
             "    w = mass if mass is not None else 1\n"
             "    return weight(v) + w\n"
         ),
-        "m/top.py": (
-            "import m.base\n"
-            "\n"
-            "\n"
-            "def final(v):\n"
-            "    return m.base.weight(v) * 10\n"
-        ),
+        "m/top.py": ("import m.base\n\n\ndef final(v):\n    return m.base.weight(v) * 10\n"),
     }
     return files, "weight", "heft"
 
@@ -285,9 +258,7 @@ class MultiLabReport:
         ]
         for cat in CATEGORIES:
             counts = self.category_counts()[cat]
-            lines.append(
-                f"[{CATEGORY_AR[cat]}] {counts['passed']}/{counts['total']}"
-            )
+            lines.append(f"[{CATEGORY_AR[cat]}] {counts['passed']}/{counts['total']}")
             for row in self.rows:
                 if row.category == cat:
                     mark = "أخضر" if row.passed else "أحمر"
@@ -446,12 +417,10 @@ _EXEC_CALLS: dict[str, list[tuple[str, str, list[list[Any]]]]] = {
 def _run_execution(seed_fn, scenario_id: str) -> MultiLabRow:
     files, sym, new = seed_fn()
     golden_calls = [
-        (rel, sym if fn == "__SYMBOL__" else fn, args)
-        for rel, fn, args in _EXEC_CALLS[scenario_id]
+        (rel, sym if fn == "__SYMBOL__" else fn, args) for rel, fn, args in _EXEC_CALLS[scenario_id]
     ]
     post_calls = [
-        (rel, new if fn == "__SYMBOL__" else fn, args)
-        for rel, fn, args in _EXEC_CALLS[scenario_id]
+        (rel, new if fn == "__SYMBOL__" else fn, args) for rel, fn, args in _EXEC_CALLS[scenario_id]
     ]
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -635,15 +604,8 @@ def _run_transaction_restore() -> MultiLabRow:
         before = {rel: _sha16(content) for rel, content in sorted(files.items())}
         contract = PermissionContract.for_roots(root, allow_patch=True)
         receipt = apply_plan(contract, plan, root=root)
-        after = {
-            rel: _sha16((root / rel).read_text(encoding="utf-8"))
-            for rel in sorted(files)
-        }
-        ok = (
-            receipt.rolled_back
-            and before == after
-            and not receipt.restore_failures
-        )
+        after = {rel: _sha16((root / rel).read_text(encoding="utf-8")) for rel in sorted(files)}
+        ok = receipt.rolled_back and before == after and not receipt.restore_failures
         return MultiLabRow(
             scenario_id="ML-T3",
             category=CATEGORY_TRANSACTION,
@@ -673,9 +635,7 @@ def run_multilab() -> MultiLabReport:
     )
     digest = hashlib.sha256()
     for row in rows:
-        digest.update(
-            json.dumps(row.to_dict(), ensure_ascii=False, sort_keys=True).encode("utf-8")
-        )
+        digest.update(json.dumps(row.to_dict(), ensure_ascii=False, sort_keys=True).encode("utf-8"))
     return MultiLabReport(rows=rows, receipt_sha256=digest.hexdigest())
 
 

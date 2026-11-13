@@ -709,9 +709,7 @@ def apply_plan(
         if step.kind == "replace" or target.is_file():
             try:
                 if target.stat().st_size > contract.max_file_bytes:
-                    return _fail(
-                        f"لقطة: {step.path} فوق سقف العقد — رفض الصفقة كاملة قبل أي كتابة"
-                    )
+                    return _fail(f"لقطة: {step.path} فوق سقف العقد — رفض الصفقة كاملة قبل أي كتابة")
                 snapshot[step.path] = target.read_text(encoding="utf-8")
             except (OSError, UnicodeDecodeError) as exc:
                 return _fail(
@@ -790,8 +788,12 @@ def apply_plan(
                 _fail,
                 f"مسح التغطية فشل: {exc}",
             )
-        old_left = len(old_after.definitions) + len(old_after.references) + len(old_after.import_refs)
-        new_count = len(new_after.definitions) + len(new_after.references) + len(new_after.import_refs)
+        old_left = (
+            len(old_after.definitions) + len(old_after.references) + len(old_after.import_refs)
+        )
+        new_count = (
+            len(new_after.definitions) + len(new_after.references) + len(new_after.import_refs)
+        )
         coverage_detail = {
             "old_left": int(old_left),
             "new_count": int(new_count),
@@ -924,9 +926,7 @@ def _cli_main(argv: list[str] | None = None) -> int:
         print(scan.table_ar())
         return 0
     try:
-        plan, scan = build_rename_plan(
-            root, contract, symbol=args.symbol, new_name=args.new_name
-        )
+        plan, scan = build_rename_plan(root, contract, symbol=args.symbol, new_name=args.new_name)
     except MultiFilePlanError as exc:
         print(f"رُفضت الخطة ({len(exc.problems)} مشكلة):")
         for problem in exc.problems:

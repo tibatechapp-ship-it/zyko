@@ -76,9 +76,7 @@ class TestScan:
         _write(
             tmp_path,
             {
-                "a.py": (
-                    "def audit(items, limit=0):\n    return len(items) + limit\n"
-                ),
+                "a.py": ("def audit(items, limit=0):\n    return len(items) + limit\n"),
                 "b.py": "import a\n\n\ndef go(x):\n    return a.audit(x)\n",
                 "c.py": "from a import audit\n\n\ndef kw(x):\n    return audit(x, limit=1)\n",
             },
@@ -100,7 +98,10 @@ class TestScan:
         assert scan.external_imports == (("x.py", 1),)
 
     def test_alias_binding_declared(self, tmp_path: Path) -> None:
-        _write(tmp_path, {"a.py": "def calc(x):\n    return x\n", "b.py": "import json as calc\nprint(calc)\n"})
+        _write(
+            tmp_path,
+            {"a.py": "def calc(x):\n    return x\n", "b.py": "import json as calc\nprint(calc)\n"},
+        )
         scan = find_symbol_references(tmp_path, "calc")
         assert scan.alias_bindings == (("b.py", 1),)
 
@@ -194,7 +195,9 @@ class TestRenameSurgery:
 class TestBuildRenamePlan:
     def test_plan_covers_all_references(self, tmp_path: Path) -> None:
         _project(tmp_path)
-        plan, scan = build_rename_plan(tmp_path, _contract(tmp_path), symbol="calc", new_name="compute")
+        plan, scan = build_rename_plan(
+            tmp_path, _contract(tmp_path), symbol="calc", new_name="compute"
+        )
         assert plan.kind == "rename" and plan.symbol == "calc"
         assert {s.path for s in plan.steps} == set(scan.touched_paths)
         assert all(s.kind == "write" and s.content is not None for s in plan.steps)
@@ -246,7 +249,9 @@ class TestBuildRenamePlan:
     def test_rejects_read_only_contract(self, tmp_path: Path) -> None:
         _project(tmp_path)
         with pytest.raises(MultiFilePlanError):
-            build_rename_plan(tmp_path, _contract(tmp_path, patch=False), symbol="calc", new_name="x")
+            build_rename_plan(
+                tmp_path, _contract(tmp_path, patch=False), symbol="calc", new_name="x"
+            )
 
     def test_rejects_above_plan_cap(self, tmp_path: Path) -> None:
         files = {"core.py": "def calc():\n    return 1\n"}
@@ -313,7 +318,9 @@ class TestPlanValidation:
 
     def test_to_json_is_sorted_and_stable(self, tmp_path: Path) -> None:
         _project(tmp_path)
-        plan, _ = build_rename_plan(tmp_path, _contract(tmp_path), symbol="calc", new_name="compute")
+        plan, _ = build_rename_plan(
+            tmp_path, _contract(tmp_path), symbol="calc", new_name="compute"
+        )
         assert plan.to_json() == plan.to_json()
         parsed = json.loads(plan.to_json())
         assert parsed["kind"] == "rename" and len(parsed["steps"]) == 2
@@ -323,7 +330,9 @@ class TestPlanValidation:
 class TestApplyPlan:
     def test_successful_transaction(self, tmp_path: Path) -> None:
         _project(tmp_path)
-        plan, _ = build_rename_plan(tmp_path, _contract(tmp_path), symbol="calc", new_name="compute")
+        plan, _ = build_rename_plan(
+            tmp_path, _contract(tmp_path), symbol="calc", new_name="compute"
+        )
         receipt = apply_plan(_contract(tmp_path), plan, root=tmp_path)
         assert receipt.ok and receipt.applied and not receipt.rolled_back
         assert receipt.coverage_ok and receipt.files_touched == 2
@@ -332,7 +341,9 @@ class TestApplyPlan:
 
     def test_receipt_chain_deterministic(self, tmp_path: Path) -> None:
         _project(tmp_path)
-        plan, _ = build_rename_plan(tmp_path, _contract(tmp_path), symbol="calc", new_name="compute")
+        plan, _ = build_rename_plan(
+            tmp_path, _contract(tmp_path), symbol="calc", new_name="compute"
+        )
         first = apply_plan(_contract(tmp_path), plan, root=tmp_path)
         _project(tmp_path)  # أعد البذر لنفس الحالة
         second = apply_plan(_contract(tmp_path), plan, root=tmp_path)
@@ -355,8 +366,19 @@ class TestApplyPlan:
             goal_ar="صفقة تنكسر وسطًا",
             kind="custom",
             steps=(
-                PlanStep(path="core.py", kind="write", content="def calc(x):\n    return 99\n", purpose_ar="سليمة"),
-                PlanStep(path="app.py", kind="replace", old_text="النص غير موجود", new_text="y", purpose_ar="كاسرة"),
+                PlanStep(
+                    path="core.py",
+                    kind="write",
+                    content="def calc(x):\n    return 99\n",
+                    purpose_ar="سليمة",
+                ),
+                PlanStep(
+                    path="app.py",
+                    kind="replace",
+                    old_text="النص غير موجود",
+                    new_text="y",
+                    purpose_ar="كاسرة",
+                ),
             ),
         )
         receipt = apply_plan(_contract(tmp_path), plan, root=tmp_path)
@@ -371,7 +393,12 @@ class TestApplyPlan:
             goal_ar="استبدال يكسر الصياغة",
             kind="custom",
             steps=(
-                PlanStep(path="core.py", kind="write", content="def calc(x):\n    return 5\n", purpose_ar="سليمة"),
+                PlanStep(
+                    path="core.py",
+                    kind="write",
+                    content="def calc(x):\n    return 5\n",
+                    purpose_ar="سليمة",
+                ),
                 PlanStep(
                     path="app.py",
                     kind="replace",
@@ -393,7 +420,14 @@ class TestApplyPlan:
             kind="rename",
             symbol="calc",
             new_name="compute",
-            steps=(PlanStep(path="core.py", kind="write", content="def compute(x):\n    return x * 2\n", purpose_ar="تعريف فقط"),),
+            steps=(
+                PlanStep(
+                    path="core.py",
+                    kind="write",
+                    content="def compute(x):\n    return x * 2\n",
+                    purpose_ar="تعريف فقط",
+                ),
+            ),
         )
         receipt = apply_plan(_contract(tmp_path), plan, root=tmp_path)
         assert not receipt.ok and receipt.rolled_back
@@ -402,7 +436,12 @@ class TestApplyPlan:
 
     def test_verify_off_skips_coverage(self, tmp_path: Path) -> None:
         _project(tmp_path)
-        step = PlanStep(path="core.py", kind="write", content="def calc(x):\n    return 3\n", purpose_ar="بلا تحقق")
+        step = PlanStep(
+            path="core.py",
+            kind="write",
+            content="def calc(x):\n    return 3\n",
+            purpose_ar="بلا تحقق",
+        )
         plan = MultiFilePlan(goal_ar="بلا تغطية", kind="custom", steps=(step,))
         receipt = apply_plan(_contract(tmp_path), plan, root=tmp_path, verify_coverage=False)
         assert receipt.ok and receipt.coverage_ok is False and receipt.applied
@@ -431,7 +470,14 @@ class TestApplyPlan:
         plan = MultiFilePlan(
             goal_ar="استبدال سليم",
             kind="custom",
-            steps=(PlanStep(path="core.py", kind="replace", old_text="return x * 2", new_text="return x * 3", purpose_ar="نشر"),
+            steps=(
+                PlanStep(
+                    path="core.py",
+                    kind="replace",
+                    old_text="return x * 2",
+                    new_text="return x * 3",
+                    purpose_ar="نشر",
+                ),
             ),
         )
         receipt = apply_plan(_contract(tmp_path), plan, root=tmp_path, verify_coverage=False)
@@ -440,7 +486,9 @@ class TestApplyPlan:
 
     def test_receipt_type_and_dict(self, tmp_path: Path) -> None:
         _project(tmp_path)
-        plan, _ = build_rename_plan(tmp_path, _contract(tmp_path), symbol="calc", new_name="compute")
+        plan, _ = build_rename_plan(
+            tmp_path, _contract(tmp_path), symbol="calc", new_name="compute"
+        )
         receipt = apply_plan(_contract(tmp_path), plan, root=tmp_path)
         assert isinstance(receipt, MultiFileReceipt)
         parsed = json.loads(receipt.to_json())
@@ -454,10 +502,14 @@ class TestCli:
 
         _project(tmp_path)
         assert _cli_main(["scan", "--root", str(tmp_path), "--symbol", "calc"]) == 0
-        assert _cli_main(
-            ["rename", "--root", str(tmp_path), "--symbol", "calc", "--new-name", "compute"]
-        ) == 0
+        assert (
+            _cli_main(
+                ["rename", "--root", str(tmp_path), "--symbol", "calc", "--new-name", "compute"]
+            )
+            == 0
+        )
         assert "بلا كتابة" in capsys.readouterr().out
-        assert _cli_main(
-            ["rename", "--root", str(tmp_path), "--symbol", "calc", "--new-name", "run"]
-        ) == 1  # run معرّف أصلًا في app.py — الاسم مصادم فتُرفض الخطة
+        assert (
+            _cli_main(["rename", "--root", str(tmp_path), "--symbol", "calc", "--new-name", "run"])
+            == 1
+        )  # run معرّف أصلًا في app.py — الاسم مصادم فتُرفض الخطة

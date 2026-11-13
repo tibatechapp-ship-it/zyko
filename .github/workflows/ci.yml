@@ -172,6 +172,7 @@ jobs:
           pytest tests/test_coder_plan.py tests/test_coder_templates.py
           tests/test_coder_generate_precheck.py tests/test_coder_gate.py
           tests/test_coder_cli.py tests/test_coder_crew_prompts.py
+          tests/test_coder_multiplan.py
           --cov=zyko.coder --cov-report=term --cov-fail-under=85 -q
       - name: Phase-1 acceptance gate — 10/10 generate, ≥8/10 first-run tests
         run: python -m zyko.coder gate
