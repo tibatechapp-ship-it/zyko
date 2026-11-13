@@ -42,6 +42,7 @@ import json
 import os
 import re
 import subprocess
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -78,6 +79,12 @@ P2P_ENV_RULE_AR = (
 )
 
 DIFF_LANGUAGE_AR = "الرقعة تُستخرج من كتلة ```diff أو من ترويسة diff --git"
+
+# الموجة 19 — حصانة النقل الافتراضي: إعادة محاولة معلنة على الأخطاء العابرة
+# (نقطة النهاية غير متاحة / HTTP / استجابة غير JSON) — العابرة لا تسكت حالة
+# كاملة، والميزانية سقف معلن لا نهاية مفتوحة.
+TRANSPORT_RETRIES_DEFAULT = 3
+TRANSPORT_BACKOFF_S = 2.0
 
 
 # --------------------------------------------------------------- الحالة
@@ -608,11 +615,13 @@ Transport = Callable[[dict[str, Any]], dict[str, Any]]
 
 
 def http_transport(
-    payload: dict[str, Any], *, host: str, api_key: str, model: str, timeout_s: float = 120.0
+    payload: dict[str, Any], *, host: str, api_key: str, model: str, timeout_s: float = 240.0
 ) -> dict[str, Any]:
     """نقل OpenAI-Compatible عبر urllib — نمط ``qwen_brain`` نفسه بلا اعتماديات.
 
-    أي فشل يعود استجابة شكلها ``{"error": {"message": "<عربي>"}}`` — لا
+    المهلة 240s (الموجة 19): توليدات الرقع الطويلة + انتظار حصص
+    النقاط العابرة في الجسر المحلي تحتاج سقفاً أوسع من 120s. أي فشل
+    يعود استجابة شكلها ``{"error": {"message": "<عربي>"}}`` — لا
     استثناء يخرج من طبقة الذكاء.
     """
     body = {
@@ -644,13 +653,21 @@ def http_transport(
 
 @dataclass(frozen=True)
 class SWEBrain:
-    """عقل إصلاح حقيقي عبر نقطة متوافقة مع OpenAI — النقل حقن، الفشل عربي."""
+    """عقل إصلاح حقيقي عبر نقطة متوافقة مع OpenAI — النقل حقن، الفشل عربي.
+
+    ``retries`` (الموجة 19): النقل الافتراضي يعيد المحاولة على الأخطاء
+    العابرة (نقطة النهاية غير متاحة / HTTP / استجابة غير JSON) بميزانية
+    معلنة وتراجع زمني ثابت — رجعة عابرة لا تسكت الحالة كلها، أما
+    النقل المحقون فيبقى كما هو: من يحقن الشبكة يملك سياسة إعادة
+    المحاولة نفسه.
+    """
 
     model: str = SWE_DEFAULT_MODEL
     host: str | None = None  # الافتراضي من البيئة — لا مفتاح في الكود
     api_key: str | None = None  # الافتراضي من البيئة — لا مفتاح في الكود
     transport: Transport | None = None
     mode: str = "choice"  # "choice" ثم "diff" — نداءان بترتيب ثابت
+    retries: int = TRANSPORT_RETRIES_DEFAULT
 
     @property
     def name(self) -> str:
@@ -688,7 +705,14 @@ class SWEBrain:
         if self.transport is not None:
             response = self.transport(payload)
         else:
-            response = http_transport(payload, host=host, api_key=key, model=self.model)
+            response: dict[str, Any] = {}
+            for attempt in range(1, max(1, self.retries) + 1):
+                response = http_transport(payload, host=host, api_key=key, model=self.model)
+                error_msg = str((response.get("error") or {}).get("message", ""))
+                if not error_msg:
+                    break
+                if attempt < max(1, self.retries):
+                    time.sleep(TRANSPORT_BACKOFF_S * attempt)
         error = response.get("error") or {}
         if error:
             return Proposal(

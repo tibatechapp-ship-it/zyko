@@ -1,0 +1,778 @@
+{
+  "protocol": "SWE-bench (psf/requests) — قياس أساس فقط، التوسع من 6 إلى 44 حالة (الموجة 19)",
+  "data": {
+    "source": "swe_bench_full_requests.json",
+    "instances_sha16": "718a80aba3bbc422"
+  },
+  "model_label": "glm-4.7",
+  "model_served_by": "معطل — قياس أساس فقط",
+  "httpbin": "http://127.0.0.1:8642/",
+  "python_env": "3.9 (uv) — بيئة معزولة لكل حالة",
+  "loop": {
+    "max_attempts": 3,
+    "max_files": 3,
+    "note_ar": "قياس أساس فقط — بلا عقل"
+  },
+  "aggregate": {
+    "planned_total": 44,
+    "total": 44,
+    "resolved_strict": 0,
+    "resolved_env": 0,
+    "f2p_repaired_total": 0,
+    "f2p_total": 0,
+    "applied_count": 0,
+    "contract_rejections": 0,
+    "gate_rejections": 0,
+    "base_only_count": 44,
+    "resolve_rate_env": 0.0
+  },
+  "results": [
+    {
+      "instance_id": "psf__requests-1142",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_no_content_length"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1142",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1327",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_transport_adapter_ordering"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1327",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1339",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::TestCaseInsensitiveDict::test_equality",
+          "test_requests.py::TestCaseInsensitiveDict::test_fixes_649",
+          "test_requests.py::TestCaseInsensitiveDict::test_len",
+          "test_requests.py::TestCaseInsensitiveDict::test_lower_items",
+          "test_requests.py::TestCaseInsensitiveDict::test_preserve_last_key_case",
+          "test_requests.py::TestCaseInsensitiveDict::test_setdefault",
+          "test_requests.py::TestCaseInsensitiveDict::test_update"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1339",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-774",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": [
+          "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-774",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-863",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": [
+          "tests/test_requests.py::RequestsTestSuite::test_connection_keepalive_and_close"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-863",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1376",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_invalid_url"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1376",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1537",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_can_send_nonstring_objects_with_files"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1537",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1635",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_cookie_persists_via_api"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1635",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1689",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1689",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1713",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_param_cookiejar_works"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1713",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1724",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1724",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1733",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_request_and_response_are_pickleable"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1733",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1766",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_DIGESTAUTH_QUOTES_QOP_VALUE"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1766",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1768",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_get_auth_from_url_encoded_spaces"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1768",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1776",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_request_cookies_not_persisted"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1776",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1888",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1888",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1921",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_headers_on_session_with_None_are_not_sent"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1921",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1944",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_redirect_with_wrong_gzipped_header"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_manual_redirect_with_partial_body_read",
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+          "test_requests.py::TestTimeout::test_stream_timeout"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1944",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1962",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_history_is_always_a_list",
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+          "test_requests.py::TestTimeout::test_stream_timeout"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1962",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1963",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::TestRedirects::test_requests_are_updated_each_time"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+          "test_requests.py::TestTimeout::test_stream_timeout"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1963",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2148",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_iter_content_handles_socket_error"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2148",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2153",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2153",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2193",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_connection_error"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+          "test_requests.py::RequestsTestCase::test_requests_history_is_saved",
+          "test_requests.py::TestTimeout::test_stream_timeout"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2193",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2317",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_requests_history_is_saved",
+          "test_requests.py::TestTimeout::test_encoded_methods"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_connection_error",
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+          "test_requests.py::TestTimeout::test_stream_timeout"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2317",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2393",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::UtilsTestCase::test_requote_uri_with_unquoted_percents"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_connection_error",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2393",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2413",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::UtilsTestCase::test_guess_filename_with_file_like_obj"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_connection_error",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2413",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2466",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::test_vendor_aliases"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2466",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2617",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2617",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2674",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2674",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2678",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::test_urllib3_pool_connection_closed"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2678",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2754",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2754",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2821",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable",
+          "test_requests.py::RequestsTestCase::test_pyopenssl_redirect",
+          "test_requests.py::test_urllib3_pool_connection_closed"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2821",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2873",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::UtilsTestCase::test_super_len_correctly_calculates_len_of_partially_read_file"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2873",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-2931",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::TestRequests::test_binary_put"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-2931",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-3362",
+      "base": {
+        "f2p_failed_at_base": [
+          "tests/test_requests.py::TestRequests::test_response_decode_unicode"
+        ],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-3362",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-3718",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-3718",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-3738",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-3738",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-4106",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-4106",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-4356",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-4356",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-4718",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-4718",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-5087",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-5087",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-5414",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-5414",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-6028",
+      "base": {
+        "f2p_failed_at_base": [],
+        "p2p_failed_at_base": []
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-6028",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    },
+    {
+      "instance_id": "psf__requests-1657",
+      "base": {
+        "f2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_session_hooks_are_used_with_no_request_hooks"
+        ],
+        "p2p_failed_at_base": [
+          "test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable"
+        ]
+      },
+      "prep_error_ar": null,
+      "loop": {
+        "instance_id": "psf__requests-1657",
+        "attempts": [],
+        "verdict": null,
+        "note_ar": "قياس أساس فقط — وضع --base-only المعلن"
+      }
+    }
+  ],
+  "chain_hash": "2a90381cb58068ae"
+}

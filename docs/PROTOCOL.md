@@ -1,6 +1,6 @@
-# بروتوكول القياس القابل لإعادة التشغيل بايت-ببايت — الوثيقة العامة لzyko (جولة 12: الظهور)
+# بروتوكول القياس القابل لإعادة التشغيل بايت-ببايت — الوثيقة العامة لzyko (جولة 12: الظهور · جولة 18: التوسع الواسع)
 
-**التاريخ:** 2026-11-12 · **الإصدار:** 0.36.0 · **المعرف:** `zyko-measurement-protocol/v1`
+**التاريخ:** 2026-11-13 · **الإصدار:** 0.42.0 · **المعرف:** `zyko-measurement-protocol/v1`
 
 هذه الوثيقة هي العقد العام: **كل رقم نشرناه قابل لإعادة التشغيل على أي
 جهاز بأمر موثق، وبصمة sha256 تحكم التطابق**. لا رقم يُستشهد به خارج
@@ -14,6 +14,7 @@
 | المرجع الداخلي | `python scripts/make_bench_baseline.py /tmp/requests-test/src/requests/models.py benchmarks/results/baseline_<تاريخ>.json` | `benchmarks/results/baseline_2026-11-11.json` | غلاف بإصدار + بصمة هدف |
 | معمل الإصلاح | `python -c "from zyko.benchmarks.repair import run_repair_lab; …"` | سجل داخل الإيصال | سلسلة sha256 |
 | SWE-bench-Lite (بروتوكول v1/v2/v3) | `python3 scripts/run_swebench_lite.py --out <وثيقة>.json` | `benchmarks/results/swebench_lite*.json` | `chain_hash` 16 محرفًا |
+| SWE-bench الواسع 44 حالة (بروتوكول v2، جولة 18) | `python3 scripts/run_swebench_lite.py --data benchmarks/data/swe_bench_full_requests.json --out <وثيقة>.json` | `benchmarks/results/swebench_full_*.json` | `chain_hash` 16 محرفًا — الوثيقة تُكتب ذرياً بعد كل حالة و`--resume` يكمل حيث توقف |
 | مختبر التقييم الكبير (جولة 13) | `PYTHONPATH=src python3 -m zyko.benchmarks.eval1000 --run --json benchmarks/results/eval1000_<تاريخ>.json` | `benchmarks/results/eval1000_2026-11-12.json` | `chain_hash` — 1000/1000، بصمة `f69ba9abf1ed1142…` |
 
 كل وثيقة نتائج تحمل: البروتوكول بالاسم، والنموذج بلصقه المعلن، والبيئة
@@ -56,9 +57,9 @@
 | GPT-5 | Aider Polyglot | 88% | Aider leaderboards |
 | OpenHands + Qwen3-Coder | SWE-bench Verified | 69.6% | OpenHands |
 | Devin (التاريخي) | SWE-bench | 13.86% | الورقة الأصلية |
-| **ZYKO 0.36.0** | **SWE-bench-Lite (psf/requests، 6 حالات، بروتوكول v2)** | **صارم 1/6 · بيئي 3/6** | هذه الوثيقة + سلاسل sha256 |
+| **ZYKO 0.42.0** | **SWE-bench (psf/requests، 44 حالة، بروتوكول v2)** | **صارم 0/44 · بيئي 6/44 (13.64%)** | هذه الوثيقة + سلاسل sha256 |
 
-الفرق الصادق: نشرنا **حتى 6 حالات** ببروتوكول كامل — هم نشروا مئات.
+الفرق الصادق: نشرنا **حتى 44 حالة** ببروتوكول كامل — هم نشروا مئات.
 لكن ما نملكه وهم لا يملكونه: **بروتوكول يفصل العشوائية عن الحتمية
 بإيصالات**، وحصرة نواتية بلا Docker، وصفر اعتماديات، وعربي أولًا،
 وإيصال يُدقَّق ضد العبث بالبايت.
@@ -68,15 +69,17 @@
 ```bash
 # 0) المستودع والإصدار
 git clone https://github.com/tibatechapp-ship-it/zyko.git && cd zyko && pip install -e .
-pytest -q                                   # 2,716 ناجح / 22 تخطيًا بيئيًا موثقًا
-# 1) بيانات SWE-bench-Lite: benchmarks/data/swe_bench_lite_requests.json — في المستودع
+pytest -q                                   # 2,891 ناجح / 22 تخطيًا بيئيًا موثقًا
+# 1) بيانات SWE-bench: الست (Lite) أو الواسع 44 (الأب الكامل) — كلاهما في المستودع
 git clone https://github.com/psf/requests.git /tmp/sb-repo
 uv venv --python 3.9 /tmp/sb-venv39 && uv pip install --python /tmp/sb-venv39/bin/python httpbin gunicorn
 /tmp/sb-venv39/bin/gunicorn --bind 127.0.0.1:8642 --workers 4 httpbin:app &
 # 2) أي نقطة نموذج متوافقة مع OpenAI (جسر محلي أو سحابة):
 ZYKO_QWEN_HOST=<نقطة_النهاية> ZYKO_QWEN_API_KEY=<مفتاحك> \
-python3 scripts/run_swebench_lite.py --out benchmarks/results/swebench_lite_run.json
+python3 scripts/run_swebench_lite.py --data benchmarks/data/swe_bench_full_requests.json \
+  --out benchmarks/results/swebench_full_wide_run.json
 # ⇒ وثيقة جديدة بسلسلة sha256 خاصة بها — قارن بصمات لا ادعاءات
+#    (قياس الأساس بلا ذكاء: --base-only — والتشغيل المقطوع: --resume يكمل حيث توقف)
 ```
 
 ## 6. عقد الظهور

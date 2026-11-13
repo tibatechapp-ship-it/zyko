@@ -431,6 +431,53 @@ def test_swe_brain_malformed_response():
     assert not brain.propose("س").accepted
 
 
+def test_swe_brain_default_transport_retries_transient_errors(monkeypatch):
+    """الموجة 19 — حصانة النقل الافتراضي: العابرة تُعاد بميزانية معلنة لا تسكت الحالة."""
+    calls = {"n": 0}
+
+    def flaky_http_transport(payload, **kwargs):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return {"error": {"message": "نقطة النهاية غير متاحة: connection refused"}}
+        return {"choices": [{"message": {"content": "requests/models.py"}}]}
+
+    monkeypatch.setattr("zyko.benchmarks.swebench.http_transport", flaky_http_transport)
+    monkeypatch.setattr("zyko.benchmarks.swebench.TRANSPORT_BACKOFF_S", 0.0)
+    brain = SWEBrain(mode="choice", host="http://x/v1", api_key="k")
+    proposal = brain.propose("التقرير\nالشجرة")
+    assert calls["n"] == 3, "الميزانية المعلنة 3 — لا محاولة واحدة معلنة النتيجة"
+    assert proposal.accepted and proposal.text == "requests/models.py"
+
+
+def test_swe_brain_default_transport_exhausts_budget_honestly(monkeypatch):
+    calls = {"n": 0}
+
+    def dead_http_transport(payload, **kwargs):
+        calls["n"] += 1
+        return {"error": {"message": "HTTP 502 من نقطة النهاية"}}
+
+    monkeypatch.setattr("zyko.benchmarks.swebench.http_transport", dead_http_transport)
+    monkeypatch.setattr("zyko.benchmarks.swebench.TRANSPORT_BACKOFF_S", 0.0)
+    brain = SWEBrain(mode="choice", host="http://x/v1", api_key="k", retries=3)
+    proposal = brain.propose("التقرير")
+    assert calls["n"] == 3
+    assert not proposal.accepted and "502" in proposal.verdicts[0].details_ar
+
+
+def test_swe_brain_injected_transport_keeps_its_own_policy():
+    """من يحقن الشبكة يملك سياسة إعادة المحاولة نفسه — لا إعادة من zyko فوقه."""
+    calls = {"n": 0}
+
+    def always_fails(payload):
+        calls["n"] += 1
+        return {"error": {"message": "HTTP 500"}}
+
+    brain = SWEBrain(mode="choice", host="http://x/v1", api_key="k", transport=always_fails)
+    proposal = brain.propose("س")
+    assert calls["n"] == 1, "النقل المحقون يُستدعى مرة واحدة — لا طبقة إعادة فوقه"
+    assert not proposal.accepted
+
+
 def test_swe_brain_happy_transport_carries_system_and_user():
     seen = {}
 

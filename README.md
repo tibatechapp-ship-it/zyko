@@ -5,8 +5,8 @@
 <img src="docs/assets/social-card.png" alt="ZYKO — منصة تنسيق الذكاء الاصطناعي الشاملة" width="800"/>
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.41.0-6366f1)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-2989%20passing-22c55e)](.github/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.42.0-6366f1)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-2991%20passing-22c55e)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Termux-10b981)](.github/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
@@ -19,7 +19,7 @@
 
 > توليد ← مراجعة ← إصلاح ← حارس — من بوابة واحدة، بإيصالات توجيه قابلة للتحقق، وعلى أي منصة.
 
-النسخة **0.41.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
+النسخة **0.42.0** · اعتماديتان فقط (`httpx` و`PyYAML`) · بايثون 3.11 – 3.14
 
 ---
 
@@ -33,7 +33,7 @@ re-computes any routing decision; byte-level determinism is a tested contract, n
 slogan). Works with **zero API keys** (deterministic brain), or a local model via
 Ollama, or any OpenAI-compatible cloud brain behind the same gates. Policy-as-code,
 MCP client+server, multi-user gateway, RAG essentials, agent crews, 2 mandatory
-dependencies, and first-class Android/Termux support. 2989 tests passing on
+dependencies, and first-class Android/Termux support. 2991 tests passing on
 Linux·macOS·Windows × Python 3.11–3.14. See [CHANGELOG](CHANGELOG.md) ·
 [Architecture](docs/ARCHITECTURE.md) · [Innovations](docs/INNOVATION.md).
 
@@ -183,6 +183,18 @@ PYTHONPATH=src python3 -m zyko.benchmarks.multilab
 # 9/9 حالة ناجحة — بصمة السلسلة: 86da0c3e88ca0e58…
 ```
 
+**التوسع الواسع: SWE-bench من 6 إلى 44 حالة (0.42.0):** الفجوة الثانية الموثقة تعالج بالقياس لا بالادعاء — Lite لا يضم غير الست من psf/requests (قِيس أولاً)، فالتوسع إلى الأب المباشر للمقياس: **44 حالة** تغطي 0.13→2.27، وبروتوكول الجولات 8→11 كله في متسابق حتمي بأمر واحد (شجرة عمل بالهاش، بيئة 3.9 معزولة لكل حالة، قياس أساس، حلقة تلقيم الفشل، خريطة دلالية، وثيقة ذرية التكتب مع `--resume`):
+
+```bash
+# قياس الأساس لكل الحالات — بلا ذكاء، مقصود ومعلن
+python3 scripts/run_swebench_lite.py --base-only --out /tmp/base.json
+# الحلقة الكاملة بعقل حقيقي (أي نقطة متوافقة مع OpenAI)
+ZYKO_QWEN_HOST=<نقطة> ZYKO_QWEN_API_KEY=<مفتاح> \
+python3 scripts/run_swebench_lite.py --out /tmp/wide.json
+# ⇒ قياس أساس 44/44 (28 حالة علة مرئية عند الأساس) · حلقة: بيئي 6/44 · إصلاحات F2P حقيقية 3
+#    التوثيق الكامل: docs/SWEBENCH_FULL_2026-11-13.md
+```
+
 ---
 
 ## المنصات والاختبارات
@@ -191,11 +203,10 @@ Linux · Windows · macOS · Android/Termux — مصفوفة CI خضراء عل�
 
 ```bash
 pytest -q
-# 2989 passed, 4 skipped  (أرقام ساق metrics-truth المرجعية — ضاد مثبتة —
-#                          بوابة حقيقة الأرقام تقرأ junit وتطابق الشارة
-#                          والسطر آليًا؛ التخطيات الـ4 نواتية موثقة:
-#                          نواة الحاوية بلا Landlock وبلا bwrap. التشغيل
-#                          العاري بلا ضاد يُظهر 12 تخطيًا إضافيًا موثقًا)
+# 2991 passed, 22 skipped  (أرقام التشغيل المرجعي الكامل — بوابة حقيقة الأرقام
+#                          تقرأ junit وتطابق الشارة والسطر آليًا؛ التخطيات
+#                          بيئية موثقة: نواة بلا Landlock/bwrap، ومزودات
+#                          شبكة بلا مفاتيح، وويندوز بلا preexec)
 ```
 
 ---
