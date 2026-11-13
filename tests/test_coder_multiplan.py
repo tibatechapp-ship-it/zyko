@@ -461,8 +461,15 @@ class TestApplyPlan:
             receipt = apply_plan(_contract(tmp_path), plan, root=tmp_path)
         finally:
             (tmp_path / "core.py").chmod(0o644)
-        assert not receipt.ok and not receipt.applied
-        # app.py لم يُكتب — الصفقة تُرفض قبل أي كتابة
+        assert not receipt.ok
+        # العدل الثابت عبر المنصات: لا نصف ترقيع على القرص — على POSIX تُرفض
+        # الصفقة قبل أي كتابة (قراءة اللقطة تفشل عند 0o000)؛ وعلى ويندوز يترجم
+        # chmod 0o000 إلى قراءة-فقط فتفشل الكتابة لاحقًا وتُرجع الصفقة كاملة.
+        if receipt.applied:
+            assert receipt.rolled_back and receipt.restored_paths == ("app.py",)
+        else:
+            assert not receipt.rolled_back
+        # app.py لم يبق نصفًا مرقّعًا في الحالين — الأصل سليم
         assert (tmp_path / "app.py").read_text(encoding="utf-8").startswith("from core")
 
     def test_replace_transaction_success(self, tmp_path: Path) -> None:

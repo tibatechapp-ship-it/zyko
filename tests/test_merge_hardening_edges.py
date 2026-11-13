@@ -215,10 +215,11 @@ def test_streaming_hash_equals_direct_sha256() -> None:
 
 
 def test_streaming_file_hash_matches_source_hash(tmp_path: Path) -> None:
-    """هاش الملف من القرص يطابق هاش نصه — القراءة المتدفقة صادقة."""
+    """هاش الملف من القرص يطابق هاش نصه — القراءة المتدفقة صادقة بالبايت."""
     source = "x = 2\n" * 3000
     path = tmp_path / "big.py"
-    path.write_text(source, encoding="utf-8")
+    # newline="" يمنع ترجمة الأسطر على ويندوز — بايتات الملف = بايتات النص في كل نظام
+    path.write_text(source, encoding="utf-8", newline="")
     assert hash_file_streaming(path) == hash_source_streaming(source)
 
 
