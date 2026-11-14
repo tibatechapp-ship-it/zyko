@@ -48,6 +48,7 @@ BURN_LIST=(
   "ghp_OtG9"  # 19 burned after publishing 0.49.0 + 0.50.0 (waves 26 reverse-map + 27 hybrid review) — user must revoke
   "ghp_vwdO"  # 20 burned after publishing 0.51.0 (wave 28 graph-planning feed + audit-before-counting gate) — user must revoke
   "ghp_wCBo"  # 21 burned after publishing 0.52.0 (wave 29 static gate in repair loop + patch text archiving) — user must revoke
+  "ghp_5tO2"  # 22 dead on arrival — green on /user at delivery, 401 Bad credentials minutes later; push refused, nothing published — user must revoke
 )
 
 PREFIX="${GH_PUSH_TOKEN:0:8}"
