@@ -49,12 +49,12 @@ def test_each_family_detected():
 
 
 def test_private_key_header_detected():
-    hits = scan_text("-----BEGIN RSA PRIVATE KEY-----")
+    hits = scan_text("-----BEGIN RSA PRIVATE KEY-----")  # zyko:secret-ok (سطر اختبار للنمط نفسه)
     assert len(hits) == 1
 
 
 def test_cred_assignment_medium():
-    hits = scan_text('password = "hard-coded-pass-99"')
+    hits = scan_text('password = "hard-coded-pass-99"')  # zyko:secret-ok (سطر اختبار للنمط نفسه)
     assert [h.severity for h in hits] == ["medium"]
     assert hits[0].name == "cred-assignment"
 

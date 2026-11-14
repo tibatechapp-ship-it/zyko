@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -50,6 +51,17 @@ def _build_parser() -> argparse.ArgumentParser:
     p_review.add_argument(
         "--include-timing", action="store_true", help="أضف زمن المراجعة (يكسر الحتمية البايتية)"
     )
+    p_review.add_argument(
+        "--hybrid",
+        action="store_true",
+        help="المراجعة الهجينة: ثابت أولاً ثم تفكير موجّه بالعقد (بنية الموجة 27)",
+    )
+    p_review.add_argument(
+        "--engine",
+        choices=("static", "none"),
+        default="static",
+        help="محرك التفكير في الوضع الهجين (static حتمي بلا شبكة)",
+    )
 
     p_gate = sub.add_parser("gate", help="بوابة قبول المرحلة 2 (ست بوابات)")
     p_gate.add_argument("--samples", default=None, help="مجلد العينات (افتراضي samples/review)")
@@ -66,6 +78,26 @@ def _cmd_review(args: argparse.Namespace) -> int:
     if not target.exists():
         print(f"خطأ: المسار غير موجود: {target}", file=sys.stderr)
         return EXIT_USAGE
+    if args.hybrid:
+        from zyko.reviewer.hybrid import (
+            HybridReviewer,
+            StaticReasoningEngine,
+        )
+
+        engine = StaticReasoningEngine() if args.engine == "static" else None
+        hybrid = HybridReviewer(engine)
+        if target.is_file():
+            source = target.read_text(encoding="utf-8", errors="replace")
+            report = hybrid.review_source(source, str(target))
+        else:
+            reports = []
+            for r in ReviewEngine().review_path(target):
+                source = (Path(r.path)).read_text(encoding="utf-8", errors="replace")
+                reports.append(hybrid.review_source(source, r.path).to_dict())
+            print(json.dumps(reports, ensure_ascii=False, sort_keys=True, indent=1))
+            return EXIT_OK
+        print(json.dumps(report.to_dict(), ensure_ascii=False, sort_keys=True, indent=1))
+        return EXIT_FINDINGS if report.static["score"] < args.fail_under else EXIT_OK
     engine = ReviewEngine()
     if target.is_file():
         results = [engine.review_file(target)]
