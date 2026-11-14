@@ -244,6 +244,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.set_defaults(func=cmd.cmd_bench)
 
+    # bench-replay (الموجة 30 — قاعة إعادة الحكم: أي إيصال يُعاد حكمه بأمر واحد)
+    p = sub.add_parser(
+        "bench-replay",
+        help="re-judge a signed SWE-bench receipt through all gates (no brain, no network)",
+    )
+    p.add_argument(
+        "--receipt",
+        required=True,
+        help="مسار إيصال الدمج الموقَّع الذي يحمل أحكامه (0.51+ كامل، وما قبله بالشكل القديم)",
+    )
+    p.add_argument(
+        "--json-out",
+        default=None,
+        help="اكتب إيصال إعادة الحكم الموقَّع في هذا المسار",
+    )
+    p.set_defaults(func=cmd.cmd_bench_replay)
+
     # new (coder — المرحلة 1: توليد مشروع من وصف عربي)
     p = sub.add_parser(
         "new",

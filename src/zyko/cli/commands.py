@@ -449,6 +449,19 @@ def cmd_bench(args: Any) -> int:
     return run_bench(args)
 
 
+def cmd_bench_replay(args: Any) -> int:
+    """`zyko bench-replay` — قاعة إعادة الحكم (الموجة 30).
+
+    أي إيصال دمج موقَّع يُعاد حكمه بأمر واحد: بصمة الوثيقة من بايتاتها،
+    ومشتقات الأحكام من حقولها الخام، والتدقيق الثماني القواعد على نصوص
+    الرقع المؤرشفة، والعدّ من المحاولات — بلا شبكة وبلا مفتاح وبلا عقل.
+    أكواد الخروج: 0 سليم · 1 مخالفة صادقة · 2 خطأ استخدام.
+    """
+    from zyko.benchmarks.replay import run_replay
+
+    return run_replay(args)
+
+
 def cmd_gauntlet(args: Any) -> int:
     """`zyko gauntlet` — الفحص الكبير: برامج حقيقية تُبنى وتُختبر، إيصال حتمي.
 
