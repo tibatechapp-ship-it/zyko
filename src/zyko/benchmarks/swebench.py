@@ -21,6 +21,12 @@
    عن فشل الأساس (قاعدة بيئية موثقة تحمي من تقلب الشبكة) ⇒ ``resolved``.
    ويُحسب حكم صارم إضافي على بروتوكول SWE-bench الرسمي حرفياً.
 
+الموجة 29 تُضيف للبروتوكول بوابتين معلنتين: **البوابة الثابتة في حلقة
+الإصلاح** — بعد التطبيق وقبل القياس تعيد القواعد الثمانية والثلاثون
+الحكم على المصدر المُصلَّح، وما يكسر بنية أو يُدخل ملاحظة جديدة يُرفض
+والشجرة تعود للأساس — و**أرشفة نص الرقعة كاملاً** في المحاولة فالتدقيق
+المُعاد ممكن لا بصمات بلا نصوص.
+
 كل شيء **حتمي بالبايت**: لا أزمنة في الإيصال، الأشجار مرتبة، والأخطاء
 عربية صريحة — والشبكة والقرص حقنا (``Runner`` و``Transport``) فتبقى
 الاختبارات بلا شبكة إطلاقاً.
@@ -61,10 +67,12 @@ __all__ = [
     "TestRun",
     "check_patch_contract",
     "diff_paths",
-    "extract_diff",
     "evaluate_instance",
+    "extract_diff",
     "load_instances",
+    "patch_touched_py_files",
     "run_ids",
+    "run_static_gate",
 ]
 
 # دالة الأثر الجانبي: أمر ⇒ نتيجة مكتملة — نقطة الحقن للاختبارات (بلا شبكة)
@@ -215,6 +223,107 @@ def diff_paths(patch: str) -> tuple[str, ...]:
                 if target and target not in paths:
                     paths.append(target)
     return tuple(sorted(paths))
+
+
+def patch_touched_py_files(patch: str) -> tuple[str, ...]:
+    """ملفات بايثون التي تلمسها الرقعة من مسارات diff — مرتبة بلا تكرار.
+
+    البوابة الثابتة تعيد الحكم على المصدر المُصلَّح فقط للملفات التي
+    تعرف قواعدها الثلاث والثمانون لغتها — غير البايثون خارج العقد معلن.
+    """
+    return tuple(p for p in diff_paths(patch) if p.endswith(".py"))
+
+
+_STATIC_GATE_NEW_FILE_AR = "ملف جديد بلا أساس مقارنة"
+_STATIC_GATE_DELETED_AR = "ملف محذوف في الرقعة"
+
+
+def run_static_gate(workdir: Path, patch: str, runner: Runner = subprocess.run) -> dict[str, Any]:
+    """البوابة الثابتة (الموجة 29): القواعد الثمانية والثلاثون تحكم المُصلَّح.
+
+    لكل ملف بايثون تلمسه الرقعة: الأساس من ``git show HEAD:path``
+    والمُصلَّح من القرص، و``FixVerifier`` يحكم بأربعة فحوص (يُحلَّل،
+    لا ملاحظات جديدة، الدرجة لم تتراجع، القاعدة المقصودة نقصت) — العدّ
+    بالقاعدة لا بالسطر كما في عقد التحقق الذاتي. الملف الجديد بلا أساس
+    مقارنة والمحذوف خارج الفحص معلنان لا مُخمّنان. الناتج قاموس
+    ``zyko.static_gate/1`` حتمي بالبايت.
+    """
+    from zyko.reviewer.hybrid.verify import FixVerifier
+
+    verifier = FixVerifier()
+    per_file: list[dict[str, Any]] = []
+    skipped: list[dict[str, str]] = []
+    checked: list[str] = []
+    for path in patch_touched_py_files(patch):
+        proc = runner(
+            ["git", "show", f"HEAD:{path}"],
+            cwd=str(workdir),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if getattr(proc, "returncode", 1) != 0:
+            skipped.append({"path": path, "reason_ar": _STATIC_GATE_NEW_FILE_AR})
+            continue
+        fixed_path = workdir / path
+        if not fixed_path.exists():
+            skipped.append({"path": path, "reason_ar": _STATIC_GATE_DELETED_AR})
+            continue
+        original = proc.stdout or ""
+        fixed = fixed_path.read_text(encoding="utf-8", errors="replace")
+        fix_verdict = verifier.verify(original, fixed, filename=path)
+        checked.append(path)
+        per_file.append(
+            {
+                "path": path,
+                "accepted": fix_verdict.accepted,
+                "checks": dict(fix_verdict.checks),
+                "score_before": fix_verdict.score_before,
+                "score_after": fix_verdict.score_after,
+                "reasons_ar": list(fix_verdict.reasons_ar),
+            }
+        )
+    reasons: list[str] = []
+    for entry in per_file:
+        reasons.extend(f"{entry['path']}: {r}" for r in entry["reasons_ar"])
+    return {
+        "schema": "zyko.static_gate/1",
+        "accepted": not reasons,
+        "files_checked": tuple(sorted(checked)),
+        "files_skipped": skipped,
+        "per_file": per_file,
+        "reasons_ar": tuple(reasons),
+        "patch_sha16": _sha16(patch),
+        "engine": "zyko-reviewer-38",
+    }
+
+
+def _restore_touched_files(workdir: Path, patch: str, runner: Runner) -> None:
+    """أعد الشجرة إلى الأساس بعد رفض البوابة — لا أثر للرقعة المرفوضة.
+
+    كل ملف تلمسه الرقعة وفق أصله: الموجود في HEAD تُستعاد بـ
+    ``git checkout --``، والجديد الذي أنشأته الرقعة يُحذف من القرص.
+    """
+    for path in diff_paths(patch):
+        probe = runner(
+            ["git", "cat-file", "-e", f"HEAD:{path}"],
+            cwd=str(workdir),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if getattr(probe, "returncode", 1) == 0:
+            runner(
+                ["git", "checkout", "--", path],
+                cwd=str(workdir),
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        else:
+            target = workdir / path
+            if target.exists():
+                target.unlink()
 
 
 def check_patch_contract(patch: str) -> tuple[bool, str]:
@@ -410,6 +519,10 @@ class SWEVerdict:
     patch_sha16: str = ""
     contract_reason_ar: str = ""
     attempts_note_ar: str = ""
+    # البوابة الثابتة (الموجة 29): سبب رفض القواعد الثمانية والثلاثون
+    # للمُصلَّح — فارغ إذا لم تصل الرقعة للبوابة أو مرّت منها.
+    static_gate_reason_ar: str = ""
+    static_gate: dict[str, Any] = field(default_factory=dict)
 
     # الحكم الصارم — بروتوكول SWE-bench الرسمي حرفياً
     @property
@@ -458,6 +571,8 @@ class SWEVerdict:
             "resolved_env": self.resolved_env,
             "f2p_repaired_count": self.f2p_repaired_count,
             "attempts_note_ar": self.attempts_note_ar,
+            "static_gate_reason_ar": self.static_gate_reason_ar,
+            "static_gate": self.static_gate,
         }
 
 
@@ -552,6 +667,31 @@ def evaluate_instance(
             attempts_note_ar="git apply رفض الرقعة — لم تُطبَّق",
         )
 
+    # الموجة 29: البوابة الثابتة في حلقة الإصلاح — بعد التطبيق وقبل القياس
+    # تعيد القواعد الثمانية والثلاثون الحكم على المصدر المُصلَّح: ما يكسر
+    # بنية أو يُدخل ملاحظة جديدة أو يُدنّس الدرجة يُرفض وتُعاد الشجرة إلى
+    # الأساس قبل أي تشغيل اختبارات — لا رقعة مسمومة تدخل العدّ.
+    gate = run_static_gate(workdir, candidate_patch, runner)
+    if not gate["accepted"]:
+        _restore_touched_files(workdir, candidate_patch, runner)
+        return SWEVerdict(
+            instance_id=instance.instance_id,
+            patch_applied=False,
+            apply_error_ar=None,
+            f2p_failed_at_base=tuple(sorted(f2p_base_failed)),
+            p2p_failed_at_base=tuple(sorted(p2p_base_failed)),
+            f2p_passed_after=(),
+            f2p_failed_after=tuple(sorted(instance.fail_to_pass)),
+            p2p_failed_after=(),
+            patch_sha16=_sha16(candidate_patch),
+            contract_reason_ar=reason,
+            static_gate_reason_ar=(
+                "بوابة القواعد الثمانية والثلاثون رفضت الرقعة بعد التطبيق — أُعيدت الشجرة إلى الأساس"
+            ),
+            static_gate=gate,
+            attempts_note_ar="البوابة الثابتة رفضت المصدر المُصلَّح — لا قياس ولا عدّ",
+        )
+
     after = run_ids(
         workdir,
         all_ids,
@@ -574,6 +714,7 @@ def evaluate_instance(
             runs_error_ar=after.error_ar,
             patch_sha16=_sha16(candidate_patch),
             contract_reason_ar=reason,
+            static_gate=gate,
             attempts_note_ar="التشغيل البعدي أُوقِف — لا حكم بعد المهلة",
         )
 
@@ -591,6 +732,7 @@ def evaluate_instance(
         p2p_failed_after=tuple(sorted(p2p_after_failed)),
         patch_sha16=_sha16(candidate_patch),
         contract_reason_ar=reason,
+        static_gate=gate,
         attempts_note_ar="طُبِّقت وقِيست",
     )
 
@@ -839,6 +981,10 @@ class SWEAttempt:
     ``patch_audit`` (الموجة 28): نتيجة بوابة التدقيق قبل العدّ على
     الرقعة المستخرجة — قاموس ``zyko.patch_audit/1`` أو فارغ إن لم تصل
     رقعة أصلاً (رفض بوابة العقل أو لا رقعة في الرد).
+
+    ``patch_text`` (الموجة 29): نص الرقعة كاملاً مؤرشف في المحاولة —
+    درس فحص نتائج الموجة 25: بصمات بلا نصوص تُفقد القدرة على إعادة
+    الحكم، والتدقيق المُعاد يحتاج النص لا البصمة وحدها.
     """
 
     instance_id: str
@@ -848,6 +994,7 @@ class SWEAttempt:
     proposal_accepted: bool
     verdict: SWEVerdict
     patch_audit: dict[str, Any] = field(default_factory=dict)
+    patch_text: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -858,6 +1005,7 @@ class SWEAttempt:
             "proposal_accepted": self.proposal_accepted,
             "verdict": self.verdict.to_dict(),
             "patch_audit": self.patch_audit,
+            "patch_text": self.patch_text,
         }
 
 
@@ -1014,6 +1162,7 @@ def attempt_repair(
             proposal_accepted=True,
             verdict=verdict,
             patch_audit=audit.to_dict(),
+            patch_text=patch,
         )
 
     verdict = evaluate_instance(
@@ -1034,6 +1183,7 @@ def attempt_repair(
         proposal_accepted=True,
         verdict=verdict,
         patch_audit=audit.to_dict(),
+        patch_text=patch,
     )
 
 
@@ -1051,6 +1201,7 @@ class SWEAggregate:
     contract_rejections: int
     gate_rejections: int
     audit_rejections: int = 0
+    static_gate_rejections: int = 0
 
     @property
     def resolve_rate_env(self) -> float:
@@ -1067,6 +1218,7 @@ class SWEAggregate:
             "contract_rejections": self.contract_rejections,
             "gate_rejections": self.gate_rejections,
             "audit_rejections": self.audit_rejections,
+            "static_gate_rejections": self.static_gate_rejections,
             "resolve_rate_env": round(self.resolve_rate_env, 4),
         }
 
@@ -1109,4 +1261,7 @@ def aggregate(attempts: tuple[SWEAttempt, ...]) -> SWEAggregate:
         ),
         gate_rejections=sum(1 for a in attempts if not a.proposal_accepted),
         audit_rejections=sum(1 for a in attempts if _audit_critical(a)),
+        static_gate_rejections=sum(
+            1 for a in attempts if not a.verdict.patch_applied and a.verdict.static_gate_reason_ar
+        ),
     )
