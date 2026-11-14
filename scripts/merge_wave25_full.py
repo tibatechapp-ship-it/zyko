@@ -14,6 +14,7 @@
         --delta benchmarks/results/swebench_full_wide25_2026-11-14.json \
         --out benchmarks/results/swebench_full_wide25_merged_2026-11-14.json
 """
+
 from __future__ import annotations
 
 import argparse

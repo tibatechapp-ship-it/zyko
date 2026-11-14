@@ -94,22 +94,38 @@ class StaticReasoningEngine(ReasoningEngine):
         if question == "is_vulnerability":
             if category == "security" and tainted:
                 return ReasoningAnswer(
-                    question, "yes", 0.8, suggestion,
-                    "تدفق ملوث بمصدر معروف وقاعدة أمنية أطلقت — قرينة قوية", self.name,
+                    question,
+                    "yes",
+                    0.8,
+                    suggestion,
+                    "تدفق ملوث بمصدر معروف وقاعدة أمنية أطلقت — قرينة قوية",
+                    self.name,
                 )
             if category == "security":
                 return ReasoningAnswer(
-                    question, "uncertain", 0.5, suggestion,
-                    "قاعدة أمنية بلا تلويث موثق — تحتاج عيناً بشرية أو محركاً أعمق", self.name,
+                    question,
+                    "uncertain",
+                    0.5,
+                    suggestion,
+                    "قاعدة أمنية بلا تلويث موثق — تحتاج عيناً بشرية أو محركاً أعمق",
+                    self.name,
                 )
             return ReasoningAnswer(
-                question, "no", 0.9, None,
-                "قاعدة غير أمنية لا تدل على ثغرة تدفق", self.name,
+                question,
+                "no",
+                0.9,
+                None,
+                "قاعدة غير أمنية لا تدل على ثغرة تدفق",
+                self.name,
             )
         # minimal_fix
         return ReasoningAnswer(
-            question, "uncertain", 0.6, suggestion,
-            "أقل إصلاح معلن من قاعدة المراجع الثابتة — يمر عبر البوابة الثابتة", self.name,
+            question,
+            "uncertain",
+            0.6,
+            suggestion,
+            "أقل إصلاح معلن من قاعدة المراجع الثابتة — يمر عبر البوابة الثابتة",
+            self.name,
         )
 
 
@@ -143,12 +159,17 @@ class RemoteReasoningEngine(ReasoningEngine):
             return ReasoningAnswer(question, verdict, confidence, fix, rationale, self.name)
         except Exception as exc:  # الانحدار الموثق — لا انهيار خط الأنابيب
             return ReasoningAnswer(
-                question, "uncertain", 0.0, None,
-                f"فشل المحرك الخارجي: {type(exc).__name__}", self.name,
+                question,
+                "uncertain",
+                0.0,
+                None,
+                f"فشل المحرك الخارجي: {type(exc).__name__}",
+                self.name,
             )
 
 
 # --------------------------- بنية 4: التوجيه الذكي ---------------------------
+
 
 def route_file(result) -> bool:
     """هل يستحق الملف لمس محرك التفكير؟ درجة دون 100 أو ملاحظة أمنية."""
@@ -161,6 +182,7 @@ def select_findings(result) -> tuple:
 
 
 # --------------------- تقرير المراجعة الهجين (الموزّع) ---------------------
+
 
 @dataclass
 class HybridReport:
@@ -188,6 +210,7 @@ class HybridReport:
 
 
 # ------------------------- الموزّع: الخط الكامل -------------------------
+
 
 class HybridReviewer:
     """ثابت أولاً، ثم تفكير موجَّه بالعقد، وكل جواب في تقرير موقّع."""

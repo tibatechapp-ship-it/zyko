@@ -76,14 +76,40 @@ _SILENT_RE = re.compile(r"except[^\n:]*:\s*$|except\s*Exception\s*:\s*pass\b")
 
 # القواعد الثماني المعلنة — العدد عقد يفحصه الاختبار
 DIFF_RULES: tuple[DiffRule, ...] = (
-    DiffRule("SEC-SECRET-001", "critical", TOKEN_VALUE_RE, "سر مضمّن في سطر مضاف — التوكنات لا تُكتب في الكود"),
-    DiffRule("SEC-EVAL-001", "high", re.compile(r"\beval\s*\("), "نداء eval على سطر مضاف — تنفيذ حر للتعبيرات"),
-    DiffRule("SEC-EXEC-001", "high", re.compile(r"\bexec\s*\("), "نداء exec على سطر مضاف — تنفيذ حر للكود"),
-    DiffRule("SEC-SHELL-001", "high", _SHELL_RE, "صدفة نظام أو shell=True على سطر مضاف — حقن أوامر ممكن"),
-    DiffRule("SEC-SQLI-001", "high", _SQLI_RE, "استعلام SQL بسلسلة مبنية على سطر مضاف — حقن SQL ممكن"),
-    DiffRule("ERR-BAREEXC-001", "medium", re.compile(r"^\s*except\s*:\s*$"), "except عارٍ يبتلع كل الأخطاء"),
+    DiffRule(
+        "SEC-SECRET-001",
+        "critical",
+        TOKEN_VALUE_RE,
+        "سر مضمّن في سطر مضاف — التوكنات لا تُكتب في الكود",
+    ),
+    DiffRule(
+        "SEC-EVAL-001",
+        "high",
+        re.compile(r"\beval\s*\("),
+        "نداء eval على سطر مضاف — تنفيذ حر للتعبيرات",
+    ),
+    DiffRule(
+        "SEC-EXEC-001",
+        "high",
+        re.compile(r"\bexec\s*\("),
+        "نداء exec على سطر مضاف — تنفيذ حر للكود",
+    ),
+    DiffRule(
+        "SEC-SHELL-001", "high", _SHELL_RE, "صدفة نظام أو shell=True على سطر مضاف — حقن أوامر ممكن"
+    ),
+    DiffRule(
+        "SEC-SQLI-001", "high", _SQLI_RE, "استعلام SQL بسلسلة مبنية على سطر مضاف — حقن SQL ممكن"
+    ),
+    DiffRule(
+        "ERR-BAREEXC-001",
+        "medium",
+        re.compile(r"^\s*except\s*:\s*$"),
+        "except عارٍ يبتلع كل الأخطاء",
+    ),
     DiffRule("ERR-SILENT-001", "medium", _SILENT_RE, "ابتلاع صامت للاستثناء بلا تسجيل"),
-    DiffRule("QUA-TODO-001", "low", re.compile(r"\b(TODO|FIXME|XXX)\b"), "واسم عمل معلّق في سطر مضاف"),
+    DiffRule(
+        "QUA-TODO-001", "low", re.compile(r"\b(TODO|FIXME|XXX)\b"), "واسم عمل معلّق في سطر مضاف"
+    ),
 )
 
 _GRADE_AR = {"critical": "مرفوض", "high": "مراجعة", "medium": "تنبيه", "low": "ملاحظة"}

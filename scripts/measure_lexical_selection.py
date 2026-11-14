@@ -66,7 +66,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     data_path = (
-        Path(args.data) if args.data else Path(__file__).resolve().parent.parent / "benchmarks/data/swe_bench_full_requests.json"
+        Path(args.data)
+        if args.data
+        else Path(__file__).resolve().parent.parent / "benchmarks/data/swe_bench_full_requests.json"
     )
     repo_path = _ensure_repo(Path(args.repo))
     gold_map = load_gold_paths(Path(args.gold))
@@ -94,7 +96,10 @@ def main(argv: list[str] | None = None) -> int:
         if proc.returncode != 0:
             record["reason_ar"] = f"فشل شجرة العمل: {proc.stderr.strip()[-200:]}"
             records.append(record)
-            print(f"[{index:02d}/{len(instances)}] {instance.instance_id} — شجرة فشلت", file=sys.stderr)
+            print(
+                f"[{index:02d}/{len(instances)}] {instance.instance_id} — شجرة فشلت",
+                file=sys.stderr,
+            )
             continue
         try:
             tree = repo_py_tree(workdir, subprocess.run)
@@ -103,7 +108,9 @@ def main(argv: list[str] | None = None) -> int:
                 records.append(record)
                 continue
             map_lines = build_repo_map(workdir, max_files=args.max_files)
-            ranked_map = rank_files(instance.problem_statement, tree, map_lines, instance.fail_to_pass)
+            ranked_map = rank_files(
+                instance.problem_statement, tree, map_lines, instance.fail_to_pass
+            )
             ranked_none = rank_files(instance.problem_statement, tree, (), instance.fail_to_pass)
             record.update(
                 {

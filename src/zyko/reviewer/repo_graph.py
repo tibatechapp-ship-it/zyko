@@ -28,14 +28,32 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 
-__all__ = ["RepoGraph", "build_repo_graph", "neighborhood", "graph_to_json"]
+__all__ = [
+    "RepoGraph",
+    "build_repo_graph",
+    "neighborhood",
+    "neighborhood_lines",
+    "neighborhood_note_for",
+    "graph_to_json",
+]
 
 # سقف الملفات الموثق (الخريطة إشارة لا نسخة — السقف نفسه معلن)
 MAX_FILES_DEFAULT = 400
 
 # مجلدات لا تمشى أبداً (نفس روح سقوف repo_map)
 SKIP_DIRS = frozenset(
-    {".git", "__pycache__", "node_modules", ".venv", "venv", "dist", "build", ".mypy_cache", ".pytest_cache", "htmlcov"}
+    {
+        ".git",
+        "__pycache__",
+        "node_modules",
+        ".venv",
+        "venv",
+        "dist",
+        "build",
+        ".mypy_cache",
+        ".pytest_cache",
+        "htmlcov",
+    }
 )
 
 
@@ -80,7 +98,9 @@ def _imports_of(tree: ast.Module, rel: str) -> tuple[str, ...]:
                 cands.add(alias.name)
         elif isinstance(node, ast.ImportFrom):
             if node.level:  # استيراد نسبي: القاعدة حزمة المستورد
-                base = list(parts[: len(parts) - (node.level - 1)]) if len(parts) >= node.level else []
+                base = (
+                    list(parts[: len(parts) - (node.level - 1)]) if len(parts) >= node.level else []
+                )
                 if node.module:
                     cands.add(".".join(base + node.module.split(".")))
                 else:
@@ -190,3 +210,78 @@ def graph_to_json(graph: RepoGraph) -> str:
 def neighborhood(graph: RepoGraph, rel: str) -> dict:
     """واجهة الاستعلام الموثقة — تمرير صريح بدل استدعاء خاصية."""
     return graph.neighborhood(rel)
+
+
+# ------------------------------------------ تغذية التخطيط بجوار الرسم (الموجة 28)
+# العقد النصية للتغذية — أقسام بالترتيب الثابت، القسم الفارغ يُحذف لا يُعبَّأ
+_LINE_IMPORTS = "يستورد: {0}"
+_LINE_IMPORTED_BY = "يُستورد منه: {0}"
+_LINE_TEST_COVER = "مصادر يغطيها كاختبار: {0}"
+_LINE_TESTED_BY = "اختبارات تستورده: {0}"
+_LINE_ISOLATED = "الملف {0} بلا حواف استيراد أو تغطية اختبارية داخل السقف المعلن"
+_ROOT_MARKERS = ("pyproject.toml", "setup.py", "setup.cfg", ".git")
+_ROOT_SEARCH_LEVELS = 6
+
+
+def neighborhood_lines(graph: RepoGraph, rel: str) -> tuple[str, ...]:
+    """سطور غذاء التخطيط لملف واحد — فراغ معلن للمسار خارج الرسم.
+
+    اختلاف العقد الموثق عن :func:`neighborhood`: الملف المجهول يعيد
+    ``()`` لا استثناء — لأن المختار من شجرة ``git ls-files`` قد يقع
+    خارج سقف المشي على القرص، واستثناء هناك يُسقط المحاولة كلها بلا
+    دليل. أما العزل الكامل فيُسمّى سطراً موثقاً لا فراغاً.
+    """
+    if rel not in graph.files:
+        return ()
+    nb = graph.neighborhood(rel)
+    # أقسام الارتباط بالكود تستبعد ملفات الاختبار — تغطيتها لها قسمان
+    # مخصصان أسفلهما (خريطة الاختبار حدة مستقلة لا خليط)
+    imports = [x for x in nb["imports"] if not _is_test_rel(x)]
+    imported_by = [x for x in nb["imported_by"] if not _is_test_rel(x)]
+    lines: list[str] = []
+    if imports:
+        lines.append(_LINE_IMPORTS.format(", ".join(imports)))
+    if imported_by:
+        lines.append(_LINE_IMPORTED_BY.format(", ".join(imported_by)))
+    if nb["tests"]:
+        lines.append(_LINE_TEST_COVER.format(", ".join(nb["tests"])))
+    if nb["tested_by"]:
+        lines.append(_LINE_TESTED_BY.format(", ".join(nb["tested_by"])))
+    if not lines:
+        return (_LINE_ISOLATED.format(rel),)
+    return tuple(lines)
+
+
+def _find_root(start: Path) -> Path:
+    """جذر المستودع: أول علامة صاعدة ضمن سقف ستة مستويات، وإلا المجلد الحامل."""
+    cur = start.parent
+    for _ in range(_ROOT_SEARCH_LEVELS):
+        if any((cur / m).exists() for m in _ROOT_MARKERS):
+            return cur
+        if cur.parent == cur:
+            break
+        cur = cur.parent
+    return start.parent
+
+
+def neighborhood_note_for(target: Path | str, *, max_files: int = MAX_FILES_DEFAULT) -> str:
+    """غذاء تخطيط جاهز للحقن في طلب الخطة — فراغ عند كل عجز معلن.
+
+    العقد: ملف غير موجود أو غير بايثوني أو خارج الرسم أو معزول تماماً
+    (لا حواف من أي نوع) ⇒ ``""`` — التخطيط لا يُضجَّر بسطر بلا معلومة.
+    الجذر يُحسم بأول علامة صاعدة (``pyproject.toml``/``setup.py``/
+    ``setup.cfg``/``.git``) ضمن ستة مستويات، وإلا المجلد الحامل للملف.
+    """
+    try:
+        path = Path(target).resolve()
+        if path.suffix != ".py" or not path.is_file():
+            return ""
+        root = _find_root(path)
+        rel = path.relative_to(root).as_posix()
+        graph = build_repo_graph(root, max_files=max_files)
+        nb = graph.neighborhood(rel)
+    except (OSError, ValueError, KeyError):
+        return ""  # عجز موثق: مسار خارج الجذر أو خارج الرسم — فراغ لا استثناء
+    if not (nb["imports"] or nb["imported_by"] or nb["tests"] or nb["tested_by"]):
+        return ""  # عزل كامل — لا غذاء تخطيط
+    return "\n".join(neighborhood_lines(graph, rel))

@@ -13,6 +13,7 @@ datasets-server) بنفس المرشح ``psf/requests`` — نفس العائل�
 الاستخدام:
     python3 scripts/fetch_swebench_lite_wide.py --out benchmarks/data/swe_bench_full_requests.json
 """
+
 from __future__ import annotations
 
 import argparse
@@ -62,7 +63,10 @@ def fetch_page(offset: int, *, retries: int = 5) -> dict:
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError) as exc:
             last_error = exc
             wait = 3.0 * attempt
-            print(f"  [offset {offset}] محاولة {attempt} فشلت: {exc} — انتظار {wait:.0f}s", file=sys.stderr)
+            print(
+                f"  [offset {offset}] محاولة {attempt} فشلت: {exc} — انتظار {wait:.0f}s",
+                file=sys.stderr,
+            )
             time.sleep(wait)
     raise RuntimeError(f"تعذّر جلب الصفحة offset={offset} بعد {retries} محاولات: {last_error}")
 

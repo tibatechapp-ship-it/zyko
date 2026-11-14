@@ -572,6 +572,114 @@ def test_attempt_repair_no_diff_in_reply(mini_repo):
     assert "لا رقعة موحدة" in attempt.verdict.attempts_note_ar
 
 
+# ------------------------------ تغذية الرسم البياني وبوابة التدقيق قبل العدّ (الموجة 28)
+def test_diff_request_neighborhood_section():
+    req = build_diff_request(
+        _instance(),
+        "requests/models.py",
+        "X = 1\n",
+        neighborhood_lines=("يُستورد منه: requests/api.py",),
+    )
+    assert "جوار الملف في الرسم البياني" in req
+    assert "يُستورد منه: requests/api.py" in req
+
+
+def test_diff_request_without_neighborhood_unchanged():
+    a = build_diff_request(_instance(), "requests/models.py", "X = 1\n")
+    b = build_diff_request(_instance(), "requests/models.py", "X = 1\n", neighborhood_lines=())
+    assert a == b
+
+
+@_working_jail
+def test_attempt_repair_feeds_graph_neighborhood_into_diff_request(mini_repo):
+    inst = _instance(
+        instance_id="psf__requests-0000",
+        fail_to_pass=("test_level.py::test_value",),
+        pass_to_pass=(),
+        problem_statement="القيمة يجب أن تكون 2",
+    )
+    (mini_repo / "test_level.py").write_text(
+        "def test_value():\n    from src import value\n    assert value == 2\n",
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "add", "."], cwd=mini_repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "t"], cwd=mini_repo, check=True)
+    choice = CannedBrain("اخترنا src.py")
+    diff = CannedBrain(
+        "الحل:\n```diff\n--- a/src.py\n+++ b/src.py\n@@ -1 +1 @@\n-value = 1\n+value = 2\n```"
+    )
+    attempt = attempt_repair(inst, mini_repo, "python3", choice, diff, runner=subprocess.run)
+    assert "الرسم البياني" in diff.calls[0]  # غذاء الجوار وصل طلب الرقعة فعلاً
+    assert attempt.verdict.resolved_env and attempt.verdict.resolved_strict
+    assert attempt.patch_audit["grade_ar"] == "نظيف"
+    assert attempt.patch_audit["added_count"] == 1 and attempt.patch_audit["finding_count"] == 0
+
+
+def test_attempt_repair_audit_gate_blocks_secret_before_counting(mini_repo):
+    fake36 = "A" * 36  # عينة مبنية برمجياً — لا قيمة حية في المصدر (اتفاقية test_patch_audit)
+    inst = _instance(fail_to_pass=("t::x",), pass_to_pass=(), problem_statement="q")
+    choice = CannedBrain("اخترنا src.py")
+    diff = CannedBrain(
+        "الحل:\n```diff\n--- a/src.py\n+++ b/src.py\n@@ -1 +1,2 @@\n-value = 1\n+value = 2\n"
+        f"+token = 'ghp_{fake36}'\n```"
+    )
+    attempt = attempt_repair(inst, mini_repo, "python3", choice, diff, runner=subprocess.run)
+    # البوابة قبل العدّ: لا تطبيق ولا قياس — الرفض موثق بالسبب والبصمة
+    assert not attempt.verdict.patch_applied
+    assert "بوابة التدقيق" in attempt.verdict.contract_reason_ar
+    assert "SEC-SECRET-001" in attempt.verdict.contract_reason_ar
+    assert attempt.patch_audit["grade_ar"] == "مرفوض"
+    assert attempt.patch_audit["findings"][0]["rule_id"] == "SEC-SECRET-001"
+    assert len(attempt.verdict.patch_sha16) == 16
+    assert not attempt.verdict.resolved_strict and not attempt.verdict.resolved_env
+
+
+def test_attempt_repair_high_severity_recorded_not_blocking(mini_repo):
+    inst = _instance(fail_to_pass=("t::x",), pass_to_pass=(), problem_statement="q")
+    choice = CannedBrain("اخترنا src.py")
+    diff = CannedBrain(
+        "الحل:\n```diff\n--- a/src.py\n+++ b/src.py\n@@ -1 +1,2 @@\n-value = 1\n+value = 2\n"
+        "+os.system('ls')\n```"
+    )
+    attempt = attempt_repair(inst, mini_repo, "python3", choice, diff, runner=subprocess.run)
+    # درجة «مراجعة» (high) تُسجَّل ولا تمنع — الحرج وحده البوابة
+    assert attempt.patch_audit["grade_ar"] == "مراجعة"
+    assert attempt.patch_audit["findings"][0]["rule_id"] == "SEC-SHELL-001"
+
+
+def test_aggregate_audit_gate_excludes_critical_only():
+    def verdict(applied):
+        return SWEVerdict(
+            instance_id="x",
+            patch_applied=applied,
+            apply_error_ar=None,
+            f2p_failed_at_base=("f1",),
+            p2p_failed_at_base=(),
+            f2p_passed_after=("f1",) if applied else (),
+            f2p_failed_after=() if applied else ("f1",),
+            p2p_failed_after=(),
+        )
+
+    def attempt(aid, audit):
+        return SWEAttempt(
+            instance_id=aid,
+            file_choice="f",
+            choice_reply_sha16="1",
+            diff_reply_sha16="2",
+            proposal_accepted=True,
+            verdict=verdict(True),
+            patch_audit=audit,
+        )
+
+    clean = attempt("a", {"grade_ar": "نظيف", "findings": []})
+    dirty = attempt("b", {"grade_ar": "مرفوض", "findings": [{"severity": "critical"}]})
+    high = attempt("c", {"grade_ar": "مراجعة", "findings": [{"severity": "high"}]})
+    agg = aggregate((clean, dirty, high))
+    assert agg.resolved_strict == 2 and agg.resolved_env == 2  # الحرجة وحدها تُقصي من العدّ
+    assert agg.audit_rejections == 1
+    assert agg.to_dict()["audit_rejections"] == 1
+
+
 # --------------------------------------------------------------- الخلاصة
 def test_aggregate_counts_and_rate():
     def verdict(resolved_env, resolved_strict, applied, repaired):

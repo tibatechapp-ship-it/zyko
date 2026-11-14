@@ -50,7 +50,7 @@ def parse_changelog(text: str) -> dict[str, dict]:
     for i, m in enumerate(versions):
         version, desc = m.group(1), m.group(2).strip()
         end = versions[i + 1].start() if i + 1 < len(versions) else len(text)
-        section = text[m.end():end]
+        section = text[m.end() : end]
         bullets = [ln.strip() for ln in section.splitlines() if ln.strip().startswith("- ")]
         entries[version] = {"desc": desc, "bullets": bullets}
     return entries

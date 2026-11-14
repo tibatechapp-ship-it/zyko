@@ -88,7 +88,9 @@ def main() -> int:
             st = statuses.get(rid, set())
             if rid in AUTO_FIXABLE:
                 if "open" not in st:
-                    problems.append(f"{name}: {rid} آلية وكان يجب أن تبقى مفتوحة؛ الواقع {sorted(st)}")
+                    problems.append(
+                        f"{name}: {rid} آلية وكان يجب أن تبقى مفتوحة؛ الواقع {sorted(st)}"
+                    )
             elif "manual" not in st:
                 problems.append(f"{name}: {rid} كان يجب أن تظهر يدوية؛ الواقع {sorted(st)}")
             manual_anywhere.add(rid)
@@ -112,15 +114,11 @@ def main() -> int:
             print(" -", p, file=sys.stderr)
         return 2
     manifest = {
-        "defective": [
-            {"file": name, **exp} for name, exp in EXPECTATIONS.items()
-        ],
+        "defective": [{"file": name, **exp} for name, exp in EXPECTATIONS.items()],
         "clean": CLEAN,
     }
     out = ROOT / "samples" / "fix" / "manifest.json"
-    out.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+    out.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"تم: {out} — {len(EXPECTATIONS)} ملفات معيبة، كل التوقعات مطابقة للسلوك")
     return 0
 

@@ -15,7 +15,7 @@ ORIGINAL = (
     "    name = input('؟ ')\n"
     "    try:\n"
     "        go(name)\n"
-    "    except:\n"          # ERR-BAREEXC-001 — الإصلاح المقصود هنا
+    "    except:\n"  # ERR-BAREEXC-001 — الإصلاح المقصود هنا
     "        pass\n"
     "    return name\n"
 )
@@ -61,7 +61,11 @@ def test_fix_that_ignores_target_rejected():
 def test_partial_fix_count_decrease_accepted():
     # الأصل يحمل استثناءين عاريين، الإصلاح يعالج واحداً — العدّ ينقص فتقبل
     src = "def f():\n    try:\n        a()\n    except:\n        pass\n    try:\n        b()\n    except:\n        pass\n"
-    fixed = src.replace("    except:\n        pass\n    try:\n        b()", "    except (ValueError,):\n        pass\n    try:\n        b()", 1)
+    fixed = src.replace(
+        "    except:\n        pass\n    try:\n        b()",
+        "    except (ValueError,):\n        pass\n    try:\n        b()",
+        1,
+    )
     v = FixVerifier().verify(src, fixed, target_rule_id="R-ERR-001")
     assert v.accepted is True
     assert v.score_after >= v.score_before

@@ -52,7 +52,9 @@ def test_cli_hybrid_directory_batch(tmp_path):
 
 def test_cli_hybrid_engine_none_documented():
     f = REPO / "src" / "zyko" / "version.py"
-    code, out = _run_cli("review", "--path", str(f), "--hybrid", "--engine", "none", "--format", "json")
+    code, out = _run_cli(
+        "review", "--path", str(f), "--hybrid", "--engine", "none", "--format", "json"
+    )
     report = json.loads(out)
     assert "المحرك غير مهيأ" in report["route_ar"] or "ثابت خالص" in report["route_ar"]
     assert report["savings"]["findings_routed"] == 0

@@ -14,12 +14,12 @@ from zyko.reviewer.hybrid.context import build_contexts
 
 SOURCE = (
     "def handle():\n"
-    "    name = input('من؟ ')\n"          # سطر 2 — ملوث من إدخال
+    "    name = input('من؟ ')\n"  # سطر 2 — ملوث من إدخال
     "    try:\n"
-    "        go(name)\n"                    # سطر 4 — تمرير المتغير الملوث
-    "    except:\n"                        # سطر 5 — except عارٍ
+    "        go(name)\n"  # سطر 4 — تمرير المتغير الملوث
+    "    except:\n"  # سطر 5 — except عارٍ
     "        pass\n"
-    "    return name\n"                    # سطر 7 — إعادة الملوث
+    "    return name\n"  # سطر 7 — إعادة الملوث
 )
 
 
@@ -52,17 +52,11 @@ def test_tainted_input_variable_family_and_usage():
     result = ReviewEngine().review_source(source, "demo.py")
     ctxs = build_contexts(source, "demo.py", result)
     assert any(c.tainted and c.taint_family_ar.startswith("ملوث من إدخال") for c in ctxs)
-    assert any(
-        any(u["kind"] == "passed_to" and u["name"] == "go" for u in c.usages) for c in ctxs
-    )
+    assert any(any(u["kind"] == "passed_to" and u["name"] == "go" for u in c.usages) for c in ctxs)
 
 
 def test_request_family_detected():
-    source = (
-        "def view(request):\n"
-        "    q = request.args.get('q')\n"
-        "    run(q)\n"
-    )
+    source = "def view(request):\n    q = request.args.get('q')\n    run(q)\n"
     result = ReviewEngine().review_source(source, "demo.py")
     ctxs = build_contexts(source, "demo.py", result)
     assert any(c.taint_family_ar.startswith("ملوث من بيانات الطلب") for c in ctxs)
@@ -102,8 +96,16 @@ def test_snippet_window_clamped_at_edges():
 
 
 def test_byte_determinism():
-    j1 = json.dumps([c.to_dict() for c in build_contexts(SOURCE, "demo.py", _review())], ensure_ascii=False, sort_keys=True)
-    j2 = json.dumps([c.to_dict() for c in build_contexts(SOURCE, "demo.py", _review())], ensure_ascii=False, sort_keys=True)
+    j1 = json.dumps(
+        [c.to_dict() for c in build_contexts(SOURCE, "demo.py", _review())],
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    j2 = json.dumps(
+        [c.to_dict() for c in build_contexts(SOURCE, "demo.py", _review())],
+        ensure_ascii=False,
+        sort_keys=True,
+    )
     assert j1 == j2
 
 

@@ -19,7 +19,7 @@ def _run(src: str):
 def test_param_flow_across_functions():
     src = (
         "def sink(data):\n"
-        "    os.system(data)\n"          # المعامل يستخدم في حوض
+        "    os.system(data)\n"  # المعامل يستخدم في حوض
         "def source():\n"
         "    name = input('؟ ')\n"
         "    sink(name)\n"
@@ -32,13 +32,7 @@ def test_param_flow_across_functions():
 
 
 def test_return_flow_back_to_caller():
-    src = (
-        "def grab():\n"
-        "    return input('؟ ')\n"
-        "def main():\n"
-        "    x = grab()\n"
-        "    os.system(x)\n"
-    )
+    src = "def grab():\n    return input('؟ ')\ndef main():\n    x = grab()\n    os.system(x)\n"
     inp = _run(src)["input"]
     assert inp.functions["grab"]["returns_tainted"] is True
     assert inp.functions["main"]["tainted_locals"] == ["x"]
@@ -80,12 +74,7 @@ def test_no_taint_no_flows():
 
 
 def test_recursion_terminates():
-    src = (
-        "def rec(n):\n"
-        "    if n > 0:\n"
-        "        return rec(n - 1)\n"
-        "    return input()\n"
-    )
+    src = "def rec(n):\n    if n > 0:\n        return rec(n - 1)\n    return input()\n"
     inp = _run(src)["input"]  # لا تعليق ولا انفجار
     assert inp.functions["rec"]["returns_tainted"] is True
 
@@ -119,11 +108,7 @@ def test_keyword_argument_resolves_by_name():
 
 def test_byte_determinism():
     src = (
-        "def sink(data):\n"
-        "    os.system(data)\n"
-        "def source():\n"
-        "    name = input()\n"
-        "    sink(name)\n"
+        "def sink(data):\n    os.system(data)\ndef source():\n    name = input()\n    sink(name)\n"
     )
     j1 = json.dumps({k: v.to_dict() for k, v in _run(src).items()}, sort_keys=True)
     j2 = json.dumps({k: v.to_dict() for k, v in _run(src).items()}, sort_keys=True)

@@ -17,6 +17,7 @@
         --doc benchmarks/results/swebench_full_wide22_2026-11-13.json \
         --out benchmarks/results/path_rescue_2026-11-14.json
 """
+
 from __future__ import annotations
 
 import argparse
@@ -87,12 +88,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--doc", required=True, help="وثيقة الموجة الموقعة لاستخراج وفيات الاختيار")
     parser.add_argument("--data", default="benchmarks/data/swe_bench_full_requests.json")
     parser.add_argument("--gold", default=str(DEFAULT_GOLD_PATHS))
-    parser.add_argument(
-        "--repo", default=str(Path.home() / ".cache" / "zyko-swe" / "requests")
-    )
-    parser.add_argument(
-        "--state-dir", default=str(Path.home() / ".cache" / "zyko-swe" / "state")
-    )
+    parser.add_argument("--repo", default=str(Path.home() / ".cache" / "zyko-swe" / "requests"))
+    parser.add_argument("--state-dir", default=str(Path.home() / ".cache" / "zyko-swe" / "state"))
     parser.add_argument("--out", required=True)
     args = parser.parse_args(argv)
 

@@ -88,3 +88,45 @@ class TestBuildPlan:
         plan = build_plan(p, DeterministicCore())
         assert all(s.acceptance_ar.strip() for s in plan.steps)
         assert all(s.title_ar.strip() for s in plan.steps)
+
+
+# ---------------------------------- تغذية التخطيط بجوار الرسم البياني (الموجة 28)
+class CapturingCore:
+    """قلب اختباري يلتقط الطلب — يكشف ما وصل القلب فعلاً."""
+
+    name = "capturing"
+    deterministic = True
+
+    def __init__(self, reply="ملاحظة مفيدة"):
+        self.reply = reply
+        self.requests = []
+
+    def respond(self, request, *, context=""):
+        self.requests.append(request)
+        return self.reply
+
+
+class TestGraphNote:
+    def test_graph_note_reaches_plan_request(self):
+        p = perceive("انشئ مشروع قائمة مهام")
+        core = CapturingCore()
+        plan = build_plan(p, core, graph_note="اختبارات تستورده: tests/test_core.py")
+        assert plan.accepted
+        assert "جوار الملف المستهدف" in core.requests[0]
+        assert "tests/test_core.py" in core.requests[0]
+
+    def test_empty_graph_note_keeps_request_unchanged(self):
+        p = perceive("انشئ مشروع قائمة مهام")
+        a = CapturingCore()
+        b = CapturingCore()
+        build_plan(p, a)
+        build_plan(p, b, graph_note="   ")
+        assert a.requests == b.requests
+
+    def test_graph_note_byte_deterministic(self):
+        p = perceive("انشئ مشروع قائمة مهام")
+        a = CapturingCore()
+        b = CapturingCore()
+        build_plan(p, a, graph_note="يستورد: pkg/core.py")
+        build_plan(p, b, graph_note="يستورد: pkg/core.py")
+        assert a.requests == b.requests

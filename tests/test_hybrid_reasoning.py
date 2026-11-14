@@ -84,7 +84,7 @@ def test_select_findings_excludes_quality():
         "def f():\n"
         "    try:\n"
         "        go()\n"
-        "    except:\n"      # error_handling
+        "    except:\n"  # error_handling
         "        pass\n"
         "    TODO_marker = 1  # quality لو ضربت\n"
     )

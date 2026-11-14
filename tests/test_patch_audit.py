@@ -28,8 +28,7 @@ def test_secret_on_added_line_detected_with_file_and_line():
         "+++ b/app.py",
         "@@ -10,3 +10,4 @@",
         " keep = 1",
-        f"+token = 'ghp_{FAKE36}',"
-        " other = 2",
+        f"+token = 'ghp_{FAKE36}', other = 2",
     )
     a = audit_patch_text(d)
     assert a.added_count == 1
@@ -45,8 +44,7 @@ def test_removed_secret_is_not_a_crime():
         "--- a/app.py",
         "+++ b/app.py",
         "@@ -1,3 +1,3 @@",
-        f"-token = 'ghp_{FAKE36}',"
-        "+token = load_from_env()",
+        f"-token = 'ghp_{FAKE36}',+token = load_from_env()",
         " keep = 2",
     )
     a = audit_patch_text(d)

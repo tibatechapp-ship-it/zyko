@@ -1,7 +1,7 @@
 """اختبارات السجل المعياري المرجعي — benchmark ledger لا يتعفّت ولا يكذب.
 
 العقود:
-1. الغلاف الملتزم (benchmarks/results/baseline_2026-11-11.json) مكتمل
+1. الغلاف الملتزم (benchmarks/results/baseline_2026-11-14.json) مكتمل
    الإثبات: إصدار متزامن مع الحزمة المثبتة، بصمة هدف sha256 صالحة،
    وإيصالا compare وgauntlet_stress أخضران بعقودهما البايتية.
 2. القدرة المقاسة تُشتق حيًّا الآن على ملف حقيقي ملتزم بالمستودع —
@@ -20,7 +20,7 @@ from pathlib import Path
 from zyko.version import __version__
 
 ROOT = Path(__file__).resolve().parent.parent
-LEDGER = ROOT / "benchmarks" / "results" / "baseline_2026-11-11.json"
+LEDGER = ROOT / "benchmarks" / "results" / "baseline_2026-11-14.json"
 REAL_FILE = ROOT / "src" / "zyko" / "reviewer" / "astcache.py"
 
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")

@@ -367,7 +367,14 @@ class MindLoop:
             return self._finish(receipt, started)
 
         # ---- 2) بوابة الخطة مع حلقة الانعكاس: رفض ⇒ درس ⇒ استشارة جديدة
-        plan = build_plan(perception, self.core)
+        # الموجة 28: غذاء الرسم البياني — جوار الملف المستهدف للخطة،
+        # مستورَد كسولاً على بنية المشروع، وفراغه لا يغيّر الطلب بالبايت
+        graph_note = ""
+        if perception.is_existing_task:
+            from zyko.reviewer.repo_graph import neighborhood_note_for
+
+            graph_note = neighborhood_note_for(perception.target_path or "")
+        plan = build_plan(perception, self.core, graph_note=graph_note)
         attempt = 1
         guard = guard_plan(plan, perception)
         while not (plan.accepted and guard.ok):
@@ -404,7 +411,7 @@ class MindLoop:
                 break
             self.budget.consume(STAGE_PLAN)
             attempt += 1
-            plan = build_plan(perception, self.core, feedback=feedback)
+            plan = build_plan(perception, self.core, feedback=feedback, graph_note=graph_note)
             guard = guard_plan(plan, perception)
         receipt.plan_accepted = bool(plan.accepted and guard.ok)
         receipt.plan_text = plan.text_ar() if receipt.plan_accepted else ""

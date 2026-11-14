@@ -13,13 +13,13 @@ import json
 import pytest
 
 from zyko.benchmarks.frontier import (
+    APPLICABLE_WEIGHTS,
     AXES,
     EVAL1000_DOC,
     SYNTHLAB_DOC,
+    WEIGHT_SUM,
     WIDE19_DOC,
     WIDE25_MERGED_DOC,
-    APPLICABLE_WEIGHTS,
-    WEIGHT_SUM,
     read_signed_doc,
     read_wide_metrics,
     run_contract_lab,
@@ -76,11 +76,14 @@ def test_frontier_report_deterministic_bytes():
 def test_zfi_equals_declared_weighted_sum():
     """المؤشر المجمع = المتوسط الموزون المعلن — لا غرق الضعف في المتوسط بلا حساب."""
     report = run_frontier()
-    zfi = sum(
-        a.weight * float(row["score_pct"])
-        for a, row in zip(AXES, report["axes"])
-        if a.weight > 0 and row["score_pct"] is not None
-    ) / APPLICABLE_WEIGHTS
+    zfi = (
+        sum(
+            a.weight * float(row["score_pct"])
+            for a, row in zip(AXES, report["axes"])
+            if a.weight > 0 and row["score_pct"] is not None
+        )
+        / APPLICABLE_WEIGHTS
+    )
     assert round(zfi, 2) == report["zfi"]
 
 

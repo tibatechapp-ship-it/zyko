@@ -135,7 +135,9 @@ def _steps_for(perception: Perception) -> tuple[MindStep, ...]:
     return ()
 
 
-def build_plan(perception: Perception, core: ModelCore, *, feedback: str = "") -> MindPlan:
+def build_plan(
+    perception: Perception, core: ModelCore, *, feedback: str = "", graph_note: str = ""
+) -> MindPlan:
     """ابنِ الخطة: خطوات حتمية + استشارة القلب خلف البوابات — بلا استثناء.
 
     نص القلب يُفحص PII ثم RTL (الترتيب الثابت)؛ رفض أي بوابة يجعل الخطة
@@ -147,6 +149,12 @@ def build_plan(perception: Perception, core: ModelCore, *, feedback: str = "") -
     تُلحق بالطلب فتغيّر مدخل الاستشارة فعلًا: بلاها إعادة المحاولة
     حتميًا نفس النتيجة، وبها يتعلم القلب من رفض البوابة قبل أن يعيد
     الصياغة.
+
+    ``graph_note`` (الموجة 28): غذاء جوار الملف المستهدف من رسم المستودع
+    البياني (``zyko.reviewer.repo_graph.neighborhood_note_for``) — القلب
+    يخطط وقد يرى من يستورد الملف وما يغطيه اختبارياً، فلا يقترح خطوة
+    تكسر البيئة المحيطة. فراغه يعني لا رسم ولا ملف — الطلب مطابق
+    بالبايت للسابق.
     """
     steps = _steps_for(perception)
     if not steps:
@@ -176,6 +184,9 @@ def build_plan(perception: Perception, core: ModelCore, *, feedback: str = "") -
     note = str(feedback or "").strip()
     if note:
         plan_request = f"{plan_request}\nملاحظة انعكاس من المحاولة السابقة: {note}"
+    graph = str(graph_note or "").strip()
+    if graph:
+        plan_request = f"{plan_request}\nجوار الملف المستهدف في الرسم البياني:\n{graph}"
     try:
         advisory = core.respond(plan_request, context=perception.goal)
     except Exception as exc:  # noqa: BLE001 — فشل القلب دليل لا انهيار

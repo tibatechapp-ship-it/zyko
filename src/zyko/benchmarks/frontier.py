@@ -34,17 +34,15 @@ from __future__ import annotations
 import hashlib
 import json
 import tempfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from zyko.benchmarks.multilab import run_multilab
 from zyko.sandbox.audit import AuditLog
 from zyko.sandbox.contracts import (
-    DEFAULT_ALLOWED_COMMANDS,
     MAX_FILE_BYTES_LIMIT,
     MAX_TIMEOUT_S,
     PermissionContract,
-    is_sensitive_file,
 )
 from zyko.sandbox.session import ToolSession
 from zyko.version import __version__
@@ -59,7 +57,9 @@ def _resolve_results_dir() -> Path:
 
     root = repo_root()
     if root is None:
-        raise FileNotFoundError("جذر المستودع غير قابل للعثور (pyproject.toml + src/zyko) — لا قياس بلا شجرة")
+        raise FileNotFoundError(
+            "جذر المستودع غير قابل للعثور (pyproject.toml + src/zyko) — لا قياس بلا شجرة"
+        )
     return root / "benchmarks" / "results"
 
 
@@ -87,16 +87,30 @@ class Axis:
 
 
 AXES: tuple[Axis, ...] = (
-    Axis("swe_engineering", "هندسة البرمجيات", 0.30, "reader+lab",
-         ("SWE-bench Verified", "EC-SWE (تعدد الملفات)", "SciCode")),
-    Axis("agentic_tools", "الأدوات والعقود", 0.25, "lab",
-         ("BFCL (استدعاء الدوال)", "τ-bench (التزام السياسة)")),
+    Axis(
+        "swe_engineering",
+        "هندسة البرمجيات",
+        0.30,
+        "reader+lab",
+        ("SWE-bench Verified", "EC-SWE (تعدد الملفات)", "SciCode"),
+    ),
+    Axis(
+        "agentic_tools",
+        "الأدوات والعقود",
+        0.25,
+        "lab",
+        ("BFCL (استدعاء الدوال)", "τ-bench (التزام السياسة)"),
+    ),
     Axis("terminal", "الطرفية", 0.15, "lab", ("Terminal-Bench",)),
-    Axis("reasoning_determinism", "التفكير والحتمية", 0.20, "reader",
-         ("ARC-AGI (التعميم)", "منهج إعادة الاشتقاق بالبايت")),
+    Axis(
+        "reasoning_determinism",
+        "التفكير والحتمية",
+        0.20,
+        "reader",
+        ("ARC-AGI (التعميم)", "منهج إعادة الاشتقاق بالبايت"),
+    ),
     Axis("platforms", "المنصات", 0.10, "reader", ("— (بعدُ zyko: النشر المقاس)",)),
-    Axis("multimodal", "متعدد الوسائط", 0.00, "declared-na",
-         ("MMMU-Pro", "ScreenSpot Pro")),
+    Axis("multimodal", "متعدد الوسائط", 0.00, "declared-na", ("MMMU-Pro", "ScreenSpot Pro")),
 )
 
 WEIGHT_SUM = round(sum(a.weight for a in AXES), 6)
@@ -231,15 +245,17 @@ def run_contract_lab() -> dict[str, object]:
         for sc in scenarios:
             observed_ok, evidence = _probe_contract(contract, sc.probe, root)
             correct = observed_ok == sc.expected_ok
-            rows.append({
-                "scenario_id": sc.scenario_id,
-                "intent": sc.intent_ar,
-                "probe": sc.probe,
-                "expected_ok": sc.expected_ok,
-                "observed_ok": observed_ok,
-                "correct": correct,
-                "evidence": evidence,
-            })
+            rows.append(
+                {
+                    "scenario_id": sc.scenario_id,
+                    "intent": sc.intent_ar,
+                    "probe": sc.probe,
+                    "expected_ok": sc.expected_ok,
+                    "observed_ok": observed_ok,
+                    "correct": correct,
+                    "evidence": evidence,
+                }
+            )
     correct_count = sum(1 for r in rows if r["correct"])
     rate = _ratio(correct_count, len(rows))
     return {
@@ -283,8 +299,9 @@ def _probe_contract(contract: PermissionContract, probe: str, root: Path) -> tup
 
         os.environ["ZYKO_FRONTIER_API_TOKEN"] = "probe-secret-value-not-a-real-token"
         env = contract.sanitized_env()
-        leaked = any("TOKEN" in k.upper() or "SECRET" in k.upper() or "KEY" in k.upper()
-                     for k in env)
+        leaked = any(
+            "TOKEN" in k.upper() or "SECRET" in k.upper() or "KEY" in k.upper() for k in env
+        )
         return (not leaked), "sanitized_env(secret denied)"
     if probe == "env-keep":
         env = contract.sanitized_env()
@@ -324,9 +341,7 @@ def run_terminal_lab() -> dict[str, object]:
     with tempfile.TemporaryDirectory(prefix="zyko-frontier-term-") as tmp:
         root = Path(tmp)
         log_path = root / "audit.jsonl"
-        contract = PermissionContract.for_roots(
-            root, allow_patch=True, allow_run_tests=True
-        )
+        contract = PermissionContract.for_roots(root, allow_patch=True, allow_run_tests=True)
         session = ToolSession(contract, AuditLog(str(log_path)))
 
         # TB-01: كتابة وحدة بالبايتات المعلنة
@@ -336,31 +351,44 @@ def run_terminal_lab() -> dict[str, object]:
 
         # TB-02: اختبار ناجح تحت العقد
         r2w = session.patch_file(path="test_ok.py", content=_TEST_OK)
-        r2 = session.run_tests(argv=("pytest", "-q", "-p", "no:cacheprovider", "test_ok.py"), cwd=root)
-        rows.append(_task_row("TB-02", r2w.ok and r2.ok and r2.passed == 1,
-                              r2.reason_ar or f"passed={r2.passed}"))
+        r2 = session.run_tests(
+            argv=("pytest", "-q", "-p", "no:cacheprovider", "test_ok.py"), cwd=root
+        )
+        rows.append(
+            _task_row(
+                "TB-02", r2w.ok and r2.ok and r2.passed == 1, r2.reason_ar or f"passed={r2.passed}"
+            )
+        )
 
         # TB-03: اختبار فاشل — العد مفصول لا مطموس
         r3w = session.patch_file(path="test_bad.py", content=_TEST_BAD)
-        r3 = session.run_tests(argv=("pytest", "-q", "-p", "no:cacheprovider", "test_bad.py"), cwd=root)
-        rows.append(_task_row("TB-03", r3w.ok and (not r3.ok) and (r3.failed or 0) == 1,
-                              r3.reason_ar or f"failed={r3.failed} (مفصول لا مطموس)"))
+        r3 = session.run_tests(
+            argv=("pytest", "-q", "-p", "no:cacheprovider", "test_bad.py"), cwd=root
+        )
+        rows.append(
+            _task_row(
+                "TB-03",
+                r3w.ok and (not r3.ok) and (r3.failed or 0) == 1,
+                r3.reason_ar or f"failed={r3.failed} (مفصول لا مطموس)",
+            )
+        )
 
         # TB-04: فحص الصياغة يفضح الملف المكسور
         r4w = session.patch_file(path="broken.py", content=_BAD_SYNTAX)
-        r4 = session.run_tests(
-            argv=("python3", "-m", "py_compile", "broken.py"), cwd=root
+        r4 = session.run_tests(argv=("python3", "-m", "py_compile", "broken.py"), cwd=root)
+        rows.append(
+            _task_row("TB-04", r4w.ok and not r4.ok, r4.reason_ar or "exit=" + str(r4.exit_code))
         )
-        rows.append(_task_row("TB-04", r4w.ok and not r4.ok, r4.reason_ar or "exit=" + str(r4.exit_code)))
 
         # TB-05: خطف المشغّل بملف ظلّ ثم الشفاء
         r5p = session.patch_file(path="pytest.py", content="print('hijack')\n")
         r5 = session.run_tests(argv=("pytest", "-q", "test_ok.py"), cwd=root)
         hijacked_rejected = r5p.ok and (not r5.ok) and "يظلّل" in (r5.reason_ar or "")
         (root / "pytest.py").unlink()
-        r5b = session.run_tests(argv=("pytest", "-q", "-p", "no:cacheprovider", "test_ok.py"), cwd=root)
-        rows.append(_task_row("TB-05", hijacked_rejected and r5b.ok,
-                              r5.reason_ar or "recovered"))
+        r5b = session.run_tests(
+            argv=("pytest", "-q", "-p", "no:cacheprovider", "test_ok.py"), cwd=root
+        )
+        rows.append(_task_row("TB-05", hijacked_rejected and r5b.ok, r5.reason_ar or "recovered"))
 
         # TB-06: رقعة خارج الجذور ترفض قبل الكتابة
         outside = Path(tempfile.gettempdir()) / "zyko-frontier-outside.txt"
@@ -414,11 +442,22 @@ def _swe_axis_score() -> tuple[float, list[dict[str, object]]]:
         2,
     )
     sub = [
-        {"name": "تعدد الملفات (EC-SWE analog)", "value_pct": multi_rate,
-         "source": "zyko.benchmarks.multilab حي — 9 سيناريوهات"},
+        {
+            "name": "تعدد الملفات (EC-SWE analog)",
+            "value_pct": multi_rate,
+            "source": "zyko.benchmarks.multilab حي — 9 سيناريوهات",
+        },
         {"name": "الحل البيئي", "value_pct": wide["env_solve_pct"], "source": wide["env_source"]},
-        {"name": "الحل الصارم", "value_pct": wide["strict_solve_pct"], "source": wide["strict_source"]},
-        {"name": "رقع مطبقة فعلاً", "value_pct": wide["applied_patch_pct"], "source": wide["applied_source"]},
+        {
+            "name": "الحل الصارم",
+            "value_pct": wide["strict_solve_pct"],
+            "source": wide["strict_source"],
+        },
+        {
+            "name": "رقع مطبقة فعلاً",
+            "value_pct": wide["applied_patch_pct"],
+            "source": wide["applied_source"],
+        },
     ]
     return score, sub
 
@@ -427,7 +466,6 @@ def run_frontier() -> dict[str, object]:
     """شغّل العدّة كاملة: محاور حية وقارئات موقّعة ومؤشر مجمع موقّع."""
     contract_lab = run_contract_lab()
     terminal_lab = run_terminal_lab()
-    multi_rate = _ratio(sum(1 for r in run_multilab().rows if r.passed), 9)
     swe_score, swe_sub = _swe_axis_score()
 
     reasoning = read_reasoning_metrics()
@@ -452,34 +490,61 @@ def run_frontier() -> dict[str, object]:
         if axis.key == "swe_engineering":
             subs = swe_sub
         elif axis.key == "agentic_tools":
-            subs = [{"name": "دقة قرارات العقود بالاتجاهين", "value_pct": contract_lab["accuracy_pct"],
-                     "source": "معمل قرارات العقود الحي (12 سيناريو)"}]
+            subs = [
+                {
+                    "name": "دقة قرارات العقود بالاتجاهين",
+                    "value_pct": contract_lab["accuracy_pct"],
+                    "source": "معمل قرارات العقود الحي (12 سيناريو)",
+                }
+            ]
         elif axis.key == "terminal":
-            subs = [{"name": "مهام الطرفية تحت العقد والجِل", "value_pct": terminal_lab["success_pct"],
-                     "source": "معمل الطرفية الحي (8 مهام)"}]
+            subs = [
+                {
+                    "name": "مهام الطرفية تحت العقد والجِل",
+                    "value_pct": terminal_lab["success_pct"],
+                    "source": "معمل الطرفية الحي (8 مهام)",
+                }
+            ]
         elif axis.key == "reasoning_determinism":
             subs = [
-                {"name": "eval1000", "value_pct": reasoning["eval1000_pct"],
-                 "source": f"{EVAL1000_DOC.name} — بصمة {str(reasoning['eval1000_chain'])[:16]}"},
-                {"name": "synthlab", "value_pct": reasoning["synthlab_pct"],
-                 "source": f"{SYNTHLAB_DOC.name} — بصمة {str(reasoning['synthlab_chain'])[:16]}"},
+                {
+                    "name": "eval1000",
+                    "value_pct": reasoning["eval1000_pct"],
+                    "source": f"{EVAL1000_DOC.name} — بصمة {str(reasoning['eval1000_chain'])[:16]}",
+                },
+                {
+                    "name": "synthlab",
+                    "value_pct": reasoning["synthlab_pct"],
+                    "source": f"{SYNTHLAB_DOC.name} — بصمة {str(reasoning['synthlab_chain'])[:16]}",
+                },
             ]
         elif axis.key == "platforms":
-            subs = [{"name": "أهداف النشر الجاهزة", "value": platforms["ready_targets"],
-                     "source": "zyko.platform.deploy — مقياس من الشجرة"}]
-        rows.append({
-            "axis": axis.key,
-            "title_ar": axis.title_ar,
-            "weight": axis.weight,
-            "source": axis.source,
-            "frontier_analogs": list(axis.frontier_analogs),
-            "score_pct": score,
-            "verdict": "خارج النطاق — معلن" if score is None else verdict_for(float(score)),
-            "sub_metrics": subs,
-        })
+            subs = [
+                {
+                    "name": "أهداف النشر الجاهزة",
+                    "value": platforms["ready_targets"],
+                    "source": "zyko.platform.deploy — مقياس من الشجرة",
+                }
+            ]
+        rows.append(
+            {
+                "axis": axis.key,
+                "title_ar": axis.title_ar,
+                "weight": axis.weight,
+                "source": axis.source,
+                "frontier_analogs": list(axis.frontier_analogs),
+                "score_pct": score,
+                "verdict": "خارج النطاق — معلن" if score is None else verdict_for(float(score)),
+                "sub_metrics": subs,
+            }
+        )
 
     zfi = round(
-        sum(a.weight * float(scores[a.key]) for a in AXES if a.weight > 0 and scores[a.key] is not None)
+        sum(
+            a.weight * float(scores[a.key])
+            for a in AXES
+            if a.weight > 0 and scores[a.key] is not None
+        )
         / APPLICABLE_WEIGHTS,
         2,
     )
@@ -511,7 +576,9 @@ def format_report(report: dict[str, object]) -> str:
         score = row["score_pct"]
         score_text = "خارج النطاق" if score is None else f"{float(score):.2f}%"
         analogs = " · ".join(row["frontier_analogs"])
-        lines.append(f"{row['title_ar']} | {row['weight']} | {score_text} | {row['verdict']} | {analogs}")
+        lines.append(
+            f"{row['title_ar']} | {row['weight']} | {score_text} | {row['verdict']} | {analogs}"
+        )
     lines.append("-" * 72)
     lines.append(f"بصمة السلسلة: {report['chain_hash'][:16]}… — كل رقم قابل لإعادة التشغيل")
     return "\n".join(lines)
@@ -524,7 +591,9 @@ def main(argv: list[str] | None = None) -> int:
         prog="zyko.benchmarks.frontier",
         description="عدّة المقاييس الأمامية — زبدة مقاييس 2026 بأسلوب zyko: قياس لا ادعاء",
     )
-    parser.add_argument("--run", action="store_true", help="شغّل المحاور الحية والقارئات واطبع المصفوفة")
+    parser.add_argument(
+        "--run", action="store_true", help="شغّل المحاور الحية والقارئات واطبع المصفوفة"
+    )
     parser.add_argument("--json", type=str, default="", help="اكتب الإيصال JSON في مسار")
     args = parser.parse_args(argv)
 
@@ -536,8 +605,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         out = Path(args.json)
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-                       encoding="utf-8")
+        out.write_text(
+            json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
         print(f"الإيصال موقّع: {out}")
     strengths = [r["title_ar"] for r in report["axes"] if r["verdict"] == "قوة"]
     weaknesses = [r["title_ar"] for r in report["axes"] if r["verdict"] == "ضعف"]

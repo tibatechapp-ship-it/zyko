@@ -1,0 +1,92 @@
+{
+  "$comment": "سجل مرجعي من تشغيل فعلي — أعد توليده على جهازك بـ scripts/make_bench_baseline.py وقارن الإيصالات الداخلية بايت-ببايت.",
+  "compare": {
+    "accuracy": 1.0,
+    "competitor": {
+      "command": "",
+      "error_ar": "لم يُشغَّل — مرّر --competitor-cmd لتشغيل منافس حقيقي",
+      "median_ms": null,
+      "output_lines": null,
+      "ran": false
+    },
+    "determinism_ok": true,
+    "kind": "compare",
+    "ok": true,
+    "probes_passed": 12,
+    "probes_total": 12,
+    "problems": [],
+    "target": "/tmp/requests-test/src/requests/models.py",
+    "verify_ok": true
+  },
+  "gauntlet_stress": {
+    "determinism_ok": true,
+    "kind": "gauntlet_stress",
+    "matrix_hashes": [
+      "e5dc793c9618b4490151389359d390c4791c51a8df4645027eac0b9587935dcd",
+      "e5dc793c9618b4490151389359d390c4791c51a8df4645027eac0b9587935dcd"
+    ],
+    "ok": true,
+    "per_intent": 8,
+    "problems": [],
+    "repeats": 2,
+    "review_chain_hash": "94bda9f7948de159c8a3d13576ea5b2d17d64883694db1782c67657a07440693",
+    "review_min_score": 70,
+    "review_rows": [
+      {
+        "files": 5,
+        "findings": 0,
+        "min_score": 100,
+        "name": "todo-cli-000",
+        "ok": true
+      },
+      {
+        "files": 5,
+        "findings": 0,
+        "min_score": 100,
+        "name": "notes-cli-005",
+        "ok": true
+      },
+      {
+        "files": 5,
+        "findings": 0,
+        "min_score": 100,
+        "name": "pomodoro-cli-002",
+        "ok": true
+      },
+      {
+        "files": 1,
+        "findings": 0,
+        "min_score": 100,
+        "name": "restaurant-site-000",
+        "ok": true
+      },
+      {
+        "files": 1,
+        "findings": 0,
+        "min_score": 100,
+        "name": "gallery-site-005",
+        "ok": true
+      },
+      {
+        "files": 3,
+        "findings": 0,
+        "min_score": 100,
+        "name": "store-api-002",
+        "ok": true
+      }
+    ]
+  },
+  "recorded": {
+    "date": "2026-11-14",
+    "generated_utc": "2026-11-14T07:44:42Z",
+    "platform": "Linux",
+    "python": "3.12.16",
+    "zyko_version": "0.51.0"
+  },
+  "target": {
+    "bytes": 41462,
+    "label": "psf/requests — src/requests/models.py (clone --depth 1 @HEAD)",
+    "lines": 1184,
+    "sha256": "a3351c3c12a86bf5ed211533875350bc4791e9327a685f8c19ba54343e471e26"
+  }
+}

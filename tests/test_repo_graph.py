@@ -10,7 +10,13 @@ import json
 
 import pytest
 
-from zyko.reviewer.repo_graph import build_repo_graph, graph_to_json, neighborhood
+from zyko.reviewer.repo_graph import (
+    build_repo_graph,
+    graph_to_json,
+    neighborhood,
+    neighborhood_lines,
+    neighborhood_note_for,
+)
 
 
 @pytest.fixture()
@@ -113,3 +119,66 @@ def test_unparsable_file_yields_no_edges_from_it(tmp_path):
     # (حسم الاستيراد بالأسماء لا يحتاج تحليل الهدف)
     assert not any(a == "broken.py" for a, _ in g.import_edges)
     assert ("ok.py", "broken.py") in g.import_edges
+
+
+# ------------------------------------------ تغذية التخطيط بجوار الرسم (الموجة 28)
+
+
+def test_neighborhood_lines_sections_exact(tree):
+    g = build_repo_graph(tree)
+    # core.py بلا استيرادات داخلية — القسمان الموجودان فقط بالترتيب الثابت
+    assert neighborhood_lines(g, "pkg/core.py") == (
+        "يُستورد منه: app.py, pkg/sub/leaf.py",
+        "اختبارات تستورده: tests/test_core.py",
+    )
+
+
+def test_neighborhood_lines_imports_section_first(tree):
+    g = build_repo_graph(tree)
+    lines = neighborhood_lines(g, "app.py")
+    assert lines[0] == "يستورد: pkg/__init__.py, pkg/core.py"
+
+
+def test_neighborhood_lines_isolated_file_named_line(tree):
+    g = build_repo_graph(tree)
+    assert neighborhood_lines(g, "pkg/sub/__init__.py") == (
+        "الملف pkg/sub/__init__.py بلا حواف استيراد أو تغطية اختبارية داخل السقف المعلن",
+    )
+
+
+def test_neighborhood_lines_unknown_file_empty_not_exception(tree):
+    g = build_repo_graph(tree)
+    # اختلاف العقد الموثق عن neighborhood: مسار خارج السقف ⇒ فراغ معلن لا KeyError —
+    # لأن المختار من شجرة git قد يقع خارج سقف المشي على القرص
+    assert neighborhood_lines(g, "ghost.py") == ()
+
+
+def test_neighborhood_lines_byte_deterministic(tree):
+    a = neighborhood_lines(build_repo_graph(tree), "pkg/core.py")
+    b = neighborhood_lines(build_repo_graph(tree), "pkg/core.py")
+    assert a == b
+
+
+def test_note_for_target_with_environment(tree):
+    (tree / "pyproject.toml").write_text("[project]\n", encoding="utf-8")  # علامة الجذر
+    note = neighborhood_note_for(tree / "pkg" / "core.py")
+    # الأقسام لا تكرر اسم الملف — المستهدف مسمّى في طلب الخطة أصلاً
+    assert "app.py" in note and "tests/test_core.py" in note
+
+
+def test_note_for_isolated_file_is_empty(tree):
+    # عزل كامل ⇒ لا غذاء تخطيط — العقد الموثقة: فراغ لا سطر عزلة
+    assert neighborhood_note_for(tree / "pkg" / "sub" / "__init__.py") == ""
+
+
+def test_note_for_missing_or_non_python_is_empty(tree):
+    assert neighborhood_note_for(tree / "ghost.py") == ""
+    (tree / "notes.txt").write_text("hi", encoding="utf-8")
+    assert neighborhood_note_for(tree / "notes.txt") == ""
+
+
+def test_note_for_byte_deterministic(tree):
+    (tree / "pyproject.toml").write_text("[project]\n", encoding="utf-8")
+    a = neighborhood_note_for(tree / "pkg" / "core.py")
+    b = neighborhood_note_for(tree / "pkg" / "core.py")
+    assert a == b and a != ""

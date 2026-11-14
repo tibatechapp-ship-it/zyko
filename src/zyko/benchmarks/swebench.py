@@ -45,11 +45,12 @@ import subprocess
 import time
 import urllib.error
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
 from zyko.ai.brains import GateVerdict, Proposal
+from zyko.benchmarks.patch_audit import audit_patch_text
 from zyko.sandbox.contracts import is_sensitive_file
 
 __all__ = [
@@ -787,15 +788,31 @@ def parse_choice(reply: str, tree: tuple[str, ...]) -> str | None:
     return None
 
 
-def build_diff_request(instance: SWEInstance, path: str, content: str) -> str:
-    """طلب الرقعة: التقرير + عقد الفشل + محتوى الملف كاملاً."""
+def build_diff_request(
+    instance: SWEInstance,
+    path: str,
+    content: str,
+    *,
+    neighborhood_lines: tuple[str, ...] | None = None,
+) -> str:
+    """طلب الرقعة: التقرير + عقد الفشل + محتوى الملف + جوار الرسم اختيارياً.
+
+    ``neighborhood_lines`` (الموجة 28 — تغذية التخطيط بجوار الرسم البياني):
+    سطور جوار الملف من رسم المستودع البياني — العقل يرى من يستورد الملف
+    وما يغطيه اختبارياً قبل كتابة الرقعة، فلا يكسر مستورداً أو اختباراً
+    لم يره (القفزة البيئية في ZFI). الإثراء إضافي لا مبدّل: بلا جوار
+    الطلب مطابق بالبايت للسابق.
+    """
     failing = "\n".join(instance.fail_to_pass[:24]) or "(لا عقد معلومة)"
-    return (
+    request = (
         f"التقرير:\n{instance.problem_statement}\n\n"
         f"عقد الفشل (اختبارات يجب أن تمر):\n{failing}\n\n"
         f"الملف {path} كاملاً:\n```python\n{content}\n```\n\n"
         "أعد الرقعة الموحدة التي تصلح العلة."
     )
+    if neighborhood_lines:
+        request += "\n\nجوار الملف في الرسم البياني:\n" + "\n".join(neighborhood_lines)
+    return request
 
 
 def repo_py_tree(workdir: Path, runner: Runner) -> tuple[str, ...]:
@@ -817,7 +834,12 @@ def repo_py_tree(workdir: Path, runner: Runner) -> tuple[str, ...]:
 # --------------------------------------------------------------- المحاولة
 @dataclass(frozen=True)
 class SWEAttempt:
-    """سجل محاولة إصلاح واحدة — كل ما جرى بالبايت، بلا أزمنة."""
+    """سجل محاولة إصلاح واحدة — كل ما جرى بالبايت، بلا أزمنة.
+
+    ``patch_audit`` (الموجة 28): نتيجة بوابة التدقيق قبل العدّ على
+    الرقعة المستخرجة — قاموس ``zyko.patch_audit/1`` أو فارغ إن لم تصل
+    رقعة أصلاً (رفض بوابة العقل أو لا رقعة في الرد).
+    """
 
     instance_id: str
     file_choice: str | None
@@ -825,6 +847,7 @@ class SWEAttempt:
     diff_reply_sha16: str
     proposal_accepted: bool
     verdict: SWEVerdict
+    patch_audit: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -834,6 +857,7 @@ class SWEAttempt:
             "diff_reply_sha16": self.diff_reply_sha16,
             "proposal_accepted": self.proposal_accepted,
             "verdict": self.verdict.to_dict(),
+            "patch_audit": self.patch_audit,
         }
 
 
@@ -901,8 +925,17 @@ def attempt_repair(
             verdict=verdict,
         )
 
+    # الموجة 28: تغذية التخطيط بجوار الرسم البياني — رسم واحد لكل محاولة،
+    # وجوار المختار يدخل طلب الرقعة (استيراد/تغطية اختبارية) بلا قراءة شاملة
+    from zyko.reviewer.repo_graph import build_repo_graph
+    from zyko.reviewer.repo_graph import neighborhood_lines as _nhood
+
+    graph = build_repo_graph(workdir)
+    nhood = _nhood(graph, chosen)
     content = (workdir / chosen).read_text(encoding="utf-8", errors="replace")
-    diff_reply = diff_brain.propose(build_diff_request(instance, chosen, content))
+    diff_reply = diff_brain.propose(
+        build_diff_request(instance, chosen, content, neighborhood_lines=nhood)
+    )
     if not diff_reply.accepted:
         verdict = SWEVerdict(
             instance_id=instance.instance_id,
@@ -948,6 +981,41 @@ def attempt_repair(
             verdict=verdict,
         )
 
+    # الموجة 28: بوابة التدقيق قبل العدّ — كل رقعة تُدقَّق بالقواعد الثماني
+    # قبل أي تطبيق أو قياس؛ الحرج (سر مضمّن) يوقف المحاولة فوراً موثقاً،
+    # ودرجات المراجعة والتدنّى تُسجّل في المحاولة ولا تمنع.
+    audit = audit_patch_text(patch)
+    if any(f.severity == "critical" for f in audit.findings):
+        critical = sorted({f.rule_id for f in audit.findings if f.severity == "critical"})
+        locs = "; ".join(
+            f"{f.file}:{f.line_in_file}" for f in audit.findings if f.severity == "critical"
+        )
+        verdict = SWEVerdict(
+            instance_id=instance.instance_id,
+            patch_applied=False,
+            apply_error_ar=None,
+            f2p_failed_at_base=(),
+            p2p_failed_at_base=(),
+            f2p_passed_after=(),
+            f2p_failed_after=(),
+            p2p_failed_after=(),
+            runs_error_ar=None,
+            patch_sha16=_sha16(patch),
+            contract_reason_ar=(
+                "بوابة التدقيق قبل العدّ رفضت الرقعة قبل التطبيق — "
+                f"إصابات حرجة: {', '.join(critical)} ({locs})"
+            ),
+        )
+        return SWEAttempt(
+            instance_id=instance.instance_id,
+            file_choice=chosen,
+            choice_reply_sha16=_sha16(choice.text),
+            diff_reply_sha16=_sha16(diff_reply.text),
+            proposal_accepted=True,
+            verdict=verdict,
+            patch_audit=audit.to_dict(),
+        )
+
     verdict = evaluate_instance(
         instance,
         workdir,
@@ -965,6 +1033,7 @@ def attempt_repair(
         diff_reply_sha16=_sha16(diff_reply.text),
         proposal_accepted=True,
         verdict=verdict,
+        patch_audit=audit.to_dict(),
     )
 
 
@@ -981,6 +1050,7 @@ class SWEAggregate:
     applied_count: int
     contract_rejections: int
     gate_rejections: int
+    audit_rejections: int = 0
 
     @property
     def resolve_rate_env(self) -> float:
@@ -996,8 +1066,14 @@ class SWEAggregate:
             "applied_count": self.applied_count,
             "contract_rejections": self.contract_rejections,
             "gate_rejections": self.gate_rejections,
+            "audit_rejections": self.audit_rejections,
             "resolve_rate_env": round(self.resolve_rate_env, 4),
         }
+
+
+def _audit_critical(a: SWEAttempt) -> bool:
+    """هل تحمل الرقعة إصابة حرجة في بوابة التدقيق (الموجة 28)."""
+    return any(f.get("severity") == "critical" for f in (a.patch_audit or {}).get("findings") or ())
 
 
 def aggregate(attempts: tuple[SWEAttempt, ...]) -> SWEAggregate:
@@ -1006,6 +1082,10 @@ def aggregate(attempts: tuple[SWEAttempt, ...]) -> SWEAggregate:
     ``f2p_total`` يُحسب من اتحاد ما رُئي فعلاً من عقد FAIL_TO_PASS في كل
     محاولة (فشل أساس ∪ فشل بعد ∪ نجح بعد) — الصادق حتى في المحاولات التي
     لم تكتمل.
+
+    بوابة العدّ (الموجة 28): الرقعة ذات الإصابة الحرجة في التدقيق لا تدخل
+    العدّ مهما قال حكمها — خط الدفاع الثاني إن مرّت رقعة مسمومة من مسار
+    لم يمر ببوابة المحاولة.
     """
     f2p_total = sum(
         len(
@@ -1017,8 +1097,10 @@ def aggregate(attempts: tuple[SWEAttempt, ...]) -> SWEAggregate:
     )
     return SWEAggregate(
         total=len(attempts),
-        resolved_strict=sum(1 for a in attempts if a.verdict.resolved_strict),
-        resolved_env=sum(1 for a in attempts if a.verdict.resolved_env),
+        resolved_strict=sum(
+            1 for a in attempts if a.verdict.resolved_strict and not _audit_critical(a)
+        ),
+        resolved_env=sum(1 for a in attempts if a.verdict.resolved_env and not _audit_critical(a)),
         f2p_repaired_total=sum(a.verdict.f2p_repaired_count for a in attempts),
         f2p_total=f2p_total,
         applied_count=sum(1 for a in attempts if a.verdict.patch_applied),
@@ -1026,4 +1108,5 @@ def aggregate(attempts: tuple[SWEAttempt, ...]) -> SWEAggregate:
             1 for a in attempts if a.verdict.contract_reason_ar and not a.verdict.patch_applied
         ),
         gate_rejections=sum(1 for a in attempts if not a.proposal_accepted),
+        audit_rejections=sum(1 for a in attempts if _audit_critical(a)),
     )

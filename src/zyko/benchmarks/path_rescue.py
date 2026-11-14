@@ -97,7 +97,7 @@ def candidate_paths_from_reply(reply: str) -> tuple[str, ...]:
         cand = _REPO_PREFIX_RX.sub("", cand)
         for prefix in _STRIP_PREFIXES:
             if cand.startswith(prefix):
-                cand = cand[len(prefix):]
+                cand = cand[len(prefix) :]
         cand = cand.lstrip("/")
         if not cand or "/" not in cand and "." not in cand:
             continue

@@ -383,7 +383,9 @@ def resume_plan(
     replanned = len(records) - len(done)
     print(
         f"الاستكمال: {len(done)} مكتملة — المتبقي {len(remaining)} من {len(instances)}"
-        + (f" — أعيد جدولتها {replanned} منصرفة/غير مطبَّقة (عقد التنفّس)" if retry_incomplete else ""),
+        + (
+            f" — أعيد جدولتها {replanned} منصرفة/غير مطبَّقة (عقد التنفّس)" if retry_incomplete else ""
+        ),
         file=sys.stderr,
     )
     return remaining

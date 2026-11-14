@@ -103,7 +103,17 @@ def scan_text(text: str) -> tuple[SecretHit, ...]:
 
 
 _SKIP_DIRS = frozenset(
-    {".git", "__pycache__", "node_modules", ".venv", "venv", "dist", "build", ".mypy_cache", ".pytest_cache"}
+    {
+        ".git",
+        "__pycache__",
+        "node_modules",
+        ".venv",
+        "venv",
+        "dist",
+        "build",
+        ".mypy_cache",
+        ".pytest_cache",
+    }
 )
 
 
@@ -128,7 +138,12 @@ def scan_tree(root, *, max_bytes: int = 2_000_000) -> dict:
                 d = hit.to_dict()
                 d["file"] = rel
                 hits.append(d)
-    return {"schema": "zyko.secret_scan/1", "files_scanned": files_scanned, "hit_count": len(hits), "hits": hits}
+    return {
+        "schema": "zyko.secret_scan/1",
+        "files_scanned": files_scanned,
+        "hit_count": len(hits),
+        "hits": hits,
+    }
 
 
 def scan_to_json(payload: dict) -> str:

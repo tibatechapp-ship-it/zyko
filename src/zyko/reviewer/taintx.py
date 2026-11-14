@@ -135,9 +135,7 @@ def _local_propagate(fn, seeds: frozenset, source_pred) -> frozenset:
 def inter_taint(tree: ast.Module, family: str, source_pred) -> InterTaintResult:
     """انتشار بين الإجرائيات حتى الثبات — عائلة مصادر واحدة."""
     funcs, ambiguous = _collect_funcs(tree)
-    by_simple = {
-        s: qs for s, qs in _simple_names(funcs).items() if s not in ambiguous
-    }
+    by_simple = {s: qs for s, qs in _simple_names(funcs).items() if s not in ambiguous}
 
     param_seeds: dict[str, set] = {q: set() for q in funcs}
     ret_seeds: dict[str, set] = {q: set() for q in funcs}
@@ -192,7 +190,9 @@ def inter_taint(tree: ast.Module, family: str, source_pred) -> InterTaintResult:
     for q, fn in funcs.items():
         params = [a.arg for a in fn.args.args]
         functions[q] = {
-            "tainted_params": sorted(set(params) & (param_seeds[q] | (final_locals[q] & set(params)))),
+            "tainted_params": sorted(
+                set(params) & (param_seeds[q] | (final_locals[q] & set(params)))
+            ),
             "tainted_locals": sorted(final_locals[q] - set(params)),
             "returns_tainted": ret_tainted[q],
         }
