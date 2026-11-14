@@ -45,6 +45,7 @@ BURN_LIST=(
   "ghp_SEUG"  # 16 dead on arrival (401 Bad credentials, verified twice) — user must revoke
   "ghp_2R5w"  # 17 burned after publishing 0.46.0 + 0.47.0 cycles — user must revoke
   "ghp_U5Zk"  # 18 burned after publishing 0.48.0 (wave 25 path rescuer) — user must revoke
+  "ghp_OtG9"  # 19 burned after publishing 0.49.0 + 0.50.0 (waves 26 reverse-map + 27 hybrid review) — user must revoke
 )
 
 PREFIX="${GH_PUSH_TOKEN:0:8}"
