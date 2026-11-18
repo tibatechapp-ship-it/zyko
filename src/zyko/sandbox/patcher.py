@@ -201,6 +201,7 @@ def patch_file(
         with tempfile.NamedTemporaryFile(
             mode="w",
             encoding="utf-8",
+            newline="",  # bytes-exact: text mode would write \r\n on Windows
             dir=target.parent,
             prefix=target.name,
             suffix=_TMP_SUFFIX,

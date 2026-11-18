@@ -39,7 +39,7 @@ def write_html_panel(path: str | Path, content: str) -> None:
     from zyko.exceptions import ZykoError
 
     try:
-        Path(path).write_text(content, encoding="utf-8")
+        Path(path).write_text(content, encoding="utf-8", newline="\n")
     except OSError as exc:
         raise ZykoError(f"تعذّر كتابة لوحة HTML إلى «{path}»: {exc}") from exc
 

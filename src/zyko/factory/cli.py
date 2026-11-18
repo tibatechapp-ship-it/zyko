@@ -176,9 +176,9 @@ def _write_dashboard_outputs(
 
     data = _dashboard_input(gates)
     if html_path:
-        Path(html_path).write_text(build_dashboard(data), encoding="utf-8")
+        Path(html_path).write_text(build_dashboard(data), encoding="utf-8", newline="\n")
     if md_path:
-        Path(md_path).write_text(build_markdown(data), encoding="utf-8")
+        Path(md_path).write_text(build_markdown(data), encoding="utf-8", newline="\n")
     parts = [
         f"HTML={html_path}" if html_path else "",
         f"Markdown={md_path}" if md_path else "",

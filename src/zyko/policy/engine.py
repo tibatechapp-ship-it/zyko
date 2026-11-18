@@ -218,7 +218,9 @@ class _Budget:
     def _save(self, state: dict[str, Any]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self.path.with_suffix(".tmp")
-        tmp.write_text(json.dumps(state, indent=2), encoding="utf-8")
+        tmp.write_text(
+            json.dumps(state, indent=2), encoding="utf-8", newline="\n"
+        )  # bytes-exact on Windows
         tmp.replace(self.path)
 
     def spent_today(self) -> float:

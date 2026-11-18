@@ -1,11 +1,11 @@
 {
-  "command": "pytest -q --junitxml=junit_w311.xml",
-  "generated_utc": "2026-11-18T16:27:32Z",
-  "junit_sha256": "56c9098a0f879bd53a9a5e6c452be4c8c779a5bcfac87231ed36a316d2785757",
+  "command": "pytest -q --junitxml=junit_w311b.xml",
+  "generated_utc": "2026-11-18T17:02:39Z",
+  "junit_sha256": "e47d70d5fdbee905c440e8d6d112ef4fc0203fac9ff6f36d923b2fb684e2f4a7",
   "platform": "linux",
   "python": "3.12.16",
   "schema": "zyko.metrics/1",
-  "tests_passed": 3237,
+  "tests_passed": 3243,
   "tests_skipped": 4,
   "version": "0.54.1"
 }

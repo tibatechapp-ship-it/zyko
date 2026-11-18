@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml/badge.svg)](https://github.com/tibatechapp-ship-it/zyko/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-0.54.1-6366f1)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-3237%20passing-22c55e)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-3243%20passing-22c55e)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776ab?logo=python&logoColor=white)](pyproject.toml)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Termux-10b981)](.github/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-3b82f6)](LICENSE)
@@ -33,7 +33,7 @@ re-computes any routing decision; byte-level determinism is a tested contract, n
 slogan). Works with **zero API keys** (deterministic brain), or a local model via
 Ollama, or any OpenAI-compatible cloud brain behind the same gates. Policy-as-code,
 MCP client+server, multi-user gateway, RAG essentials, agent crews, 2 mandatory
-dependencies, and first-class Android/Termux support. 3237 tests passing on
+dependencies, and first-class Android/Termux support. 3243 tests passing on
 Linux·macOS·Windows × Python 3.11–3.14. See [CHANGELOG](CHANGELOG.md) ·
 [Architecture](docs/ARCHITECTURE.md) · [Innovations](docs/INNOVATION.md).
 
@@ -234,7 +234,7 @@ Linux · Windows · macOS · Android/Termux — مصفوفة CI خضراء عل�
 
 ```bash
 pytest -q
-# 3237 passed, 4 skipped  (أرقام التشغيل المرجعي الكامل — بوابة حقيقة الأرقام
+# 3243 passed, 4 skipped  (أرقام التشغيل المرجعي الكامل — بوابة حقيقة الأرقام
 #                          تقرأ junit وتطابق الشارة والسطر آليًا؛ التخطيات
 #                          بيئية موثقة: نواة بلا Landlock/bwrap، ومزودات
 #                          شبكة بلا مفاتيح، وويندوز بلا preexec)

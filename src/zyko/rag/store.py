@@ -147,7 +147,9 @@ class VectorStore:
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
             tmp = self.path.with_suffix(self.path.suffix + ".tmp")
-            tmp.write_text(json.dumps(payload, ensure_ascii=False, default=str), encoding="utf-8")
+            tmp.write_text(
+                json.dumps(payload, ensure_ascii=False, default=str), encoding="utf-8", newline="\n"
+            )  # bytes-exact on Windows
             tmp.replace(self.path)
         except OSError as exc:
             # Searching still works from memory; persistence is best-effort.
