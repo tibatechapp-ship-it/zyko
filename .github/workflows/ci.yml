@@ -184,7 +184,7 @@ jobs:
           test -f /tmp/todo-cli/RECEIPT.md && echo "receipt OK"
 
   phase2-reviewer:
-    name: phase-2 reviewer (27 Arabic rules — recall/precision/determinism gates)
+    name: phase-2 reviewer (coverage ≥85% over the full suite + recall/precision/determinism gates)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -193,13 +193,15 @@ jobs:
           python-version: "3.12"
       - name: Install
         run: pip install -e .[dev] pytest-cov
-      - name: Reviewer coverage gate (≥85%)
+      - name: Reviewer coverage gate (≥85%, full suite — v0.54.0)
+        # درس المراجعة الخارجية: القائمة المُعدّدة يدويًا تتعفّت — نمت الحزمة
+        # (repo_graph/taintx/hybrid/repo_map) وبقيت الاختبارات ستة فصارت
+        # التغطية 56.72% وtaintx صفرًا. الحاجز يقيس الحزمة على المجموعة
+        # الكاملة — لا قائمة تُنسى، ولا خفض حد لإخفاء المشكلة.
         run: >
-          pytest tests/test_reviewer_rules.py tests/test_reviewer_engine.py
-          tests/test_reviewer_report_cli.py tests/test_reviewer_robustness.py
-          tests/test_reviewer_gate.py tests/test_reviewer_mcp.py
+          pytest tests/
           --cov=zyko.reviewer --cov-report=term --cov-fail-under=85 -q
-      - name: Phase-2 gate — 29/29 planted defects, clean stays clean, byte determinism
+      - name: Phase-2 gate — planted defects caught, clean stays clean, byte determinism
         run: python -m zyko.reviewer gate
       - name: Reviewer CLI — defective fails, clean passes (exit-code contract)
         run: |

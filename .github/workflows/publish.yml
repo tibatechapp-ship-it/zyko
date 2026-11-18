@@ -13,11 +13,24 @@ jobs:
     permissions:
       id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - name: Tag must certify its own version (release integrity, v0.54.0)
+        # درس invalid-publisher ودرس الوسوم: الوسم الذي يفصل عن نسخته
+        # لا يُنشر — الحزمة تُبنى من الكود لكن تُدّعى من الوسم؛ التعارض
+        # يرفض قبل أي بناء لا بعد رفعه.
+        run: |
+          python -c "
+          import pathlib, sys
+          sys.path.insert(0, 'src')
+          from zyko.version import __version__
+          tag = '${GITHUB_REF_NAME#v}'
+          assert tag == __version__, f'tag v{tag} != version.py {__version__} — fix the tag or the bump'
+          print(f'tag/version coherent: {tag} == {__version__}')
+          "
       - name: Install build tools
         run: python -m pip install --upgrade build
       - name: Build package

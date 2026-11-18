@@ -16,7 +16,7 @@ from zyko.cli import ui
 from zyko.cli.ui import bold
 from zyko.config.settings import Settings
 from zyko.core.messages import Message
-from zyko.exceptions import ConfigError, ZykoError
+from zyko.exceptions import ConfigError, GatewayAuthError, ZykoError
 from zyko.log import get_logger
 from zyko.platform import cache_dir, config_dir, config_file, data_dir, platform_info
 from zyko.policy.engine import PolicyEngine, builtin_default_policy, load_policy
@@ -264,8 +264,22 @@ def cmd_serve(args: Any) -> int:
         users = UserStore.load(users_source)
     host = args.host or settings.get("gateway.host", "127.0.0.1")
     port = int(args.port or settings.get("gateway.port", 8787))
+    # فشل مغلقة (v0.54.0): واجهة خارجية بلا مصادقة مرفوضة افتراضيًا —
+    # الباب المفتوح فعل صريح (علم أو بيئة) لا سهو افتراضي.
+    allow_open = bool(getattr(args, "allow_open", False)) or os.environ.get(
+        "ZYKO_GATEWAY_ALLOW_OPEN", ""
+    ).strip().lower() in {"1", "true", "yes"}
     try:
-        httpd = serve(router, host=host, port=port, api_key=api_key, users=users)
+        httpd = serve(
+            router,
+            host=host,
+            port=port,
+            api_key=api_key,
+            users=users,
+            allow_open=allow_open,
+        )
+    except GatewayAuthError as exc:
+        raise ConfigError(str(exc), hint=exc.hint) from exc
     except OSError as exc:
         # A busy/protected port used to escape as a raw OSError traceback.
         raise ConfigError(

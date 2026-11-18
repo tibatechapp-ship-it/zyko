@@ -31,6 +31,9 @@ README = ROOT / "README.md"
 # أنماط الحقيقة المعلنة في README — تعديلها يعني تغيير العقد مع هذا السكربت
 BADGE_RE = re.compile(r"img\.shields\.io/badge/tests-(\d+)%20passing")
 COUNT_RE = re.compile(r"^#\s+(\d+) passed, (\d+) skipped", re.MULTILINE)
+# الفقرة الإنجليزية — رقماها كانا يتعفّان خارج العقد (درس المراجعة الخارجية:
+# الشارة 3167 والفقرة 2991 والسجل 3209 — ثلاثة أرقام لنفس الحقيقة)
+EN_PARA_RE = re.compile(r"(?<![\w.])(\d+) tests passing on")
 
 
 def junit_counts(junit_path: Path) -> tuple[int, int]:
@@ -76,6 +79,9 @@ def sync_readme(readme_text: str, passed: int, skipped: int) -> str:
     assert count
     replaced = f"# {passed} passed, {skipped} skipped"
     readme_text = readme_text[: count.start()] + replaced + readme_text[count.end() :]
+    en = EN_PARA_RE.search(readme_text)
+    if en:
+        readme_text = readme_text[: en.start(1)] + str(passed) + readme_text[en.end(1) :]
     return readme_text
 
 
@@ -95,15 +101,21 @@ def main(argv: list[str] | None = None) -> int:
     badge, declared_passed, declared_skipped = declared_counts(text)
 
     ok = badge == passed and declared_passed == passed and declared_skipped == skipped
-    if ok:
+    # الفقرة الإنجليزية تُحكم إن وُجدت فقط (README الواقعي يحملها — أي غياب
+    # فيها يُحكم في اختبار الاتساق الداخلي لا في التشغيلات الاصطناعية)
+    en = EN_PARA_RE.search(text)
+    en_ok = en is None or int(en.group(1)) == passed
+    if ok and en_ok:
         print(
             f"✅ حقيقة الأرقام: شارة {badge} = خط {declared_passed}/{declared_skipped} = junit {passed}/{skipped}"
+            + (f" = فقرة EN {en.group(1)}" if en else "")
         )
         return 0
 
     print(
         f"❌ تعفّت الأرقام: README يعلن شارة {badge} وخط {declared_passed}/{declared_skipped} "
-        f"بينما junit يقول {passed}/{skipped}",
+        + (f"وفقرة EN {en.group(1)} " if en and not en_ok else "")
+        + f"بينما junit يقول {passed}/{skipped}",
         file=sys.stderr,
     )
     if args.sync:

@@ -94,7 +94,8 @@ def test_gateway_internal_error_returns_500():
             assert exc.code == 500
             body = json.loads(exc.read())
             assert "internal error" in body["error"]["message"]
-            assert "kaboom" in body["error"]["message"]
+            # v0.54.0: الصدق للسجل لا للهجوم — نص الاستثناء لا يسرّب في الرد
+            assert "kaboom" not in body["error"]["message"]
     finally:
         httpd.shutdown()
 

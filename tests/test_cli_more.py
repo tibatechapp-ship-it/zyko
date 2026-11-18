@@ -76,7 +76,7 @@ def test_cmd_serve_starts_and_stops(monkeypatch, capsys):
         def shutdown(self):
             started["shutdown"] = True
 
-    def fake_serve(router, host="127.0.0.1", port=8787, api_key=None, users=None):
+    def fake_serve(router, host="127.0.0.1", port=8787, api_key=None, users=None, allow_open=False):
         started["router"] = router
         started["host"] = host
         started["users"] = users

@@ -11,6 +11,16 @@ Only ``http.server`` + ``json`` are used, so there is nothing to compile and
 nothing to install beyond ZYKO itself. Responses carry a ``zyko.receipt``
 object: the verifiable routing decision (ranking, policy, attempts) that
 produced the answer.
+
+**Safety valves (v0.54.0 — المراجعة الخارجية تُغلق)** — the gateway fails
+closed by default: binding a non-loopback interface without any auth mode
+(``users`` / ``api_key``) raises :class:`GatewayAuthError` *before the
+socket opens* — an open gateway must be an explicit act
+(``allow_open=True`` / ``--allow-open`` / ``ZYKO_GATEWAY_ALLOW_OPEN=1``),
+never a slip. Every request passes through declared valves: a request-body
+cap (413), a concurrent-request cap (503), and a per-connection socket
+timeout; a 500 never echoes exception internals — details go to the server
+log, not the attacker.
 """
 
 from __future__ import annotations
@@ -24,12 +34,25 @@ from typing import Any
 from zyko.core import tools as toolconv
 from zyko.core.messages import Message
 from zyko.core.response import ChatRequest
-from zyko.exceptions import ZykoError
+from zyko.exceptions import GatewayAuthError, ZykoError
 from zyko.gateway.auth import GatewayUser, UserStore
 from zyko.log import get_logger
 from zyko.utils.loop import SHARED_LOOP
 
 log = get_logger("gateway")
+
+#: hosts that never trigger the fail-closed bind guard (loopback only)
+LOOPBACK_HOSTS: frozenset[str] = frozenset({"127.0.0.1", "localhost", "::1"})
+
+#: request-body cap — a chat completion payload has no honest reason to be huge
+MAX_BODY_BYTES_DEFAULT = 16 * 1024 * 1024
+
+#: concurrent-request cap — ThreadingHTTPServer spawns a thread per request;
+#: without a valve, one client with 10k sockets is a remote DoS
+MAX_CONCURRENT_REQUESTS_DEFAULT = 64
+
+#: per-connection socket timeout (seconds) — half-open sockets must die
+REQUEST_TIMEOUT_S_DEFAULT = 120.0
 
 
 def _openai_messages(payload: dict[str, Any]) -> list[Message]:
@@ -90,6 +113,7 @@ class _Handler(BaseHTTPRequestHandler):
     router: Any = None
     api_key: str | None = None
     users: UserStore | None = None  # 0.7.0: multi-user identity + governance
+    max_body_bytes: int = MAX_BODY_BYTES_DEFAULT  # 0.54.0: request-body valve
     protocol_version = "HTTP/1.1"
 
     # ------------------------------------------------------------- plumbing
@@ -151,8 +175,30 @@ class _Handler(BaseHTTPRequestHandler):
     def _error(self, status: int, message: str, err_type: str = "zyko_error") -> None:
         self._json(status, {"error": {"message": message, "type": err_type}})
 
+    # ---------------------------------------------------------- load valves
+    def _acquire_slot(self) -> bool:
+        """Take one concurrent-request slot; 503 with ``close`` when full."""
+        slots = getattr(self.server, "zyko_slots", None)
+        if slots is None or slots.acquire(blocking=False):
+            return True
+        self.close_connection = True
+        self._error(
+            503, "server busy: concurrent request limit reached", err_type="zyko_overloaded"
+        )
+        return False
+
     # -------------------------------------------------------------- routes
     def do_GET(self) -> None:  # noqa: N802 (stdlib naming)
+        if not self._acquire_slot():
+            return
+        try:
+            self._handle_get()
+        finally:
+            slots = getattr(self.server, "zyko_slots", None)
+            if slots is not None:
+                slots.release()
+
+    def _handle_get(self) -> None:
         identity, ok = self._authenticate()
         if not ok:
             return
@@ -192,11 +238,35 @@ class _Handler(BaseHTTPRequestHandler):
         return self._error(404, f"no route: {path}")
 
     def do_POST(self) -> None:  # noqa: N802
-        # Drain the request body BEFORE any early error return: with HTTP/1.1
-        # keep-alive, an unread body would be parsed as the next request line
-        # and corrupt the connection (classic 501-on-reuse failure).
+        if not self._acquire_slot():
+            return
+        try:
+            self._handle_post()
+        finally:
+            slots = getattr(self.server, "zyko_slots", None)
+            if slots is not None:
+                slots.release()
+
+    def _handle_post(self) -> None:
+        # Declared cap FIRST: an oversized body is refused without reading it
+        # (the connection is closed so the unread bytes cannot poison the next
+        # request line on keep-alive). Then drain the body BEFORE any early
+        # error return: with HTTP/1.1 keep-alive, an unread body would be
+        # parsed as the next request line (classic 501-on-reuse failure).
         try:
             length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            length = -1
+        if length < 0:
+            return self._error(400, "invalid Content-Length")
+        if length > self.max_body_bytes:
+            self.close_connection = True
+            return self._error(
+                413,
+                f"request body exceeds the limit of {self.max_body_bytes} bytes",
+                err_type="zyko_payload_too_large",
+            )
+        try:
             body = self.rfile.read(length) if length > 0 else b""
         except (ValueError, OSError):
             body = b""
@@ -238,9 +308,10 @@ class _Handler(BaseHTTPRequestHandler):
             return self._json(200, _response_to_openai(outcome.response, outcome.receipt))
         except ZykoError as exc:
             return self._error(502, str(exc), err_type="zyko_upstream_error")
-        except Exception as exc:  # noqa: BLE001
+        except Exception:  # noqa: BLE001
+            # الصدق للسجل لا للهجوم: التفاصيل الداخلية في لوج الخادم لا في الرد
             log.exception("gateway failure")
-            return self._error(500, f"internal error: {exc}")
+            return self._error(500, "internal error — details are in the server log")
 
     def _record_usage(self, user: GatewayUser, receipt: dict[str, Any], response: Any) -> None:
         """Persist per-user usage; estimated cost from the chosen candidate."""
@@ -333,6 +404,29 @@ class _Handler(BaseHTTPRequestHandler):
             pass
 
 
+def _guard_open_bind(
+    host: str,
+    *,
+    api_key: str | None,
+    users: UserStore | None,
+    allow_open: bool,
+) -> None:
+    """فشل مغلقة — raise BEFORE the socket opens when the default is unsafe.
+
+    A non-loopback bind with no auth mode is refused unless the operator
+    opted in explicitly (``allow_open``) — an open gateway on ``0.0.0.0``
+    must be an act, not an accident.
+    """
+    if host in LOOPBACK_HOSTS or users is not None or api_key or allow_open:
+        return
+    raise GatewayAuthError(
+        f"refusing to bind {host} without authentication — an open gateway "
+        "on an external interface is not a default (v0.54.0 fail-closed)",
+        hint="pass --api-key/--users, or bind 127.0.0.1, or opt in explicitly "
+        "with --allow-open / ZYKO_GATEWAY_ALLOW_OPEN=1 (local experiments only)",
+    )
+
+
 def serve(
     router: Any,
     *,
@@ -340,13 +434,23 @@ def serve(
     port: int = 8787,
     api_key: str | None = None,
     users: UserStore | None = None,
+    allow_open: bool = False,
+    max_body_bytes: int = MAX_BODY_BYTES_DEFAULT,
+    max_concurrent: int = MAX_CONCURRENT_REQUESTS_DEFAULT,
+    request_timeout_s: float = REQUEST_TIMEOUT_S_DEFAULT,
 ) -> ThreadingHTTPServer:
     """Create, start and return a running gateway server.
 
     Auth modes, most to least governed: ``users`` (multi-user identities,
     per-user RPM + daily budgets, receipts carry the user name), ``api_key``
-    (single legacy bearer token), or open (development only).
+    (single legacy bearer token), or open (development only — refused on a
+    non-loopback host unless ``allow_open=True``, see
+    :func:`_guard_open_bind`).
+
+    Valves (all declared, none silent): ``max_body_bytes`` → 413,
+    ``max_concurrent`` → 503, ``request_timeout_s`` → socket timeout.
     """
+    _guard_open_bind(host, api_key=api_key, users=users, allow_open=allow_open)
 
     class BoundHandler(_Handler):
         pass
@@ -354,9 +458,27 @@ def serve(
     BoundHandler.router = router
     BoundHandler.api_key = api_key
     BoundHandler.users = users
+    BoundHandler.max_body_bytes = max(1, int(max_body_bytes))
+    BoundHandler.timeout = max(1.0, float(request_timeout_s))
     httpd = ThreadingHTTPServer((host, port), BoundHandler)
     httpd.daemon_threads = True
+    httpd.zyko_slots = threading.BoundedSemaphore(max(1, int(max_concurrent)))
     thread = threading.Thread(target=httpd.serve_forever, name="zyko-gateway", daemon=True)
     thread.start()
-    log.info("gateway listening on http://%s:%d", host, port)
+    mode = (
+        "multi-user"
+        if users is not None
+        else "single-token"
+        if api_key
+        else "open (explicitly allowed)"
+    )
+    log.info(
+        "gateway listening on http://%s:%d (%s; body<=%d bytes; concurrent<=%d; timeout=%.0fs)",
+        host,
+        port,
+        mode,
+        BoundHandler.max_body_bytes,
+        max_concurrent,
+        BoundHandler.timeout,
+    )
     return httpd

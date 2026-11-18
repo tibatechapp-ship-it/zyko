@@ -126,6 +126,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="multi-user YAML (0.7.0): per-user keys, roles, rpm and daily budgets",
     )
+    p.add_argument(
+        "--allow-open",
+        action="store_true",
+        help="explicitly allow an unauthenticated gateway (v0.54.0: required when "
+        "binding a non-loopback host without --api-key/--users; local experiments only)",
+    )
     with_router(p)
     p.set_defaults(func=cmd.cmd_serve)
 
