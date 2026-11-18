@@ -38,8 +38,12 @@ def test_publish_workflow_declares_the_trusted_publisher_identity() -> None:
 
 def test_publish_workflow_certifies_tag_version_before_building() -> None:
     assert "Tag must certify its own version" in PUBLISH_YML
-    assert "from zyko.version import __version__" in PUBLISH_YML
-    assert "tag == __version__" in PUBLISH_YML
+    assert "tag == version" in PUBLISH_YML
+    # درس التشغيل الفاشل 44340231957: استيراد zyko.version ينسحب على
+    # zyko/__init__.py فيستدعي اعتماديات client.py (httpx) قبل تثبيتها
+    # فيموت الحاجز نفسه — النسخة تُقرأ من الملف بـ ast لا باستيراد الحزمة
+    assert "ast.parse" in PUBLISH_YML
+    assert "from zyko.version import" not in PUBLISH_YML
 
 
 def test_ci_keeps_the_full_suite_reviewer_coverage_gate() -> None:
