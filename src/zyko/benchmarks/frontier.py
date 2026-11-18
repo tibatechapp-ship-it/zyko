@@ -297,7 +297,9 @@ def _probe_contract(contract: PermissionContract, probe: str, root: Path) -> tup
     if probe == "env-secret":
         import os
 
-        os.environ["ZYKO_FRONTIER_API_TOKEN"] = "probe-secret-value-not-a-real-token"
+        # probe value deliberately fake - it must NEVER cross sanitized_env; B105 is
+        # a false positive on a test probe, the real contract is the deny-list below.
+        os.environ["ZYKO_FRONTIER_API_TOKEN"] = "probe-secret-value-not-a-real-token"  # nosec B105
         env = contract.sanitized_env()
         leaked = any(
             "TOKEN" in k.upper() or "SECRET" in k.upper() or "KEY" in k.upper() for k in env
@@ -373,9 +375,14 @@ def run_terminal_lab() -> dict[str, object]:
             )
         )
 
-        # TB-04: فحص الصياغة يفضح الملف المكسور
+        # TB-04: فحص الصياغة يفضح الملف المكسور — «python3» على POSIX
+        # و«python» على ويندوز (كلاهما في القائمة البيضاء، والاسم python3
+        # وحده غير موجود في ويندوز فيُرفض الأمر بلا ذنب).
+        import os
+
+        _py_cmd = "python" if os.name == "nt" else "python3"
         r4w = session.patch_file(path="broken.py", content=_BAD_SYNTAX)
-        r4 = session.run_tests(argv=("python3", "-m", "py_compile", "broken.py"), cwd=root)
+        r4 = session.run_tests(argv=(_py_cmd, "-m", "py_compile", "broken.py"), cwd=root)
         rows.append(
             _task_row("TB-04", r4w.ok and not r4.ok, r4.reason_ar or "exit=" + str(r4.exit_code))
         )
@@ -398,7 +405,8 @@ def run_terminal_lab() -> dict[str, object]:
         # TB-07: البيئة البيضاء — سر مزروع لا يعبر
         import os
 
-        os.environ["ZYKO_FRONTIER_SECRET_KEY"] = "probe-value-not-a-real-secret"
+        # probe value deliberately fake - same env-sanitization contract as above.
+        os.environ["ZYKO_FRONTIER_SECRET_KEY"] = "probe-value-not-a-real-secret"  # nosec B105
         env = contract.sanitized_env()
         no_leak = not any("SECRET" in k or "KEY" in k for k in env)
         rows.append(_task_row("TB-07", no_leak and "PATH" in env, "sanitized_env"))

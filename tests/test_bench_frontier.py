@@ -61,7 +61,8 @@ def test_terminal_lab_eight_tasks_all_pass():
     """معمل الطرفية: 8 مهام حقيقية تحت العقد والجِل — كتابة وتشغيل وحراسة."""
     lab = run_terminal_lab()
     assert lab["total"] == 8
-    assert lab["passed"] == 8, "مهام الطرفية الثمانية كلها تمر — والفاشل موثق لا مطموس"
+    failed = [r for r in lab["tasks"] if not r["passed"]]
+    assert lab["passed"] == 8, f"مهام الطرفية الثمانية كلها تمر — الفاشل موثق: {failed}"
     assert lab["success_pct"] == 100.0
 
 

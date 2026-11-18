@@ -365,6 +365,19 @@ def line_removes_file(patch: str, path: str) -> bool:
     return False
 
 
+def _sub_text(value: object) -> str:
+    """subprocess output is bytes (real runner) or str (fake runner) - always text.
+
+    Windows lesson (run 44340230518): a text-mode stdin translates \n to
+    \r\n on Windows (TextIOWrapper without newline=), making ``git apply``
+    say "corrupt patch" for a perfectly valid patch - the patch crosses
+    platforms as **UTF-8 bytes**, and stderr is decoded here, not at raise.
+    """
+    if isinstance(value, bytes):
+        return value.decode("utf-8", "replace")
+    return str(value or "")
+
+
 def apply_candidate(workdir: Path, patch: str, runner: Runner) -> tuple[bool, str]:
     """طبّق الرقعة في صندوق العمل عبر ``git apply`` — فحص ثم تطبيق.
 
@@ -376,25 +389,23 @@ def apply_candidate(workdir: Path, patch: str, runner: Runner) -> tuple[bool, st
     check_run = runner(
         ["git", "apply", "--check", "--whitespace=nowarn", "-"],
         cwd=str(workdir),
-        input=patch,
+        input=patch.encode("utf-8"),  # bytes: text stdin corrupts patches on Windows (\r\n)
         capture_output=True,
-        text=True,
         timeout=30,
     )
     if getattr(check_run, "returncode", 1) != 0:
-        detail = (getattr(check_run, "stderr", "") or "").strip().splitlines()
+        detail = _sub_text(getattr(check_run, "stderr", "")).strip().splitlines()
         reason = detail[0][:200] if detail else "فحص التطبيق رفض الرقعة"
         return False, f"فشل فحص التطبيق: {reason}"
     apply_run = runner(
         ["git", "apply", "--whitespace=nowarn", "-"],
         cwd=str(workdir),
-        input=patch,
+        input=patch.encode("utf-8"),  # bytes: text stdin corrupts patches on Windows (\r\n)
         capture_output=True,
-        text=True,
         timeout=30,
     )
     if getattr(apply_run, "returncode", 1) != 0:
-        detail = (getattr(apply_run, "stderr", "") or "").strip().splitlines()
+        detail = _sub_text(getattr(apply_run, "stderr", "")).strip().splitlines()
         reason = detail[0][:200] if detail else "التطبيق فشل بعد الفحص"
         return False, f"فشل التطبيق: {reason}"
     return True, "طُبِّقت"

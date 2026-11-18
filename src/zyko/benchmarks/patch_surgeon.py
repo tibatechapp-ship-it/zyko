@@ -233,6 +233,13 @@ class TolerantApply:
         }
 
 
+def _dec_text(value: object) -> str:
+    """subprocess stderr/stdout arrives as bytes (real) or str (fake) - always text."""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", "replace")
+    return str(value or "")
+
+
 def _git_apply(
     workdir: Path, sub: str, runner: Runner, extra: tuple[str, ...] = ()
 ) -> tuple[bool, str]:
@@ -242,25 +249,23 @@ def _git_apply(
     check = runner(
         ["git", "apply", "--check", "--whitespace=nowarn", *extra, "-"],
         cwd=str(workdir),
-        input=sub,
+        input=sub.encode("utf-8"),  # bytes: text stdin corrupts patches on Windows (\r\n)
         capture_output=True,
-        text=True,
         timeout=30,
     )
     if getattr(check, "returncode", 1) != 0:
-        detail = (getattr(check, "stderr", "") or "").strip().splitlines()
+        detail = _dec_text(getattr(check, "stderr", "")).strip().splitlines()
         reason = detail[-1][:200] if detail else "فحص التطبيق رفض الجزء"
         return False, f"فشل فحص التطبيق: {reason}"
     run = runner(
         ["git", "apply", "--whitespace=nowarn", *extra, "-"],
         cwd=str(workdir),
-        input=sub,
+        input=sub.encode("utf-8"),  # bytes: text stdin corrupts patches on Windows (\r\n)
         capture_output=True,
-        text=True,
         timeout=30,
     )
     if getattr(run, "returncode", 1) != 0:
-        detail = (getattr(run, "stderr", "") or "").strip().splitlines()
+        detail = _dec_text(getattr(run, "stderr", "")).strip().splitlines()
         reason = detail[-1][:200] if detail else "التطبيق فشل بعد الفحص"
         return False, f"فشل التطبيق: {reason}"
     return True, "طُبِّق"

@@ -479,11 +479,12 @@ def test_report_schema_and_table_are_declared():
     assert "psf__requests-0001" in table
 
 
-def test_replay_file_round_trip():
+def test_replay_file_round_trip(tmp_path):
     import hashlib
 
     receipt, _ = _clean_world()
-    path = Path("/tmp/replay_test_receipt.json")
+    # tmp_path لا /tmp: مسار POSIX مطلق ينكسر على ويندوز (\tmp\ لا \USR\tmp)
+    path = tmp_path / "replay_test_receipt.json"
     raw = json.dumps(receipt, ensure_ascii=False)
     path.write_text(raw, encoding="utf-8")
     r = replay_file(path, source_label="file")

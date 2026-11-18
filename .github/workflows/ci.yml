@@ -192,7 +192,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install
-        run: pip install -e .[dev] pytest-cov
+        # fastapi+httpx: البوابة تقيس المجموعة الكاملة وتُعِدّ قوالب coder
+        # حقيقية (تدرس test_coder_gate/test_bench_gauntlet) — بلا هذه
+        # الحزم تتخطى/تموت القوالب وتُسقط البوابة زوراً (التشغيل 44340230518)
+        run: pip install -e .[dev] pytest-cov fastapi httpx
       - name: Reviewer coverage gate (≥85%, full suite — v0.54.0)
         # درس المراجعة الخارجية: القائمة المُعدّدة يدويًا تتعفّت — نمت الحزمة
         # (repo_graph/taintx/hybrid/repo_map) وبقيت الاختبارات ستة فصارت

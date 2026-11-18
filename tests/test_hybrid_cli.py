@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -21,8 +22,12 @@ def _run_cli(*cli_args: str) -> tuple[int, str]:
         [sys.executable, "-m", "zyko.reviewer", *cli_args],
         capture_output=True,
         text=True,
+        encoding="utf-8",  # Arabic JSON on stdout must survive cp1252 defaults
         cwd=REPO,
-        env={"PYTHONPATH": str(REPO / "src"), "PATH": "/usr/bin:/bin"},
+        # inherit the full env then layer PYTHONPATH: a bare POSIX PATH (or a
+        # Windows env without SystemRoot) kills the python subprocess itself
+        # and stdout comes back empty -> JSONDecodeError (run 44340230518).
+        env={**os.environ, "PYTHONPATH": str(REPO / "src")},
     )
     return proc.returncode, proc.stdout
 

@@ -19,3 +19,11 @@ skips:
   #       inside the eval1000 corpus that never touch the filesystem.
   #       Real temp files go through tempfile.gettempdir() everywhere.
   - B108
+  # B613: bidirectional control characters (RLM U+200F) appear inside Arabic
+  #       prose in docstrings and scenario descriptions — this is an
+  #       Arabic-first project and RTL marks are required typography for
+  #       correct rendering of mixed Arabic/Latin text (the phase-0 RTL
+  #       gate tests exactly this). Trojan-source hiding requires bidi
+  #       reordering of CODE (identifiers/operators); zyko code positions
+  #       stay LTR-ASCII, so prose-level RTL marks carry no such risk.
+  - B613

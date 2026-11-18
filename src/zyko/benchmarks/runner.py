@@ -168,13 +168,19 @@ def prepare_worktree(
         proc = runner(
             ["git", "apply", "--whitespace=nowarn", "-"],
             cwd=str(workdir),
-            input=patch,
+            # bytes: text-mode stdin translates \n to \r\n on Windows and git
+            # apply rejects the valid patch as "corrupt" (run 44340230518).
+            input=patch.encode("utf-8"),
             capture_output=True,
-            text=True,
             timeout=60,
         )
         if getattr(proc, "returncode", 1) != 0:
-            detail = (getattr(proc, "stderr", "") or "").strip().splitlines()
+            stderr = (
+                proc.stderr
+                if isinstance(proc.stderr, str)
+                else (proc.stderr or b"").decode("utf-8", "replace")
+            )
+            detail = stderr.strip().splitlines()
             reason = detail[-1][:200] if detail else "رقعة الاختبارات رفضت"
             return False, f"فشل تطبيق رقعة الاختبارات: {reason}"
     return True, "جاهزة"
